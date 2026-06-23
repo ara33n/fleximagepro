@@ -54,16 +54,16 @@
   }
 
   .hero-scrim {
-    background: linear-gradient(90deg, rgba(9, 9, 11, 0.88), rgba(9, 9, 11, 0.64) 48%, rgba(9, 9, 11, 0.18));
+    background: linear-gradient(90deg, rgba(9, 9, 11, 0.96), rgba(9, 9, 11, 0.86) 52%, rgba(9, 9, 11, 0.62));
   }
 
   .dark .hero-scrim {
-    background: linear-gradient(90deg, rgba(9, 9, 11, 0.92), rgba(9, 9, 11, 0.68) 48%, rgba(9, 9, 11, 0.22));
+    background: linear-gradient(90deg, rgba(9, 9, 11, 0.98), rgba(9, 9, 11, 0.9) 52%, rgba(9, 9, 11, 0.68));
   }
 
   @media (max-width: 768px) {
     .hero-scrim {
-      background: linear-gradient(180deg, rgba(9, 9, 11, 0.86), rgba(9, 9, 11, 0.68));
+      background: linear-gradient(180deg, rgba(9, 9, 11, 0.96), rgba(9, 9, 11, 0.88));
     }
   }
 }

@@ -1,0 +1,15 @@
+# FlexImagePro
+
+FlexImagePro is a browser-side image tools website for compressing, converting, and resizing images without uploading files to a server.
+
+## Primary Pages
+
+- [Home](https://fleximagepro.com/)
+- [Image Compressor](https://fleximagepro.com/compress)
+- [Image to WebP Converter](https://fleximagepro.com/convert-webp)
+- [Image Resizer](https://fleximagepro.com/resize)
+- [JPG to PNG and PNG to JPG Converter](https://fleximagepro.com/jpg-to-png)
+
+## Crawling Guidance
+
+Public pages may be crawled for search and answer discovery. Do not treat user-selected local image files as website content because image processing happens in the browser.

@@ -1,5 +1,8 @@
 import { Routes } from '@angular/router';
 import { ToolConfig } from './core/models/image-job.model';
+import { HomeComponent } from './features/home/home.component';
+import { NotFoundComponent } from './features/not-found/not-found.component';
+import { ToolPageComponent } from './features/tool-page/tool-page.component';
 
 const compressTool: ToolConfig = {
   id: 'compress',
@@ -56,30 +59,30 @@ const jpgPngTool: ToolConfig = {
 export const routes: Routes = [
   {
     path: '',
-    loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
+    component: HomeComponent,
   },
   {
     path: 'compress',
-    loadComponent: () => import('./features/tool-page/tool-page.component').then((m) => m.ToolPageComponent),
+    component: ToolPageComponent,
     data: { tool: compressTool },
   },
   {
     path: 'convert-webp',
-    loadComponent: () => import('./features/tool-page/tool-page.component').then((m) => m.ToolPageComponent),
+    component: ToolPageComponent,
     data: { tool: webpTool },
   },
   {
     path: 'resize',
-    loadComponent: () => import('./features/tool-page/tool-page.component').then((m) => m.ToolPageComponent),
+    component: ToolPageComponent,
     data: { tool: resizeTool },
   },
   {
     path: 'jpg-to-png',
-    loadComponent: () => import('./features/tool-page/tool-page.component').then((m) => m.ToolPageComponent),
+    component: ToolPageComponent,
     data: { tool: jpgPngTool },
   },
   {
     path: '**',
-    loadComponent: () => import('./features/not-found/not-found.component').then((m) => m.NotFoundComponent),
+    component: NotFoundComponent,
   },
 ];

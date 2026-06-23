@@ -24,6 +24,10 @@ jobs:
       - name: Build Angular
         run: npm run build
 
+      # 🔍 DEBUG STEP (IMPORTANT)
+      - name: List build files
+        run: ls -R dist
+
       - name: Deploy via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -33,5 +37,6 @@ jobs:
           port: 21
           protocol: ftps
 
-          local-dir: dist/image-tools/
-          server-dir: /fleximagepro.com/
+          # ⚠️ most likely correct path for Angular 17+
+          local-dir: dist/image-tools/browser/
+          server-dir: /

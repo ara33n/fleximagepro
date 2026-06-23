@@ -39,4 +39,4 @@ jobs:
 
           # ⚠️ most likely correct path for Angular 17+
           local-dir: dist/image-tools/browser/
-          server-dir: /home2/vrcompaniesllc/fleximagepro.com/
+          server-dir: /fleximagepro.com/

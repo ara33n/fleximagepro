@@ -32,8 +32,6 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
           protocol: ftps
-
-          # ✅ FIXED PATH
           local-dir: dist/image-tools/
 
           # live domain folder

@@ -1,0 +1,183 @@
+<article>
+  <section class="bg-white dark:bg-zinc-950">
+    <div class="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-wide text-teal-600 dark:text-teal-400">{{ tool().eyebrow }}</p>
+        <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-4xl">{{ tool().title }}</h1>
+        <p class="mt-4 max-w-3xl text-base leading-7 text-zinc-600 dark:text-zinc-300">{{ tool().description }}</p>
+      </div>
+      <app-ad-slot label="Sidebar" />
+    </div>
+  </section>
+
+  <section class="mx-auto grid max-w-7xl gap-6 px-4 pb-14 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
+    <div class="space-y-6">
+      <app-upload-zone [accept]="tool().acceptedTypes" (filesSelected)="addFiles($event)" />
+
+      @if (message()) {
+        <p class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">{{ message() }}</p>
+      }
+
+      @if (jobs().length) {
+        <section class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="summary-heading">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 id="summary-heading" class="text-lg font-semibold text-zinc-950 dark:text-white">Results</h2>
+              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                {{ completedJobs().length }} of {{ jobs().length }} complete. Total saved: {{ totalSavings() }}%.
+              </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                (click)="downloadAll()"
+                [disabled]="!completedJobs().length || isZipping()"
+                class="rounded-lg bg-zinc-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-zinc-950 dark:hover:bg-teal-300"
+              >
+                {{ isZipping() ? 'Preparing ZIP...' : 'Download All ZIP' }}
+              </button>
+              <button type="button" (click)="clearAll()" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-4 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800" aria-label="Processing progress">
+            <div class="h-full rounded-full bg-teal-500 transition-all" [style.width.%]="progress()"></div>
+          </div>
+
+          <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+            <div class="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-950">
+              <dt class="text-zinc-500">Original</dt>
+              <dd class="mt-1 font-semibold text-zinc-950 dark:text-white">{{ formatBytes(totalOriginalSize()) }}</dd>
+            </div>
+            <div class="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-950">
+              <dt class="text-zinc-500">Processed</dt>
+              <dd class="mt-1 font-semibold text-zinc-950 dark:text-white">{{ formatBytes(totalResultSize()) }}</dd>
+            </div>
+            <div class="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-950">
+              <dt class="text-zinc-500">Saved</dt>
+              <dd class="mt-1 font-semibold text-zinc-950 dark:text-white">{{ totalSavings() }}%</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="space-y-4" aria-label="Before and after image previews">
+          @for (job of jobs(); track trackByJob($index, job)) {
+            <article class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 class="break-all text-base font-semibold text-zinc-950 dark:text-white">{{ job.name }}</h2>
+                  <p class="mt-1 text-sm text-zinc-500">{{ job.width }} x {{ job.height }} px</p>
+                </div>
+                <button
+                  type="button"
+                  (click)="download(job)"
+                  [disabled]="job.status !== 'done'"
+                  class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                >
+                  Download
+                </button>
+              </div>
+
+              <div class="mt-4 grid gap-4 lg:grid-cols-2">
+                <figure class="rounded-lg bg-zinc-100 p-3 dark:bg-zinc-950">
+                  <img [src]="job.originalUrl" [alt]="'Original preview for ' + job.name" class="aspect-video w-full rounded-md object-contain" loading="lazy" />
+                  <figcaption class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">Before: {{ formatBytes(job.originalSize) }}</figcaption>
+                </figure>
+
+                <figure class="rounded-lg bg-zinc-100 p-3 dark:bg-zinc-950">
+                  @if (job.status === 'processing') {
+                    <div class="grid aspect-video w-full place-items-center rounded-md bg-white text-sm text-zinc-500 dark:bg-zinc-900">Processing...</div>
+                  } @else if (job.status === 'error') {
+                    <div class="grid aspect-video w-full place-items-center rounded-md bg-red-50 p-4 text-center text-sm text-red-700 dark:bg-red-950 dark:text-red-200">{{ job.error }}</div>
+                  } @else if (job.resultUrl) {
+                    <img [src]="job.resultUrl" [alt]="'Processed preview for ' + job.name" class="aspect-video w-full rounded-md object-contain" loading="lazy" />
+                  } @else {
+                    <div class="grid aspect-video w-full place-items-center rounded-md bg-white text-sm text-zinc-500 dark:bg-zinc-900">Queued</div>
+                  }
+                  <figcaption class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+                    After:
+                    @if (job.resultSize) {
+                      {{ formatBytes(job.resultSize) }} ({{ savings(job.originalSize, job.resultSize) }}% saved)
+                      @if (job.resultWidth && job.resultHeight) {
+                        - {{ job.resultWidth }} x {{ job.resultHeight }} px
+                      }
+                    } @else {
+                      Waiting
+                    }
+                  </figcaption>
+                </figure>
+              </div>
+            </article>
+          }
+        </section>
+      }
+    </div>
+
+    <aside class="space-y-6">
+      <section class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="options-heading">
+        <h2 id="options-heading" class="text-lg font-semibold text-zinc-950 dark:text-white">Options</h2>
+
+        @if (tool().mode !== 'jpg-png') {
+          <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200" for="quality">Quality: {{ options().quality }}%</label>
+          <input id="quality" type="range" min="10" max="95" step="1" [value]="options().quality" (input)="updateQuality($event)" class="mt-3 w-full accent-teal-600" />
+        }
+
+        @if (tool().mode === 'resize') {
+          <div class="mt-5 grid grid-cols-2 gap-3">
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Width
+              <input type="number" min="1" [value]="options().width" (change)="updateWidth($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+            </label>
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Height
+              <input type="number" min="1" [value]="options().height" (change)="updateHeight($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+            </label>
+          </div>
+          <label class="mt-4 flex items-center gap-3 text-sm text-zinc-700 dark:text-zinc-200">
+            <input type="checkbox" [checked]="options().lockAspect" (change)="toggleAspectLock($event)" class="size-4 rounded border-zinc-300 accent-teal-600" />
+            Lock aspect ratio
+          </label>
+        }
+
+        @if (tool().mode === 'compress' || tool().mode === 'resize') {
+          <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+            Output format
+            <select [value]="options().outputFormat" (change)="updateOutputFormat($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
+              <option value="original">Keep original</option>
+              <option value="jpeg">JPG</option>
+              <option value="png">PNG</option>
+              <option value="webp">WebP</option>
+            </select>
+          </label>
+        }
+
+        @if (tool().mode === 'jpg-png') {
+          <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+            Conversion
+            <select [value]="options().outputFormat" (change)="updateOutputFormat($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
+              <option value="auto">Auto: JPG to PNG, PNG to JPG</option>
+              <option value="png">PNG</option>
+              <option value="jpeg">JPG</option>
+            </select>
+          </label>
+        }
+
+        @if (jobs().length) {
+          @if (optionsDirty()) {
+            <p class="mt-5 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-900 dark:border-teal-900 dark:bg-teal-950 dark:text-teal-200">
+              Options changed. Click Reprocess Images to apply them.
+            </p>
+          }
+
+          <button type="button" (click)="processAll()" [disabled]="isProcessing()" class="mt-6 w-full rounded-lg bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50">
+            {{ isProcessing() ? 'Processing...' : 'Reprocess Images' }}
+          </button>
+        }
+      </section>
+
+      <app-ad-slot label="Sidebar" />
+    </aside>
+  </section>
+</article>

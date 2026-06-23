@@ -1,0 +1,13 @@
+<label
+  class="group flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 p-8 text-center transition dark:border-slate-700 sm:p-10"
+  [class.border-emerald-500]="isDragging()"
+  [class.bg-emerald-50]="isDragging()"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave($event)"
+  (drop)="onDrop($event)"
+>
+  <input class="sr-only" type="file" multiple [accept]="acceptValue()" (change)="onInput($event)" />
+  <span class="grid size-12 place-items-center rounded-lg bg-slate-950 text-sm font-bold text-white transition group-hover:bg-emerald-600 dark:bg-white dark:text-slate-950">UP</span>
+  <span class="mt-4 text-base font-semibold text-slate-950 dark:text-white">Drop images here or browse</span>
+  <span class="mt-2 max-w-md text-sm text-slate-600 dark:text-slate-400">Upload up to 10 images. Files are processed locally in this browser and never leave your device.</span>
+</label>

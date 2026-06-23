@@ -66,9 +66,11 @@ export class AdSlotComponent {
         return;
       }
 
-      this.loadAdsenseScript();
-      this.requestAd();
-      this.hideWhenAdIsUnavailable();
+      this.loadWhenBrowserIsIdle(() => {
+        this.loadAdsenseScript();
+        this.requestAd();
+        this.hideWhenAdIsUnavailable();
+      });
     });
   }
 
@@ -97,6 +99,17 @@ export class AdSlotComponent {
   private requestAd(): void {
     window.adsbygoogle = window.adsbygoogle || [];
     window.adsbygoogle.push({});
+  }
+
+  private loadWhenBrowserIsIdle(callback: () => void): void {
+    const idleCallback = window.requestIdleCallback;
+
+    if (idleCallback) {
+      idleCallback(callback, { timeout: 2500 });
+      return;
+    }
+
+    window.setTimeout(callback, 1800);
   }
 
   private hideWhenAdIsUnavailable(): void {

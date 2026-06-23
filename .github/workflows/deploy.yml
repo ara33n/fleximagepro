@@ -33,8 +33,8 @@ jobs:
           port: 21
           protocol: ftps
 
-          # ✅ Angular 19 / modern build fix
-          local-dir: dist/fleximagepro/browser/
+          # ✅ FIXED PATH
+          local-dir: dist/image-tools/
 
-          # ✅ Live domain folder
+          # live domain folder
           server-dir: /public_html/fleximagepro.com/

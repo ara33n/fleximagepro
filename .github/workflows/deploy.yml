@@ -1,4 +1,4 @@
-name: Deploy Angular to cPanel
+name: Deploy Angular to cPanel FTPS
 
 on:
   push:
@@ -24,12 +24,13 @@ jobs:
       - name: Build Angular
         run: npm run build
 
-      - name: Deploy via FTP
+      - name: Deploy via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
+          server: ftp.vrcompaniesllc.us
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
+          protocol: ftps
           local-dir: dist/
           server-dir: /public_html/app/

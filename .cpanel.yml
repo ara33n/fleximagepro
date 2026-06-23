@@ -1,0 +1,4 @@
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home2/vrcompaniesllc/fleximagepro.com/
+    - /bin/cp -R fleximagepro.com/browser/* $DEPLOYPATH

@@ -1,3 +1,4 @@
-deployment:
-  tasks:
-    - echo "DEPLOY WORKING" > /home2/vrcompaniesllc/fleximagepro.com/test.txt
+#  deployment:
+#   tasks:
+#     - export DEPLOYPATH=/home2/vrcompaniesllc/fleximagepro.com/
+#     - /bin/cp -R fleximagepro.com/browser/* $DEPLOYPATH

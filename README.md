@@ -1,4 +1,4 @@
-# PixelPress Image Tools
+# FlexImagePro
 
 Angular standalone SaaS micro-tool for browser-side image compression, conversion, and resizing. All image processing uses the Canvas API and File API in the browser. There is no backend, API call, or paid service dependency.
 

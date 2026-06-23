@@ -20,6 +20,6 @@ export class NotFoundComponent {
   private readonly seo = inject(SeoService);
 
   constructor() {
-    this.seo.update('404 - PixelPress Image Tools', 'The requested image tool page could not be found.');
+    this.seo.update('404 - FlexImagePro', 'The requested image tool page could not be found.');
   }
 }

@@ -2,11 +2,14 @@ import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   PLATFORM_ID,
+  ViewChild,
   afterNextRender,
   computed,
   inject,
   input,
+  signal,
 } from '@angular/core';
 
 import { environment } from '../../../../environments/environment';
@@ -21,26 +24,22 @@ declare global {
   selector: 'app-ad-slot',
   standalone: true,
   template: `
-    <div
-      class="relative flex min-h-28 overflow-hidden rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-      aria-label="{{ label() }} sponsored placement"
-    >
-      @if (isConfigured()) {
+    @if (shouldRender()) {
+      <div
+        class="relative flex min-h-28 overflow-hidden rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+        aria-label="{{ label() }} sponsored placement"
+      >
         <ins
+          #adElement
           class="adsbygoogle block min-h-24 w-full"
+          style="display: block"
           [attr.data-ad-client]="clientId"
           [attr.data-ad-slot]="slotId()"
           data-ad-format="auto"
           data-full-width-responsive="true"
         ></ins>
-      } @else {
-        <div
-          class="flex min-h-24 w-full items-center justify-center rounded-md border border-dashed border-zinc-300 bg-zinc-50 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-500"
-        >
-          {{ label() }} ad
-        </div>
-      }
-    </div>
+      </div>
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -56,6 +55,10 @@ export class AdSlotComponent {
   readonly clientId = environment.adsenseClientId;
   readonly slotId = computed(() => this.adSlot() || this.slotConfig[this.slotKey()] || '');
   readonly isConfigured = computed(() => Boolean(this.clientId && this.slotId()));
+  readonly isHidden = signal(false);
+  readonly shouldRender = computed(() => this.isConfigured() && !this.isHidden());
+
+  @ViewChild('adElement') private readonly adElement?: ElementRef<HTMLElement>;
 
   constructor() {
     afterNextRender(() => {
@@ -65,6 +68,7 @@ export class AdSlotComponent {
 
       this.loadAdsenseScript();
       this.requestAd();
+      this.hideWhenAdIsUnavailable();
     });
   }
 
@@ -93,5 +97,35 @@ export class AdSlotComponent {
   private requestAd(): void {
     window.adsbygoogle = window.adsbygoogle || [];
     window.adsbygoogle.push({});
+  }
+
+  private hideWhenAdIsUnavailable(): void {
+    const adElement = this.adElement?.nativeElement;
+
+    if (!adElement) {
+      return;
+    }
+
+    const syncVisibility = (): void => {
+      const adStatus = adElement.getAttribute('data-ad-status');
+
+      if (adStatus === 'unfilled') {
+        this.isHidden.set(true);
+      }
+    };
+
+    const observer = new MutationObserver(syncVisibility);
+    observer.observe(adElement, { attributes: true, childList: true, subtree: true });
+
+    window.setTimeout(() => {
+      const hasAdFrame = Boolean(adElement.querySelector('iframe'));
+      const adStatus = adElement.getAttribute('data-ad-status');
+
+      if (!hasAdFrame && adStatus !== 'filled') {
+        this.isHidden.set(true);
+      }
+
+      observer.disconnect();
+    }, 6000);
   }
 }

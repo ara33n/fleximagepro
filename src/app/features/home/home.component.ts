@@ -55,7 +55,7 @@ export class HomeComponent {
 
   constructor() {
     this.seo.update(
-      'PixelPress Image Tools - Compress, Convert and Resize Images',
+      'FlexImagePro - Compress, Convert and Resize Images',
       'Free browser-side image tools for compression, WebP conversion, resizing, and JPG/PNG conversion. No uploads or backend required.',
     );
   }

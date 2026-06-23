@@ -1,36 +1,26 @@
 <header
   class="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/90 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90"
 >
-  <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8">
-    <div class="flex items-center justify-between gap-3">
+  <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-3 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between gap-4">
       <a
         routerLink="/"
-        class="focus-ring flex items-center gap-2 rounded-lg font-semibold tracking-tight text-zinc-950 dark:text-white"
-        aria-label="PixelPress home"
+        class="focus-ring flex min-w-0 items-center gap-2 rounded-lg font-semibold tracking-tight text-zinc-950 dark:text-white"
+        aria-label="FlexImagePro home"
       >
-        <!-- <span
-          class="grid size-9 place-items-center rounded-lg text-sm font-black text-white shadow-sm shadow-teal-600/25"
-        >
-        </span> -->
         <img src="/assets/logo.png" width="45" height="45" alt="logo" />
-        <span>PixelPress</span>
+        <span class="truncate text-lg">FlexImagePro</span>
       </a>
 
       <div class="flex items-center gap-2">
-        <!-- <button
-          type="button"
-          class="focus-ring hidden rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 hover:border-teal-300 hover:bg-teal-100 active:scale-[0.99] dark:border-teal-900 dark:bg-teal-950 dark:text-teal-200 dark:hover:border-teal-700 dark:hover:bg-teal-900 sm:inline-flex"
-        >
-          Pro Plan
-        </button> -->
         <button
           type="button"
           (click)="theme.toggle()"
-          class="focus-ring relative h-10 w-16 rounded-full border border-zinc-200 bg-zinc-100 p-1 hover:border-teal-300 active:scale-[0.98] dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-teal-700"
+          class="focus-ring relative h-10 w-16 rounded-full border border-zinc-300 bg-white p-1 shadow-sm hover:border-teal-400 active:scale-[0.98] dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-teal-700"
           [attr.aria-label]="theme.darkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
         >
           <span
-            class="absolute left-1 top-1 grid size-8 place-items-center rounded-full bg-white text-[10px] font-bold text-zinc-700 shadow-sm transition-transform duration-300 dark:translate-x-6 dark:bg-teal-400 dark:text-zinc-950"
+            class="absolute left-1 top-1 grid size-8 place-items-center rounded-full bg-zinc-950 text-[10px] font-bold text-white shadow-sm transition-transform duration-300 dark:translate-x-6 dark:bg-teal-400 dark:text-zinc-950"
             aria-hidden="true"
           >
             {{ theme.darkMode() ? 'DK' : 'LT' }}
@@ -39,16 +29,15 @@
       </div>
     </div>
 
-    <div class="hidden md:block">
-      <app-ad-slot label="Header" />
-    </div>
-
-    <nav class="flex gap-2 overflow-x-auto pb-1 text-sm" aria-label="Primary navigation">
+    <nav
+      class="flex gap-2 overflow-x-auto rounded-lg border border-zinc-200 bg-zinc-100 p-1 text-sm shadow-inner dark:border-zinc-800 dark:bg-zinc-900"
+      aria-label="Primary navigation"
+    >
       @for (link of links; track trackByPath($index, link)) {
         <a
           [routerLink]="link.path"
-          routerLinkActive="bg-zinc-950 text-white dark:bg-white dark:text-zinc-950"
-          class="focus-ring whitespace-nowrap rounded-lg px-3 py-2 font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950 active:scale-[0.98] dark:text-zinc-200 dark:hover:bg-zinc-900 dark:hover:text-white"
+          routerLinkActive="bg-white text-zinc-950 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-950 dark:text-white dark:ring-zinc-800"
+          class="focus-ring whitespace-nowrap rounded-md px-3 py-2 font-semibold text-zinc-700 hover:bg-white/80 hover:text-zinc-950 active:scale-[0.98] dark:text-zinc-300 dark:hover:bg-zinc-950/80 dark:hover:text-white"
         >
           {{ link.label }}
         </a>

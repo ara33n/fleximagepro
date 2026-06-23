@@ -35,4 +35,4 @@ jobs:
           local-dir: dist/image-tools/
 
           # live domain folder
-          server-dir: /public_html/fleximagepro.com/
+          server-dir: /fleximagepro.com/public_html/fleximagepro.com/

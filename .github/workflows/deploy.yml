@@ -32,7 +32,9 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
           protocol: ftps
+
+          # Angular build output
           local-dir: dist/image-tools/
 
-          # live domain folder
-          server-dir: /public_html/fleximagepro.com/
+          # ✅ REAL FTP ROOT (IMPORTANT FIX)
+          server-dir: /fleximagepro.com/

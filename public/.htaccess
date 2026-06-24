@@ -1,18 +1,25 @@
 Options -Indexes
+
+# UTF-8 Charset
+AddDefaultCharset UTF-8
+
 RewriteEngine On
+
+# Redirect www to non-www
+RewriteCond %{HTTP_HOST} ^www\.fleximagepro\.com$ [NC]
+RewriteRule ^(.*)$ https://fleximagepro.com/$1 [R=301,L]
 
 # Force HTTPS
 RewriteCond %{HTTPS} off
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
-# Serve existing static files (JS, CSS, images, fonts, etc.) directly
+# Serve existing static files
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
-# For Angular prerendered routes: serve the route's own index.html
-# e.g., /compress  →  /compress/index.html
+# Angular prerendered routes
 RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI}/index.html -f
 RewriteRule ^(.+[^/])$ $1/index.html [L]
 
-# Fallback: serve root index.html for any unmatched path (404 recovery)
+# Fallback
 RewriteRule ^ /index.html [L]

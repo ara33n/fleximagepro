@@ -15,6 +15,12 @@ interface StoredImageJob {
   resultSize?: number;
   resultWidth?: number;
   resultHeight?: number;
+  shareStatus?: ImageJob['shareStatus'];
+  shareId?: string;
+  shareUrl?: string;
+  qrCodeDataUrl?: string;
+  shareExpiresAt?: string;
+  shareError?: string;
   error?: string;
 }
 
@@ -57,6 +63,12 @@ export class ImageSessionService {
         resultSize: job.resultSize,
         resultWidth: job.resultWidth,
         resultHeight: job.resultHeight,
+        shareStatus: job.shareStatus,
+        shareId: job.shareId,
+        shareUrl: job.shareUrl,
+        qrCodeDataUrl: job.qrCodeDataUrl,
+        shareExpiresAt: job.shareExpiresAt,
+        shareError: job.shareError,
         error: job.error,
       })),
     };
@@ -99,6 +111,12 @@ export class ImageSessionService {
         resultSize: stored.resultSize,
         resultWidth: stored.resultWidth,
         resultHeight: stored.resultHeight,
+        shareStatus: stored.shareStatus,
+        shareId: stored.shareId,
+        shareUrl: stored.shareUrl,
+        qrCodeDataUrl: stored.qrCodeDataUrl,
+        shareExpiresAt: stored.shareExpiresAt,
+        shareError: stored.shareError,
         error: stored.error,
       };
     });

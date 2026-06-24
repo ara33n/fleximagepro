@@ -30,6 +30,12 @@ export interface ImageJob {
   resultSize?: number;
   resultWidth?: number;
   resultHeight?: number;
+  shareStatus?: 'idle' | 'uploading' | 'ready' | 'error';
+  shareId?: string;
+  shareUrl?: string;
+  qrCodeDataUrl?: string;
+  shareExpiresAt?: string;
+  shareError?: string;
   error?: string;
 }
 

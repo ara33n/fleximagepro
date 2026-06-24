@@ -6,6 +6,10 @@
 /out-tsc
 /bazel-out
 
+/backend/node_modules
+/backend/uploads/*
+!/backend/uploads/.gitkeep
+
 # Node
 /node_modules
 npm-debug.log

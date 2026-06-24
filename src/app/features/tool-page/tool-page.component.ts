@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CropRect, ImageJob, OutputFormat, ToolConfig } from '../../core/models/image-job.model';
 import { ImageProcessorService } from '../../core/services/image-processor.service';
@@ -38,7 +39,25 @@ export class ToolPageComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly zip = inject(ZipService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly doc = inject(DOCUMENT);
   private sessionId = this.route.snapshot.queryParamMap.get('session');
+
+  constructor() {
+    // Lock body scroll while the crop modal is open (works on iOS Safari too)
+    effect(() => {
+      const open = !!this.cropModal();
+      const body = this.doc.body;
+      if (open) {
+        body.style.overflow = 'hidden';
+        body.style.position = 'fixed';
+        body.style.width = '100%';
+      } else {
+        body.style.overflow = '';
+        body.style.position = '';
+        body.style.width = '';
+      }
+    });
+  }
 
   readonly tool = signal<ToolConfig>(this.route.snapshot.data['tool']);
   readonly jobs = signal<ImageJob[]>([]);

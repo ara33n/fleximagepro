@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ImageJob, OutputFormat, ToolConfig } from '../../core/models/image-job.model';
+import { CropRect, ImageJob, OutputFormat, ToolConfig } from '../../core/models/image-job.model';
 import { ImageProcessorService } from '../../core/services/image-processor.service';
 import { ImageShareResponse, ImageShareService } from '../../core/services/image-share.service';
 import { ImageSessionService } from '../../core/services/image-session.service';
@@ -50,6 +50,16 @@ export class ToolPageComponent implements OnInit {
   readonly isShareModalOpen = signal(false);
   readonly pageIsDragging = signal(false);
   private _dragDepth = 0;
+
+  // Crop modal state
+  protected readonly Math = Math;
+  readonly cropModal = signal<{ jobId: string; imageUrl: string; naturalW: number; naturalH: number } | null>(null);
+  readonly cropSelDisplay = signal<{ x: number; y: number; w: number; h: number } | null>(null);
+  readonly cropDisplaySize = signal({ w: 1, h: 1 });
+  private cropSel = { x: 0, y: 0, w: 0, h: 0 };
+  private cropDragMode: 'none' | 'new' | 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w' = 'none';
+  private cropDragStart = { dpx: 0, dpy: 0, sx: 0, sy: 0, sw: 0, sh: 0 };
+  private cropImgEl: HTMLImageElement | null = null;
   readonly options = signal<ToolOptions>({
     quality: 78,
     width: 1200,
@@ -148,13 +158,23 @@ export class ToolPageComponent implements OnInit {
           URL.revokeObjectURL(job.resultUrl);
         }
         const options = this.options();
+        const isResize = this.tool().mode === 'resize';
+        // Per-image height: when aspect lock is on, each image uses its own ratio from the target width.
+        // This prevents distortion when images have different aspect ratios.
+        let processHeight: number | undefined;
+        if (isResize) {
+          processHeight = options.lockAspect && job.width > 0 && job.height > 0
+            ? Math.round(options.width / (job.width / job.height))
+            : options.height;
+        }
         const processed = this.tool().mode === 'png-to-svg'
           ? await this.processor.processToSvg(job.file, options.svgColors)
           : await this.processor.process(job.file, {
               mode: this.tool().mode,
               quality: options.quality,
-              width: this.tool().mode === 'resize' ? options.width : undefined,
-              height: this.tool().mode === 'resize' ? options.height : undefined,
+              width: isResize ? options.width : undefined,
+              height: processHeight,
+              cropRect: job.cropRect,
               outputFormat: this.outputFormatForTool(),
             });
 
@@ -384,8 +404,160 @@ export class ToolPageComponent implements OnInit {
     return Math.round(((original - result) / original) * 100);
   }
 
+  readonly imagesHaveDifferentRatios = computed(() => {
+    const jobs = this.jobs();
+    if (jobs.length < 2) return false;
+    const baseRatio = jobs[0].width / jobs[0].height;
+    return jobs.slice(1).some(j => Math.abs(j.width / j.height - baseRatio) > 0.02);
+  });
+
   trackByJob(_: number, job: ImageJob): string {
     return job.id;
+  }
+
+  // ── Crop modal ─────────────────────────────────────────────────────────
+
+  openCrop(job: ImageJob): void {
+    this.cropImgEl = null;
+    this.cropSelDisplay.set(null);
+    this.cropDragMode = 'none';
+    this.cropModal.set({ jobId: job.id, imageUrl: job.originalUrl, naturalW: job.width, naturalH: job.height });
+  }
+
+  onCropImageLoad(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    this.cropImgEl = img;
+    const { width: dw, height: dh } = img.getBoundingClientRect();
+    const w = dw || img.naturalWidth || 1;
+    const h = dh || img.naturalHeight || 1;
+    this.cropDisplaySize.set({ w, h });
+    const modal = this.cropModal();
+    if (!modal) return;
+    const job = this.jobs().find(j => j.id === modal.jobId);
+    if (job?.cropRect) {
+      const scaleX = w / modal.naturalW;
+      const scaleY = h / modal.naturalH;
+      const sel = { x: job.cropRect.x * scaleX, y: job.cropRect.y * scaleY, w: job.cropRect.width * scaleX, h: job.cropRect.height * scaleY };
+      this.cropSel = sel;
+      this.cropSelDisplay.set({ ...sel });
+    } else {
+      const sel = { x: 0, y: 0, w, h };
+      this.cropSel = sel;
+      this.cropSelDisplay.set({ ...sel });
+    }
+  }
+
+  private getCropPointerRelative(event: PointerEvent): { x: number; y: number } {
+    const img = this.cropImgEl;
+    if (!img) return { x: 0, y: 0 };
+    const rect = img.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(rect.width, event.clientX - rect.left)),
+      y: Math.max(0, Math.min(rect.height, event.clientY - rect.top)),
+    };
+  }
+
+  onCropImageDown(event: PointerEvent): void {
+    event.preventDefault();
+    const pos = this.getCropPointerRelative(event);
+    this.cropDragMode = 'new';
+    this.cropDragStart = { dpx: pos.x, dpy: pos.y, sx: pos.x, sy: pos.y, sw: 0, sh: 0 };
+    this.cropSel = { x: pos.x, y: pos.y, w: 0, h: 0 };
+    this.cropSelDisplay.set({ ...this.cropSel });
+  }
+
+  onCropSelDown(event: PointerEvent): void {
+    event.stopPropagation();
+    event.preventDefault();
+    const pos = this.getCropPointerRelative(event);
+    this.cropDragMode = 'move';
+    this.cropDragStart = { dpx: pos.x, dpy: pos.y, sx: this.cropSel.x, sy: this.cropSel.y, sw: this.cropSel.w, sh: this.cropSel.h };
+  }
+
+  onCropHandleDown(event: PointerEvent, handle: string): void {
+    event.stopPropagation();
+    event.preventDefault();
+    const pos = this.getCropPointerRelative(event);
+    this.cropDragMode = handle as typeof this.cropDragMode;
+    this.cropDragStart = { dpx: pos.x, dpy: pos.y, sx: this.cropSel.x, sy: this.cropSel.y, sw: this.cropSel.w, sh: this.cropSel.h };
+  }
+
+  onCropPointerMove(event: PointerEvent): void {
+    if (this.cropDragMode === 'none' || !this.cropImgEl) return;
+    event.preventDefault();
+    const rect = this.cropImgEl.getBoundingClientRect();
+    const px = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+    const py = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
+    const { dpx, dpy, sx, sy, sw, sh } = this.cropDragStart;
+    const W = rect.width, H = rect.height;
+    let x = sx, y = sy, w = sw, h = sh;
+
+    switch (this.cropDragMode) {
+      case 'new':
+        x = Math.min(dpx, px); y = Math.min(dpy, py);
+        w = Math.abs(px - dpx); h = Math.abs(py - dpy);
+        break;
+      case 'move':
+        x = Math.max(0, Math.min(W - sw, sx + px - dpx));
+        y = Math.max(0, Math.min(H - sh, sy + py - dpy));
+        break;
+      case 'nw': { const nx = Math.max(0, Math.min(sx + sw - 1, px)), ny = Math.max(0, Math.min(sy + sh - 1, py)); x = nx; y = ny; w = sx + sw - nx; h = sy + sh - ny; break; }
+      case 'ne': { const ny = Math.max(0, Math.min(sy + sh - 1, py)); y = ny; h = sy + sh - ny; w = Math.max(1, px - sx); break; }
+      case 'sw': { const nx = Math.max(0, Math.min(sx + sw - 1, px)); x = nx; w = sx + sw - nx; h = Math.max(1, py - sy); break; }
+      case 'se': w = Math.max(1, px - sx); h = Math.max(1, py - sy); break;
+      case 'n': { const ny = Math.max(0, Math.min(sy + sh - 1, py)); y = ny; h = sy + sh - ny; break; }
+      case 's': h = Math.max(1, py - sy); break;
+      case 'w': { const nx = Math.max(0, Math.min(sx + sw - 1, px)); x = nx; w = sx + sw - nx; break; }
+      case 'e': w = Math.max(1, px - sx); break;
+    }
+
+    this.cropSel = { x, y, w, h };
+    this.cropSelDisplay.set({ x, y, w, h });
+  }
+
+  onCropPointerUp(): void {
+    this.cropDragMode = 'none';
+  }
+
+  applyCrop(): void {
+    const modal = this.cropModal();
+    const sel = this.cropSelDisplay();
+    if (!modal || !sel || !this.cropImgEl || sel.w < 2 || sel.h < 2) { this.cancelCrop(); return; }
+    const { w: dw, h: dh } = this.cropDisplaySize();
+    const scaleX = modal.naturalW / dw;
+    const scaleY = modal.naturalH / dh;
+    const cropRect: CropRect = {
+      x: Math.round(sel.x * scaleX),
+      y: Math.round(sel.y * scaleY),
+      width: Math.max(1, Math.round(sel.w * scaleX)),
+      height: Math.max(1, Math.round(sel.h * scaleY)),
+    };
+    void this.updateJob(modal.jobId, { cropRect, status: 'queued' });
+    this.optionsDirty.set(true);
+    this.cancelCrop();
+  }
+
+  removeCrop(jobId: string): void {
+    void this.updateJob(jobId, { cropRect: undefined, status: 'queued' });
+    this.optionsDirty.set(true);
+  }
+
+  cancelCrop(): void {
+    this.cropModal.set(null);
+    this.cropSelDisplay.set(null);
+    this.cropImgEl = null;
+    this.cropDragMode = 'none';
+  }
+
+  cropNaturalDims(): { w: number; h: number } | null {
+    const sel = this.cropSelDisplay();
+    const modal = this.cropModal();
+    const size = this.cropDisplaySize();
+    if (!sel || !modal || !size.w) return null;
+    return {
+      w: Math.max(1, Math.round(sel.w * modal.naturalW / size.w)),
+      h: Math.max(1, Math.round(sel.h * modal.naturalH / size.h)),
+    };
   }
 
   @HostListener('dragenter', ['$event'])

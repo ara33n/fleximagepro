@@ -121,6 +121,24 @@
                   <p class="mt-1 text-sm text-zinc-500">{{ job.width }} x {{ job.height }} px</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
+                  @if (tool().mode === 'resize') {
+                    <button
+                      type="button"
+                      (click)="openCrop(job)"
+                      class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                    >
+                      {{ job.cropRect ? 'Edit Crop' : 'Crop' }}
+                    </button>
+                    @if (job.cropRect) {
+                      <button
+                        type="button"
+                        (click)="removeCrop(job.id)"
+                        class="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+                      >
+                        Remove Crop
+                      </button>
+                    }
+                  }
                   <button
                     type="button"
                     (click)="download(job)"
@@ -205,18 +223,31 @@
         @if (tool().mode === 'resize') {
           <div class="mt-5 grid grid-cols-2 gap-3">
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-              Width
+              Width (px)
               <input type="number" min="1" [value]="options().width" (change)="updateWidth($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
             </label>
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-              Height
-              <input type="number" min="1" [value]="options().height" (change)="updateHeight($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+              Height (px)
+              <input
+                type="number" min="1"
+                [value]="options().height"
+                (change)="updateHeight($event)"
+                [readonly]="options().lockAspect"
+                class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                [class.opacity-60]="options().lockAspect"
+                [class.cursor-not-allowed]="options().lockAspect"
+              />
             </label>
           </div>
           <label class="mt-4 flex items-center gap-3 text-sm text-zinc-700 dark:text-zinc-200">
             <input type="checkbox" [checked]="options().lockAspect" (change)="toggleAspectLock($event)" class="size-4 rounded border-zinc-300 accent-teal-600" />
             Lock aspect ratio
           </label>
+          @if (options().lockAspect && imagesHaveDifferentRatios()) {
+            <p class="mt-2 rounded-lg bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+              Width is fixed. Height is calculated per image to preserve each image's own proportions.
+            </p>
+          }
         }
 
         @if (tool().mode === 'compress' || tool().mode === 'resize') {
@@ -260,6 +291,93 @@
       </div>
     </aside>
   </section>
+
+  <!-- ════════════════ CROP MODAL ════════════════ -->
+  @if (cropModal(); as crop) {
+    <div
+      class="fixed inset-0 z-50 flex flex-col bg-black"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Crop image"
+      (document:pointermove)="onCropPointerMove($event)"
+      (document:pointerup)="onCropPointerUp()"
+    >
+      <!-- Toolbar -->
+      <div class="flex shrink-0 items-center justify-between bg-zinc-900 px-4 py-3">
+        <span class="text-sm font-semibold text-white">Crop Image</span>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            (click)="cancelCrop()"
+            class="rounded-lg border border-zinc-600 px-4 py-2 text-sm font-semibold text-zinc-300 hover:bg-zinc-800"
+          >Cancel</button>
+          <button
+            type="button"
+            (click)="applyCrop()"
+            class="rounded-lg bg-teal-500 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-400"
+          >Apply Crop</button>
+        </div>
+      </div>
+
+      <!-- Image + crop overlay -->
+      <div class="flex flex-1 items-center justify-center overflow-hidden p-4">
+        <div class="relative inline-block select-none overflow-hidden">
+          <img
+            [src]="crop.imageUrl"
+            [alt]="'Crop preview'"
+            class="block max-h-[calc(100dvh-140px)] max-w-[calc(100vw-32px)] object-contain"
+            draggable="false"
+            style="touch-action:none"
+            (load)="onCropImageLoad($event)"
+            (pointerdown)="onCropImageDown($event)"
+          />
+
+          @if (cropSelDisplay(); as sel) {
+            <!-- Selection box — box-shadow dims the area outside selection -->
+            <div
+              class="absolute cursor-move border-2 border-white"
+              style="box-shadow:0 0 0 9999px rgba(0,0,0,0.55)"
+              [style.left.px]="sel.x"
+              [style.top.px]="sel.y"
+              [style.width.px]="sel.w"
+              [style.height.px]="sel.h"
+              (pointerdown)="onCropSelDown($event)"
+            >
+              <!-- Rule-of-thirds grid -->
+              <div class="pointer-events-none absolute inset-0">
+                <div class="absolute left-0 right-0 top-1/3 h-px bg-white/30"></div>
+                <div class="absolute left-0 right-0 top-2/3 h-px bg-white/30"></div>
+                <div class="absolute bottom-0 left-1/3 top-0 w-px bg-white/30"></div>
+                <div class="absolute bottom-0 left-2/3 top-0 w-px bg-white/30"></div>
+              </div>
+
+              <!-- Corner handles -->
+              <div class="absolute -left-2 -top-2 h-4 w-4 cursor-nw-resize rounded-sm bg-white" (pointerdown)="onCropHandleDown($event, 'nw')"></div>
+              <div class="absolute -right-2 -top-2 h-4 w-4 cursor-ne-resize rounded-sm bg-white" (pointerdown)="onCropHandleDown($event, 'ne')"></div>
+              <div class="absolute -bottom-2 -left-2 h-4 w-4 cursor-sw-resize rounded-sm bg-white" (pointerdown)="onCropHandleDown($event, 'sw')"></div>
+              <div class="absolute -bottom-2 -right-2 h-4 w-4 cursor-se-resize rounded-sm bg-white" (pointerdown)="onCropHandleDown($event, 'se')"></div>
+
+              <!-- Edge handles -->
+              <div class="absolute -top-2 left-1/2 h-4 w-4 -translate-x-1/2 cursor-n-resize rounded-sm bg-white/80" (pointerdown)="onCropHandleDown($event, 'n')"></div>
+              <div class="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 cursor-s-resize rounded-sm bg-white/80" (pointerdown)="onCropHandleDown($event, 's')"></div>
+              <div class="absolute -left-2 top-1/2 h-4 w-4 -translate-y-1/2 cursor-w-resize rounded-sm bg-white/80" (pointerdown)="onCropHandleDown($event, 'w')"></div>
+              <div class="absolute -right-2 top-1/2 h-4 w-4 -translate-y-1/2 cursor-e-resize rounded-sm bg-white/80" (pointerdown)="onCropHandleDown($event, 'e')"></div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Dimensions info bar -->
+      <div class="shrink-0 bg-zinc-900 px-4 py-2 text-center text-xs text-zinc-400">
+        @if (cropNaturalDims(); as dims) {
+          Crop: {{ dims.w }} &times; {{ dims.h }} px &nbsp;&bull;&nbsp; Original: {{ crop.naturalW }} &times; {{ crop.naturalH }} px
+        } @else {
+          Drag on the image to select a crop area
+        }
+        <span class="ml-4 text-zinc-500">Drag corners or edges to resize &bull; Drag inside to move</span>
+      </div>
+    </div>
+  }
 
   @if (isShareModalOpen()) {
     @if (shareBatch(); as share) {

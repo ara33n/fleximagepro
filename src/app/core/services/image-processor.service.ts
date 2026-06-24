@@ -12,8 +12,15 @@ export class ImageProcessorService {
 
   async process(file: File, options: ProcessOptions): Promise<ProcessedImage> {
     const bitmap = await createImageBitmap(file);
-    const targetWidth = Math.max(1, Math.round(options.width || bitmap.width));
-    const targetHeight = Math.max(1, Math.round(options.height || bitmap.height));
+
+    // Source region (crop area or full image)
+    const sx = Math.max(0, options.cropRect?.x ?? 0);
+    const sy = Math.max(0, options.cropRect?.y ?? 0);
+    const sw = Math.min(bitmap.width - sx, Math.max(1, options.cropRect?.width ?? bitmap.width));
+    const sh = Math.min(bitmap.height - sy, Math.max(1, options.cropRect?.height ?? bitmap.height));
+
+    const targetWidth = Math.max(1, Math.round(options.width || sw));
+    const targetHeight = Math.max(1, Math.round(options.height || sh));
     const canvas = document.createElement('canvas');
     canvas.width = targetWidth;
     canvas.height = targetHeight;
@@ -32,7 +39,7 @@ export class ImageProcessorService {
 
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = 'high';
-    context.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+    context.drawImage(bitmap, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
     bitmap.close();
 
     const mimeType = this.mimeForFormat(format);

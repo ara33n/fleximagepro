@@ -1,6 +1,13 @@
 export type ToolMode = 'compress' | 'convert-webp' | 'resize' | 'jpg-png' | 'png-to-svg';
 export type OutputFormat = 'original' | 'auto' | 'jpeg' | 'png' | 'webp' | 'svg';
 
+export interface CropRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface ToolConfig {
   id: string;
   title: string;
@@ -37,6 +44,7 @@ export interface ImageJob {
   shareExpiresAt?: string;
   shareError?: string;
   error?: string;
+  cropRect?: CropRect;
 }
 
 export interface ProcessOptions {
@@ -44,6 +52,7 @@ export interface ProcessOptions {
   quality: number;
   width?: number;
   height?: number;
+  cropRect?: CropRect;
   outputFormat: OutputFormat;
 }
 

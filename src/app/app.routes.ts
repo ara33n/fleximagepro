@@ -3,6 +3,9 @@ import { ToolConfig } from './core/models/image-job.model';
 import { HomeComponent } from './features/home/home.component';
 import { NotFoundComponent } from './features/not-found/not-found.component';
 import { ToolPageComponent } from './features/tool-page/tool-page.component';
+import { PrivacyPolicyComponent } from './features/privacy-policy/privacy-policy.component';
+import { TermsOfServiceComponent } from './features/terms-of-service/terms-of-service.component';
+import { ContactComponent } from './features/contact/contact.component';
 
 const compressTool: ToolConfig = {
   id: 'compress',
@@ -80,6 +83,18 @@ export const routes: Routes = [
     path: 'jpg-to-png',
     component: ToolPageComponent,
     data: { tool: jpgPngTool },
+  },
+  {
+    path: 'privacy-policy',
+    component: PrivacyPolicyComponent,
+  },
+  {
+    path: 'terms-of-service',
+    component: TermsOfServiceComponent,
+  },
+  {
+    path: 'contact',
+    component: ContactComponent,
   },
   {
     path: '**',

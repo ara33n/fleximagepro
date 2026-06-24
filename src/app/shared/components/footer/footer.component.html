@@ -1,11 +1,61 @@
 <footer class="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-  <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-slate-600 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-    <p>(c) {{ year }} FlexImagePro. Browser-side image tools.</p>
-    <nav class="flex flex-wrap gap-4" aria-label="Footer navigation">
-      <a routerLink="/compress" class="hover:text-slate-950 dark:hover:text-white">Compress</a>
-      <a routerLink="/convert-webp" class="hover:text-slate-950 dark:hover:text-white">Convert WebP</a>
-      <a routerLink="/resize" class="hover:text-slate-950 dark:hover:text-white">Resize</a>
-      <a routerLink="/jpg-to-png" class="hover:text-slate-950 dark:hover:text-white">JPG/PNG</a>
-    </nav>
+  <div class="mx-auto max-w-7xl px-4 py-8 text-sm text-slate-600 dark:text-slate-400 sm:px-6 lg:px-8">
+    <div class="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <a
+          routerLink="/"
+          class="text-base font-semibold text-zinc-950 hover:text-teal-700 dark:text-white dark:hover:text-teal-300"
+        >
+          FlexImagePro
+        </a>
+        <p class="mt-1 text-xs">Browser-side image tools. No uploads. No sign-up.</p>
+      </div>
+
+      <div class="flex flex-wrap gap-x-8 gap-y-6 sm:justify-end">
+        <nav aria-label="Tools">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-950 dark:text-white">
+            Tools
+          </p>
+          <ul class="space-y-2">
+            <li>
+              <a routerLink="/" class="hover:text-slate-950 dark:hover:text-white">Home</a>
+            </li>
+            <li>
+              <a routerLink="/compress" class="hover:text-slate-950 dark:hover:text-white">Image Compressor</a>
+            </li>
+            <li>
+              <a routerLink="/resize" class="hover:text-slate-950 dark:hover:text-white">Image Resizer</a>
+            </li>
+            <li>
+              <a routerLink="/convert-webp" class="hover:text-slate-950 dark:hover:text-white">WebP Converter</a>
+            </li>
+            <li>
+              <a routerLink="/jpg-to-png" class="hover:text-slate-950 dark:hover:text-white">JPG to PNG Converter</a>
+            </li>
+          </ul>
+        </nav>
+
+        <nav aria-label="Legal">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-950 dark:text-white">
+            Company
+          </p>
+          <ul class="space-y-2">
+            <li>
+              <a routerLink="/privacy-policy" class="hover:text-slate-950 dark:hover:text-white">Privacy Policy</a>
+            </li>
+            <li>
+              <a routerLink="/terms-of-service" class="hover:text-slate-950 dark:hover:text-white">Terms of Service</a>
+            </li>
+            <li>
+              <a routerLink="/contact" class="hover:text-slate-950 dark:hover:text-white">Contact</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+    <div class="mt-8 border-t border-slate-200 pt-6 dark:border-slate-800">
+      <p class="text-xs">&copy; {{ year }} FlexImagePro. All rights reserved.</p>
+    </div>
   </div>
 </footer>

@@ -14,6 +14,7 @@ interface ToolOptions {
   height: number;
   lockAspect: boolean;
   outputFormat: OutputFormat;
+  svgColors: number;
 }
 
 @Component({
@@ -45,6 +46,7 @@ export class ToolPageComponent implements OnInit {
     height: 800,
     lockAspect: true,
     outputFormat: this.tool().defaultOutput,
+    svgColors: 16,
   });
 
   readonly completedJobs = computed(() => this.jobs().filter((job) => job.status === 'done' && job.resultBlob));
@@ -124,24 +126,15 @@ export class ToolPageComponent implements OnInit {
           URL.revokeObjectURL(job.resultUrl);
         }
         const options = this.options();
-        let processed = await this.processor.process(job.file, {
-          mode: this.tool().mode,
-          quality: options.quality,
-          width: this.tool().mode === 'resize' ? options.width : undefined,
-          height: this.tool().mode === 'resize' ? options.height : undefined,
-          outputFormat: this.outputFormatForTool(),
-        });
-
-        if (this.tool().mode === 'compress' && processed.blob.size > job.file.size) {
-          URL.revokeObjectURL(processed.url);
-          processed = {
-            blob: job.file,
-            url: URL.createObjectURL(job.file),
-            fileName: this.fallbackCompressedName(job.name),
-            width: job.width,
-            height: job.height,
-          };
-        }
+        const processed = this.tool().mode === 'png-to-svg'
+          ? await this.processor.processToSvg(job.file, options.svgColors)
+          : await this.processor.process(job.file, {
+              mode: this.tool().mode,
+              quality: options.quality,
+              width: this.tool().mode === 'resize' ? options.width : undefined,
+              height: this.tool().mode === 'resize' ? options.height : undefined,
+              outputFormat: this.outputFormatForTool(),
+            });
 
         await this.updateJob(job.id, {
           status: 'done',
@@ -252,6 +245,12 @@ export class ToolPageComponent implements OnInit {
     this.optionsDirty.set(true);
   }
 
+  updateSvgColors(event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value);
+    this.options.update((current) => ({ ...current, svgColors: value }));
+    this.optionsDirty.set(true);
+  }
+
   formatBytes(bytes = 0): string {
     if (bytes < 1024) {
       return `${bytes} B`;
@@ -282,6 +281,9 @@ export class ToolPageComponent implements OnInit {
     if (tool.mode === 'convert-webp') {
       return 'webp';
     }
+    if (tool.mode === 'png-to-svg') {
+      return 'svg';
+    }
     if (tool.mode === 'jpg-png') {
       return this.options().outputFormat === 'auto' ? 'auto' : this.options().outputFormat;
     }
@@ -298,14 +300,6 @@ export class ToolPageComponent implements OnInit {
     anchor.href = url;
     anchor.download = fileName;
     anchor.click();
-  }
-
-  private fallbackCompressedName(name: string): string {
-    const dotIndex = name.lastIndexOf('.');
-    if (dotIndex < 1) {
-      return `${name}-compressed`;
-    }
-    return `${name.slice(0, dotIndex)}-compressed${name.slice(dotIndex)}`;
   }
 
   private uniqueName(name: string, names: Map<string, number>): string {

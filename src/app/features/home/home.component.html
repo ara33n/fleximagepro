@@ -85,7 +85,7 @@
         images are ready.
       </p>
     </div>
-    <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       @for (tool of tools; track trackByPath($index, tool)) {
         <a
           [routerLink]="tool.path"

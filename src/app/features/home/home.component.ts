@@ -142,6 +142,12 @@ export class HomeComponent implements OnDestroy {
       path: '/jpg-to-png',
       badge: 'Format',
     },
+    {
+      title: 'PNG to SVG Converter',
+      description: 'Trace PNG, JPG and WebP images into scalable SVG vector files — ideal for logos and flat graphics.',
+      path: '/png-to-svg',
+      badge: 'Vector',
+    },
   ];
 
   readonly steps = [

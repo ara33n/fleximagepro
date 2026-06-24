@@ -48,6 +48,40 @@ export class ImageProcessorService {
     };
   }
 
+  async processToSvg(file: File, colorCount: number): Promise<ProcessedImage> {
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+
+    const context = canvas.getContext('2d', { alpha: true });
+    if (!context) {
+      bitmap.close();
+      throw new Error('Canvas is not supported in this browser.');
+    }
+
+    context.drawImage(bitmap, 0, 0);
+    bitmap.close();
+
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const ImageTracer = (await import('imagetracerjs')) as any;
+    const tracer = ImageTracer.default ?? ImageTracer;
+    const svgString: string = tracer.imagedataToSVG(imageData, {
+      numberofcolors: Math.max(2, Math.min(64, colorCount)),
+      colorsampling: 2,
+      pathomit: 8,
+    });
+
+    const blob = new Blob([svgString], { type: 'image/svg+xml' });
+    return {
+      blob,
+      url: URL.createObjectURL(blob),
+      fileName: this.renameSvg(file.name),
+      width: canvas.width,
+      height: canvas.height,
+    };
+  }
+
   private canvasToBlob(canvas: HTMLCanvasElement, mimeType: string, quality?: number): Promise<Blob> {
     return new Promise((resolve, reject) => {
       canvas.toBlob(
@@ -73,10 +107,17 @@ export class ImageProcessorService {
       return file.type === 'image/png' ? 'jpeg' : 'png';
     }
 
-    if (file.type === 'image/png') {
+    // AVIF and ICO cannot be output by canvas — map to a supported format
+    if (file.type === 'image/avif') {
+      return 'webp';
+    }
+    if (file.type === 'image/x-icon' || file.type === 'image/vnd.microsoft.icon') {
       return 'png';
     }
 
+    if (file.type === 'image/png') {
+      return 'png';
+    }
     if (file.type === 'image/webp') {
       return 'webp';
     }
@@ -92,5 +133,10 @@ export class ImageProcessorService {
     const extension = format === 'jpeg' ? 'jpg' : format;
     const base = name.replace(/\.[^.]+$/, '');
     return `${base}-${format === 'webp' ? 'webp' : 'optimized'}.${extension}`;
+  }
+
+  private renameSvg(name: string): string {
+    const base = name.replace(/\.[^.]+$/, '');
+    return `${base}.svg`;
   }
 }

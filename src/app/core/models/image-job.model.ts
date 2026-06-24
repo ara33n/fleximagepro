@@ -1,5 +1,5 @@
-export type ToolMode = 'compress' | 'convert-webp' | 'resize' | 'jpg-png';
-export type OutputFormat = 'original' | 'auto' | 'jpeg' | 'png' | 'webp';
+export type ToolMode = 'compress' | 'convert-webp' | 'resize' | 'jpg-png' | 'png-to-svg';
+export type OutputFormat = 'original' | 'auto' | 'jpeg' | 'png' | 'webp' | 'svg';
 
 export interface ToolConfig {
   id: string;

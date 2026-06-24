@@ -9,6 +9,7 @@ const serverRoutes: ServerRoute[] = [
   { path: 'convert-webp',    renderMode: RenderMode.Prerender },
   { path: 'resize',          renderMode: RenderMode.Prerender },
   { path: 'jpg-to-png',      renderMode: RenderMode.Prerender },
+  { path: 'png-to-svg',      renderMode: RenderMode.Prerender },
   { path: 'privacy-policy',  renderMode: RenderMode.Prerender },
   { path: 'terms-of-service',renderMode: RenderMode.Prerender },
   { path: 'contact',         renderMode: RenderMode.Prerender },

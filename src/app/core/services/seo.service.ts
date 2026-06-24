@@ -1,6 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class SeoService {
@@ -25,7 +26,9 @@ export class SeoService {
   }
 
   private updateCanonicalUrl(): void {
-    const canonicalUrl = `${this.document.location.origin}${this.document.location.pathname}`;
+    // Use the production origin so canonical URLs are always correct,
+    // even during SSG prerendering where document.location.origin is http://localhost.
+    const canonicalUrl = `${environment.siteUrl}${this.document.location.pathname}`;
     let canonicalLink = this.document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
 
     if (!canonicalLink) {

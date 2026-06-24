@@ -17,6 +17,7 @@
           "builder": "@angular/build:application",
           "options": {
             "browser": "src/main.ts",
+            "server": "src/main.server.ts",
             "tsConfig": "tsconfig.app.json",
             "assets": [
               {
@@ -42,7 +43,8 @@
                   "maximumError": "8kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "outputMode": "static"
             },
             "development": {
               "optimization": false,

@@ -1,0 +1,8 @@
+/
+/compress
+/convert-webp
+/resize
+/jpg-to-png
+/privacy-policy
+/terms-of-service
+/contact

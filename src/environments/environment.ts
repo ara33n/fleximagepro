@@ -1,5 +1,6 @@
 export const environment = {
   production: false,
+  siteUrl: 'https://fleximagepro.com',
   apiBaseUrl: '',
   stripePublishableKey: '',
   adsenseClientId: 'ca-pub-9996895181971583',

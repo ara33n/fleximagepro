@@ -1,11 +1,16 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
+  private readonly platformId = inject(PLATFORM_ID);
   readonly darkMode = signal(false);
   private mediaQuery?: MediaQueryList;
 
   init(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
     const stored = localStorage.getItem('pixelpress-theme');
     this.mediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
     const prefersDark = this.mediaQuery?.matches ?? false;

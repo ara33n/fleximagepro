@@ -5,7 +5,8 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "build:ssg": "ng build --configuration=production",
+    "build:ssg": "npm_lifecycle_event=build ng build",
+    "postbuild:ssg": "node scripts/create-share-fallback.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

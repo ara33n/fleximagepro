@@ -17,6 +17,9 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
+# Shared image links are dynamic Angular routes.
+RewriteRule ^share/.+ /share/index.html [L]
+
 # Angular prerendered routes
 RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI}/index.html -f
 RewriteRule ^(.+[^/])$ $1/index.html [L]

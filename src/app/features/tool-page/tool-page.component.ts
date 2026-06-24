@@ -306,6 +306,15 @@ export class ToolPageComponent implements OnInit {
     }
   }
 
+  downloadQrCode(): void {
+    const share = this.shareBatch();
+    if (!share?.qrCodeDataUrl) {
+      return;
+    }
+
+    this.clickDownload(share.qrCodeDataUrl, `fleximagepro-share-${share.id}-qr.png`);
+  }
+
   updateQuality(event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
     this.options.update((current) => ({ ...current, quality: value }));

@@ -27,10 +27,6 @@
         <app-upload-zone [accept]="tool().acceptedTypes" (filesSelected)="addFiles($event)" [compact]="true" />
       }
 
-      @if (message()) {
-        <p class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">{{ message() }}</p>
-      }
-
       @if (jobs().length) {
         <section class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="summary-heading">
           <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -407,10 +403,6 @@
           <button type="button" (click)="downloadQrCode()" class="mt-4 w-full rounded-lg border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
             Download QR Code
           </button>
-
-          @if (copyMessage()) {
-            <p class="mt-3 text-sm text-teal-700 dark:text-teal-300">{{ copyMessage() }}</p>
-          }
         </section>
       </div>
     }

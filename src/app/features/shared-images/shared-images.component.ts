@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ImageShareBatch, ImageShareService, SharedImage } from '../../core/services/image-share.service';
 import { SeoService } from '../../core/services/seo.service';
+import { ToastService } from '../../core/services/toast.service';
 import { ZipService } from '../../core/services/zip.service';
 
 @Component({
@@ -15,12 +16,13 @@ export class SharedImagesComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly imageShare = inject(ImageShareService);
   private readonly seo = inject(SeoService);
+  private readonly toast = inject(ToastService);
   private readonly zip = inject(ZipService);
 
   readonly share = signal<ImageShareBatch | null>(null);
   readonly isLoading = signal(true);
   readonly isZipping = signal(false);
-  readonly message = signal('');
+  readonly errorMessage = signal('');
 
   ngOnInit(): void {
     this.seo.update(
@@ -37,7 +39,6 @@ export class SharedImagesComponent implements OnInit {
       return;
     }
 
-    this.message.set('');
     this.isZipping.set(true);
     try {
       const names = new Map<string, number>();
@@ -56,7 +57,7 @@ export class SharedImagesComponent implements OnInit {
       this.clickDownload(url, `fleximagepro-share-${share.id}.zip`);
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) {
-      this.message.set(error instanceof Error ? error.message : 'ZIP download failed.');
+      this.toast.error(error instanceof Error ? error.message : 'ZIP download failed.');
     } finally {
       this.isZipping.set(false);
     }
@@ -87,7 +88,7 @@ export class SharedImagesComponent implements OnInit {
   private async loadShare(): Promise<void> {
     const id = this.route.snapshot.paramMap.get('id') || '';
     if (!id) {
-      this.message.set('Share link not found.');
+      this.errorMessage.set('Share link not found.');
       this.isLoading.set(false);
       return;
     }
@@ -95,7 +96,7 @@ export class SharedImagesComponent implements OnInit {
     try {
       this.share.set(await this.imageShare.getBatch(id));
     } catch (error) {
-      this.message.set(error instanceof Error ? error.message : 'Share link could not be loaded.');
+      this.errorMessage.set(error instanceof Error ? error.message : 'Share link could not be loaded.');
     } finally {
       this.isLoading.set(false);
     }

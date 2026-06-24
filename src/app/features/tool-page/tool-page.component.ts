@@ -6,6 +6,7 @@ import { ImageShareResponse, ImageShareService } from '../../core/services/image
 import { ImageSessionService } from '../../core/services/image-session.service';
 import { PendingFilesService } from '../../core/services/pending-files.service';
 import { SeoService } from '../../core/services/seo.service';
+import { ToastService } from '../../core/services/toast.service';
 import { ZipService } from '../../core/services/zip.service';
 import { AdSlotComponent } from '../../shared/components/ad-slot/ad-slot.component';
 import { UploadZoneComponent } from '../../shared/components/upload-zone/upload-zone.component';
@@ -34,6 +35,7 @@ export class ToolPageComponent implements OnInit {
   private readonly sessions = inject(ImageSessionService);
   private readonly pendingFiles = inject(PendingFilesService);
   private readonly seo = inject(SeoService);
+  private readonly toast = inject(ToastService);
   private readonly zip = inject(ZipService);
   private readonly destroyRef = inject(DestroyRef);
   private sessionId = this.route.snapshot.queryParamMap.get('session');
@@ -44,8 +46,6 @@ export class ToolPageComponent implements OnInit {
   readonly isZipping = signal(false);
   readonly isGeneratingShareLinks = signal(false);
   readonly optionsDirty = signal(false);
-  readonly message = signal('');
-  readonly copyMessage = signal('');
   readonly shareBatch = signal<ImageShareResponse | null>(null);
   readonly isShareModalOpen = signal(false);
   readonly pageIsDragging = signal(false);
@@ -97,13 +97,12 @@ export class ToolPageComponent implements OnInit {
   }
 
   async addFiles(files: File[]): Promise<void> {
-    this.message.set('');
     const existing = this.jobs();
     const capacity = Math.max(0, 10 - existing.length);
     const selected = files.slice(0, capacity);
 
     if (!selected.length) {
-      this.message.set('You can process up to 10 images at a time.');
+      this.toast.warning('You can process up to 10 images at a time.');
       return;
     }
 
@@ -123,7 +122,7 @@ export class ToolPageComponent implements OnInit {
           status: 'queued',
         });
       } catch {
-        this.message.set('One or more images could not be read by this browser.');
+        this.toast.error('One or more images could not be read by this browser.');
       }
     }
 
@@ -149,7 +148,6 @@ export class ToolPageComponent implements OnInit {
 
     this.shareBatch.set(null);
     this.isShareModalOpen.set(false);
-    this.copyMessage.set('');
     this.isProcessing.set(true);
     for (const job of jobs) {
       await this.updateJob(job.id, { status: 'processing', error: undefined });
@@ -208,8 +206,6 @@ export class ToolPageComponent implements OnInit {
     const sessionId = this.sessionId;
     this.revokeUrls(this.jobs());
     this.jobs.set([]);
-    this.message.set('');
-    this.copyMessage.set('');
     this.shareBatch.set(null);
     this.isShareModalOpen.set(false);
     this.sessionId = null;
@@ -260,8 +256,6 @@ export class ToolPageComponent implements OnInit {
       return;
     }
 
-    this.message.set('');
-    this.copyMessage.set('');
     this.shareBatch.set(null);
     this.isGeneratingShareLinks.set(true);
     const jobsToShare = completed.filter((job) => job.resultBlob && job.resultName);
@@ -295,7 +289,7 @@ export class ToolPageComponent implements OnInit {
         shareStatus: 'error',
         shareError: errorMessage,
       })));
-      this.message.set(errorMessage);
+      this.toast.error(errorMessage);
     } finally {
       this.isGeneratingShareLinks.set(false);
     }
@@ -303,7 +297,6 @@ export class ToolPageComponent implements OnInit {
 
   closeShareModal(): void {
     this.isShareModalOpen.set(false);
-    this.copyMessage.set('');
   }
 
   openShareModal(): void {
@@ -320,9 +313,9 @@ export class ToolPageComponent implements OnInit {
 
     try {
       await navigator.clipboard.writeText(share.shareUrl);
-      this.copyMessage.set('Share URL copied.');
+      this.toast.success('Share URL copied to clipboard.');
     } catch {
-      this.copyMessage.set('Copy failed. Select and copy the URL manually.');
+      this.toast.error('Copy failed. Select and copy the URL manually.');
     }
   }
 
@@ -650,7 +643,7 @@ export class ToolPageComponent implements OnInit {
       }
 
       this.jobs.set(restored);
-      this.message.set('Your previous images were restored from this browser.');
+      this.toast.info('Your previous images were restored from this browser.');
 
       if (this.tool().mode === 'resize') {
         const first = restored[0];
@@ -661,7 +654,7 @@ export class ToolPageComponent implements OnInit {
         await this.processAll();
       }
     } catch {
-      this.message.set('Saved images could not be restored in this browser.');
+      this.toast.error('Saved images could not be restored in this browser.');
     }
   }
 
@@ -687,7 +680,7 @@ export class ToolPageComponent implements OnInit {
     try {
       await this.sessions.save(this.sessionId, this.tool(), this.jobs());
     } catch {
-      this.message.set('Images are still available now, but this browser could not save them for refresh recovery.');
+      this.toast.warning('Images are still available now, but this browser could not save them for refresh recovery.');
     }
   }
 }

@@ -38,9 +38,6 @@
         This share expires at {{ currentShare.expiresAt }}. Images are available for 24 hours only.
       </div>
 
-      @if (message()) {
-        <p class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">{{ message() }}</p>
-      }
 
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         @for (image of currentShare.images; track trackByImage($index, image)) {
@@ -67,7 +64,7 @@
     } @else {
       <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-8 text-center dark:border-zinc-800 dark:bg-zinc-900">
         <h2 class="text-lg font-semibold text-zinc-950 dark:text-white">Share link unavailable</h2>
-        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">{{ message() || 'This share link was not found or has expired.' }}</p>
+        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">{{ errorMessage() || 'This share link was not found or has expired.' }}</p>
         <a routerLink="/" class="mt-5 inline-flex rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700">
           Go to FlexImagePro
         </a>

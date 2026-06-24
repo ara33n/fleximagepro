@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ImageJob, OutputFormat, ToolConfig } from '../../core/models/image-job.model';
 import { ImageProcessorService } from '../../core/services/image-processor.service';
 import { ImageSessionService } from '../../core/services/image-session.service';
+import { PendingFilesService } from '../../core/services/pending-files.service';
 import { SeoService } from '../../core/services/seo.service';
 import { ZipService } from '../../core/services/zip.service';
 import { AdSlotComponent } from '../../shared/components/ad-slot/ad-slot.component';
@@ -29,6 +30,7 @@ export class ToolPageComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly processor = inject(ImageProcessorService);
   private readonly sessions = inject(ImageSessionService);
+  private readonly pendingFiles = inject(PendingFilesService);
   private readonly seo = inject(SeoService);
   private readonly zip = inject(ZipService);
   private readonly destroyRef = inject(DestroyRef);
@@ -40,6 +42,8 @@ export class ToolPageComponent implements OnInit {
   readonly isZipping = signal(false);
   readonly optionsDirty = signal(false);
   readonly message = signal('');
+  readonly pageIsDragging = signal(false);
+  private _dragDepth = 0;
   readonly options = signal<ToolOptions>({
     quality: 78,
     width: 1200,
@@ -63,7 +67,12 @@ export class ToolPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.seo.update(this.tool().titleTag, this.tool().metaDescription, this.tool().keywords);
-    void this.restoreSession();
+    const pending = this.pendingFiles.take();
+    if (pending.length) {
+      void this.addFiles(pending);
+    } else {
+      void this.restoreSession();
+    }
     this.destroyRef.onDestroy(() => this.revokeUrls(this.jobs()));
   }
 
@@ -274,6 +283,35 @@ export class ToolPageComponent implements OnInit {
 
   trackByJob(_: number, job: ImageJob): string {
     return job.id;
+  }
+
+  @HostListener('dragenter', ['$event'])
+  onPageDragEnter(event: DragEvent): void {
+    if (!Array.from(event.dataTransfer?.types || []).includes('Files')) return;
+    this._dragDepth++;
+    this.pageIsDragging.set(true);
+  }
+
+  @HostListener('dragleave', ['$event'])
+  onPageDragLeave(_event: DragEvent): void {
+    this._dragDepth = Math.max(0, this._dragDepth - 1);
+    if (this._dragDepth === 0) this.pageIsDragging.set(false);
+  }
+
+  @HostListener('dragover', ['$event'])
+  onPageDragOver(event: DragEvent): void {
+    event.preventDefault();
+  }
+
+  @HostListener('drop', ['$event'])
+  onPageDrop(event: DragEvent): void {
+    event.preventDefault();
+    this._dragDepth = 0;
+    this.pageIsDragging.set(false);
+    const files = Array.from(event.dataTransfer?.files || [])
+      .filter(f => this.tool().acceptedTypes.includes(f.type))
+      .slice(0, 10);
+    if (files.length) void this.addFiles(files);
   }
 
   private outputFormatForTool(): OutputFormat {

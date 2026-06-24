@@ -8,6 +8,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal } f
 })
 export class UploadZoneComponent {
   readonly accept = input<string[]>([]);
+  readonly compact = input(false);
   readonly filesSelected = output<File[]>();
   readonly isDragging = signal(false);
 

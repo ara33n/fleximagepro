@@ -1,4 +1,12 @@
-<article>
+<article class="relative">
+  @if (pageIsDragging() && jobs().length) {
+    <div class="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-teal-500 bg-teal-50/80 dark:bg-teal-950/80">
+      <svg xmlns="http://www.w3.org/2000/svg" class="mb-3 size-12 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+      </svg>
+      <p class="text-lg font-semibold text-teal-700 dark:text-teal-300">Drop to add images</p>
+    </div>
+  }
   <section class="bg-white dark:bg-zinc-950">
     <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div>
@@ -11,7 +19,13 @@
 
   <section class="mx-auto grid max-w-7xl gap-8 px-4 pb-14 sm:px-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:px-8">
     <div class="space-y-6">
-      <app-upload-zone [accept]="tool().acceptedTypes" (filesSelected)="addFiles($event)" />
+
+      <!-- Upload zone: full when empty, compact "+" when images exist -->
+      @if (!jobs().length) {
+        <app-upload-zone [accept]="tool().acceptedTypes" (filesSelected)="addFiles($event)" />
+      } @else if (jobs().length < 10) {
+        <app-upload-zone [accept]="tool().acceptedTypes" (filesSelected)="addFiles($event)" [compact]="true" />
+      }
 
       @if (message()) {
         <p class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">{{ message() }}</p>
@@ -41,8 +55,31 @@
             </div>
           </div>
 
-          <div class="mt-4 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800" aria-label="Processing progress">
-            <div class="h-full rounded-full bg-teal-500 transition-all" [style.width.%]="progress()"></div>
+          <!-- Progress indicator -->
+          <div class="mt-4 flex h-8 items-center">
+            @if (isProcessing()) {
+              <div class="flex items-center gap-3">
+                <svg class="size-5 shrink-0 animate-spin text-teal-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <span class="text-sm text-zinc-600 dark:text-zinc-400">
+                  Processing {{ completedJobs().length }} of {{ jobs().length }}…
+                </span>
+                <span class="flex gap-1">
+                  <span class="size-1.5 animate-bounce rounded-full bg-teal-500 [animation-delay:0ms]"></span>
+                  <span class="size-1.5 animate-bounce rounded-full bg-teal-500 [animation-delay:150ms]"></span>
+                  <span class="size-1.5 animate-bounce rounded-full bg-teal-500 [animation-delay:300ms]"></span>
+                </span>
+              </div>
+            } @else if (progress() === 100) {
+              <div class="flex items-center gap-2 text-sm font-medium text-teal-700 dark:text-teal-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                All done
+              </div>
+            }
           </div>
 
           <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-3">
@@ -87,13 +124,30 @@
 
                 <figure class="rounded-lg bg-zinc-100 p-3 dark:bg-zinc-950">
                   @if (job.status === 'processing') {
-                    <div class="grid aspect-video w-full place-items-center rounded-md bg-white text-sm text-zinc-500 dark:bg-zinc-900">Processing...</div>
+                    <div class="grid aspect-video w-full place-items-center rounded-md bg-white dark:bg-zinc-900">
+                      <div class="flex flex-col items-center gap-3">
+                        <svg class="size-9 animate-spin text-teal-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                          <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <span class="text-xs font-medium text-zinc-400">Processing…</span>
+                      </div>
+                    </div>
                   } @else if (job.status === 'error') {
                     <div class="grid aspect-video w-full place-items-center rounded-md bg-red-50 p-4 text-center text-sm text-red-700 dark:bg-red-950 dark:text-red-200">{{ job.error }}</div>
                   } @else if (job.resultUrl) {
                     <img [src]="job.resultUrl" [alt]="'Processed preview for ' + job.name" class="aspect-video w-full rounded-md object-contain" loading="lazy" />
                   } @else {
-                    <div class="grid aspect-video w-full place-items-center rounded-md bg-white text-sm text-zinc-500 dark:bg-zinc-900">Queued</div>
+                    <div class="grid aspect-video w-full place-items-center rounded-md bg-white dark:bg-zinc-900">
+                      <div class="flex flex-col items-center gap-2">
+                        <span class="flex gap-1.5">
+                          <span class="size-2 animate-pulse rounded-full bg-zinc-300 dark:bg-zinc-600 [animation-delay:0ms]"></span>
+                          <span class="size-2 animate-pulse rounded-full bg-zinc-300 dark:bg-zinc-600 [animation-delay:200ms]"></span>
+                          <span class="size-2 animate-pulse rounded-full bg-zinc-300 dark:bg-zinc-600 [animation-delay:400ms]"></span>
+                        </span>
+                        <span class="text-xs text-zinc-400">Queued</span>
+                      </div>
+                    </div>
                   }
                   <figcaption class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
                     After:

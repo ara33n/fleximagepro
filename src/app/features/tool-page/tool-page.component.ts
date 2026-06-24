@@ -46,7 +46,7 @@ export class ToolPageComponent implements OnInit {
     height: 800,
     lockAspect: true,
     outputFormat: this.tool().defaultOutput,
-    svgColors: 16,
+    svgColors: 100,
   });
 
   readonly completedJobs = computed(() => this.jobs().filter((job) => job.status === 'done' && job.resultBlob));

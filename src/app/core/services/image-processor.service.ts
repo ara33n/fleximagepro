@@ -67,7 +67,7 @@ export class ImageProcessorService {
     const ImageTracer = (await import('imagetracerjs')) as any;
     const tracer = ImageTracer.default ?? ImageTracer;
     const svgString: string = tracer.imagedataToSVG(imageData, {
-      numberofcolors: Math.max(2, Math.min(64, colorCount)),
+      numberofcolors: Math.max(2, Math.min(100, colorCount)),
       colorsampling: 2,
       pathomit: 8,
     });

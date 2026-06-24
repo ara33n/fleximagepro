@@ -58,56 +58,6 @@
     </div>
   </section>
 
-  <!-- Quick-start drag-drop zone -->
-  <section class="border-b border-zinc-200 bg-white py-10 dark:border-zinc-800 dark:bg-zinc-950">
-    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-      <div
-        class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-300 px-8 py-12 text-center transition dark:border-zinc-700"
-        [class.border-teal-500]="homeIsDragging()"
-        [class.bg-teal-50]="homeIsDragging()"
-        [class.dark:bg-teal-950]="homeIsDragging()"
-        (dragover)="onHomeDragOver($event)"
-        (dragleave)="onHomeDragLeave($event)"
-        (drop)="onHomeDrop($event)"
-        (click)="homePicker.click()"
-      >
-        <input #homePicker class="sr-only" type="file" multiple accept="image/*" (change)="onHomeInput($event)" />
-        <svg xmlns="http://www.w3.org/2000/svg" class="mb-4 size-10 text-zinc-400 dark:text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-        </svg>
-        <p class="text-base font-semibold text-zinc-800 dark:text-zinc-100">Drop images here or click to browse</p>
-        <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">JPG, PNG, WebP, AVIF supported &mdash; up to 10 files</p>
-      </div>
-
-      @if (homePendingFiles().length) {
-        <div class="mt-6">
-          <p class="mb-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200">
-            {{ homePendingFiles().length }} image{{ homePendingFiles().length > 1 ? 's' : '' }} ready &mdash; choose a tool:
-          </p>
-          <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
-            @for (tool of tools; track tool.path) {
-              <button
-                type="button"
-                (click)="sendToTool(tool)"
-                class="flex flex-col items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center transition hover:border-teal-400 hover:bg-teal-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-teal-500 dark:hover:bg-teal-950"
-              >
-                <span class="rounded-md bg-teal-600 px-2 py-0.5 text-xs font-semibold text-white">{{ tool.badge }}</span>
-                <span class="text-xs font-medium text-zinc-700 dark:text-zinc-200">{{ tool.label }}</span>
-              </button>
-            }
-          </div>
-          <button
-            type="button"
-            (click)="clearHomePending()"
-            class="mt-3 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-          >
-            Cancel
-          </button>
-        </div>
-      }
-    </div>
-  </section>
-
   <section class="border-y border-zinc-200 bg-zinc-100 py-10 dark:border-zinc-800 dark:bg-zinc-900">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <app-ad-slot label="Between tools" />
@@ -249,7 +199,6 @@
 
   <section class="bg-zinc-50 py-12 dark:bg-zinc-900 md:py-16" aria-labelledby="why-heading">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
       <div class="mb-10">
         <p class="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
           Why us
@@ -263,9 +212,7 @@
       </div>
 
       <div class="grid gap-10 lg:grid-cols-3 lg:gap-16">
-
         <div class="lg:col-span-2 space-y-5 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
-
           <p>
             Most tools that let you compress images online or resize images online require you to
             upload your files to a remote server first. FlexImagePro works differently. Every
@@ -279,15 +226,16 @@
             The privacy benefit is substantial. Designers working with unreleased product visuals,
             photographers editing personal work, and developers preparing client assets can all use
             FlexImagePro without concern. Because nothing leaves your device, your images cannot
-            appear in a third-party database, be used to train machine learning models, or be exposed
-            by a data breach on someone else's infrastructure. You stay in complete control from the
-            moment you add a file to the moment you download the result.
+            appear in a third-party database, be used to train machine learning models, or be
+            exposed by a data breach on someone else's infrastructure. You stay in complete control
+            from the moment you add a file to the moment you download the result.
           </p>
 
           <p>
             Performance follows naturally from this local-first design. Without upload latency, most
             images are ready in under a second. FlexImagePro supports the three formats that cover
-            virtually every web use case: <strong class="font-medium text-zinc-950 dark:text-white">JPEG</strong>
+            virtually every web use case:
+            <strong class="font-medium text-zinc-950 dark:text-white">JPEG</strong>
             for photographs and photorealistic imagery,
             <strong class="font-medium text-zinc-950 dark:text-white">PNG</strong> for lossless
             graphics and images that need transparency, and
@@ -301,9 +249,9 @@
             image compressor to reduce payload sizes without degrading quality. Bloggers use the
             image resizer to crop thumbnails to the exact pixel dimensions their CMS expects before
             upload. E-commerce teams use the JPG to PNG converter to add transparency to cut-out
-            product images, and the WebP converter to trim kilobytes off every product card image
-            — page-speed gains that translate directly into conversion rate improvements. Social
-            media managers compress and resize photos together to satisfy the strict file-size and
+            product images, and the WebP converter to trim kilobytes off every product card image —
+            page-speed gains that translate directly into conversion rate improvements. Social media
+            managers compress and resize photos together to satisfy the strict file-size and
             dimension limits imposed by every major platform.
           </p>
 
@@ -322,7 +270,6 @@
             drop your files in, adjust the settings, and download — that is the entire workflow,
             every time.
           </p>
-
         </div>
 
         <div class="lg:col-span-1">
@@ -368,7 +315,6 @@
             </li>
           </ul>
         </div>
-
       </div>
     </div>
   </section>

@@ -66,12 +66,12 @@ const pngToSvgTool: ToolConfig = {
   id: 'png-to-svg',
   title: 'PNG to SVG Converter',
   eyebrow: 'Raster to Vector',
-  description: 'Trace PNG, JPG, WebP and AVIF images into scalable SVG vector files — all processed locally in your browser.',
-  acceptedTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/avif'],
+  description: 'Trace PNG images into scalable SVG vector files — all processed locally in your browser.',
+  acceptedTypes: ['image/png'],
   mode: 'png-to-svg',
   defaultOutput: 'svg',
   titleTag: 'PNG to SVG Converter - Free Online Raster to Vector Tool',
-  metaDescription: 'Convert PNG, JPG, WebP and AVIF images to SVG vector format in your browser. Free raster to vector tracer with no uploads and instant downloads.',
+  metaDescription: 'Convert PNG images to SVG vector format in your browser. Free raster to vector tracer with no uploads and instant downloads.',
   keywords: 'PNG to SVG, JPG to SVG, image to SVG, raster to vector, convert PNG to SVG, free SVG converter, vector tracing online',
 };
 

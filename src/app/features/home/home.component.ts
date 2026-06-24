@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, OnDestroy, signal } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { animate, style, transition, trigger } from '@angular/animations';
-import { PendingFilesService } from '../../core/services/pending-files.service';
 import { SeoService } from '../../core/services/seo.service';
 import { AdSlotComponent } from '../../shared/components/ad-slot/ad-slot.component';
 
@@ -11,8 +10,6 @@ interface ToolCard {
   description: string;
   path: string;
   badge: string;
-  label: string;
-  accept: string[];
 }
 
 interface FaqItem {
@@ -91,8 +88,6 @@ const FAQ_SCHEMA = {
   ],
 };
 
-const ALL_RASTER = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/x-icon', 'image/vnd.microsoft.icon'];
-
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -114,13 +109,9 @@ const ALL_RASTER = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'imag
 export class HomeComponent implements OnDestroy {
   private readonly seo = inject(SeoService);
   private readonly doc = inject(DOCUMENT);
-  private readonly router = inject(Router);
-  private readonly pendingFiles = inject(PendingFilesService);
   private faqScript: HTMLScriptElement | null = null;
 
   readonly openFaq = signal<number | null>(null);
-  readonly homeIsDragging = signal(false);
-  readonly homePendingFiles = signal<File[]>([]);
 
   toggleFaq(index: number): void {
     this.openFaq.update(current => (current === index ? null : index));
@@ -129,43 +120,33 @@ export class HomeComponent implements OnDestroy {
   readonly tools: ToolCard[] = [
     {
       title: 'Image Compressor',
-      label: 'Image Compressor',
       description: 'Shrink JPG, PNG, and WebP files with quality controls and instant size savings.',
       path: '/compress',
       badge: 'Compress',
-      accept: ALL_RASTER,
     },
     {
       title: 'Image to WebP',
-      label: 'Image to WebP',
       description: 'Export lightweight WebP images from common image formats without a server round-trip.',
       path: '/convert-webp',
       badge: 'Convert',
-      accept: ALL_RASTER,
     },
     {
       title: 'Image Resizer',
-      label: 'Image Resizer',
       description: 'Set custom dimensions and keep aspect ratio locked for clean responsive assets.',
       path: '/resize',
       badge: 'Resize',
-      accept: ALL_RASTER,
     },
     {
       title: 'JPG to PNG / PNG to JPG',
-      label: 'JPG ↔ PNG',
       description: 'Switch between JPG and PNG for transparent graphics, thumbnails, and publishing.',
       path: '/jpg-to-png',
       badge: 'Format',
-      accept: ['image/jpeg', 'image/png'],
     },
     {
       title: 'PNG to SVG Converter',
-      label: 'PNG to SVG',
-      description: 'Trace PNG, JPG and WebP images into scalable SVG vector files — ideal for logos and flat graphics.',
+      description: 'Trace PNG images into scalable SVG vector files — ideal for logos and flat graphics.',
       path: '/png-to-svg',
       badge: 'Vector',
-      accept: ['image/png', 'image/jpeg', 'image/webp', 'image/avif'],
     },
   ];
 
@@ -232,50 +213,6 @@ export class HomeComponent implements OnDestroy {
   ngOnDestroy(): void {
     this.faqScript?.remove();
     this.faqScript = null;
-  }
-
-  onHomeDragOver(event: DragEvent): void {
-    event.preventDefault();
-    this.homeIsDragging.set(true);
-  }
-
-  onHomeDragLeave(event: DragEvent): void {
-    event.preventDefault();
-    this.homeIsDragging.set(false);
-  }
-
-  onHomeDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.homeIsDragging.set(false);
-    const files = Array.from(event.dataTransfer?.files || [])
-      .filter(f => f.type.startsWith('image/'))
-      .slice(0, 10);
-    if (files.length) {
-      this.homePendingFiles.set(files);
-    }
-  }
-
-  onHomeInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const files = Array.from(input.files || [])
-      .filter(f => f.type.startsWith('image/'))
-      .slice(0, 10);
-    input.value = '';
-    if (files.length) {
-      this.homePendingFiles.set(files);
-    }
-  }
-
-  sendToTool(tool: ToolCard): void {
-    const files = this.homePendingFiles().filter(f => tool.accept.includes(f.type));
-    if (!files.length) return;
-    this.pendingFiles.set(files);
-    this.homePendingFiles.set([]);
-    void this.router.navigate([tool.path]);
-  }
-
-  clearHomePending(): void {
-    this.homePendingFiles.set([]);
   }
 
   trackByPath(_: number, item: ToolCard): string {

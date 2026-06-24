@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, OnInit, c
 import { ActivatedRoute, Router } from '@angular/router';
 import { ImageJob, OutputFormat, ToolConfig } from '../../core/models/image-job.model';
 import { ImageProcessorService } from '../../core/services/image-processor.service';
-import { ImageShareService } from '../../core/services/image-share.service';
+import { ImageShareResponse, ImageShareService } from '../../core/services/image-share.service';
 import { ImageSessionService } from '../../core/services/image-session.service';
 import { PendingFilesService } from '../../core/services/pending-files.service';
 import { SeoService } from '../../core/services/seo.service';
@@ -46,7 +46,8 @@ export class ToolPageComponent implements OnInit {
   readonly optionsDirty = signal(false);
   readonly message = signal('');
   readonly copyMessage = signal('');
-  readonly selectedShareJobId = signal<string | null>(null);
+  readonly shareBatch = signal<ImageShareResponse | null>(null);
+  readonly isShareModalOpen = signal(false);
   readonly pageIsDragging = signal(false);
   private _dragDepth = 0;
   readonly options = signal<ToolOptions>({
@@ -70,12 +71,8 @@ export class ToolPageComponent implements OnInit {
   readonly totalResultSize = computed(() => this.completedJobs().reduce((total, job) => total + (job.resultSize || 0), 0));
   readonly totalSavings = computed(() => this.savings(this.totalOriginalSize(), this.totalResultSize()));
   readonly shareLinksReady = computed(() => {
-    const completed = this.completedJobs();
-    return completed.length > 0 && completed.every((job) => job.shareStatus === 'ready' && job.shareUrl);
-  });
-  readonly selectedShareJob = computed(() => {
-    const selectedId = this.selectedShareJobId();
-    return this.jobs().find((job) => job.id === selectedId) || null;
+    const share = this.shareBatch();
+    return Boolean(share && this.completedJobs().length > 0);
   });
 
   ngOnInit(): void {
@@ -140,6 +137,9 @@ export class ToolPageComponent implements OnInit {
       return;
     }
 
+    this.shareBatch.set(null);
+    this.isShareModalOpen.set(false);
+    this.copyMessage.set('');
     this.isProcessing.set(true);
     for (const job of jobs) {
       await this.updateJob(job.id, { status: 'processing', error: undefined });
@@ -190,7 +190,8 @@ export class ToolPageComponent implements OnInit {
     this.jobs.set([]);
     this.message.set('');
     this.copyMessage.set('');
-    this.selectedShareJobId.set(null);
+    this.shareBatch.set(null);
+    this.isShareModalOpen.set(false);
     this.sessionId = null;
     if (sessionId) {
       void this.sessions.remove(sessionId);
@@ -233,15 +234,6 @@ export class ToolPageComponent implements OnInit {
     }
   }
 
-  async share(job: ImageJob): Promise<void> {
-    this.copyMessage.set('');
-    if (job.shareStatus === 'ready') {
-      this.selectedShareJobId.set(job.id);
-    } else {
-      this.message.set('Click Generate Share Links first.');
-    }
-  }
-
   async generateShareLinks(): Promise<void> {
     const completed = this.completedJobs();
     if (!completed.length || this.isGeneratingShareLinks()) {
@@ -250,6 +242,7 @@ export class ToolPageComponent implements OnInit {
 
     this.message.set('');
     this.copyMessage.set('');
+    this.shareBatch.set(null);
     this.isGeneratingShareLinks.set(true);
     const jobsToShare = completed.filter((job) => job.resultBlob && job.resultName);
 
@@ -259,29 +252,23 @@ export class ToolPageComponent implements OnInit {
         shareError: undefined,
       })));
 
-      const shares = await this.imageShare.uploadBatch(jobsToShare.map((job) => ({
+      const share = await this.imageShare.uploadBatch(jobsToShare.map((job) => ({
         blob: job.resultBlob as Blob,
         fileName: job.resultName as string,
       })));
 
-      await Promise.all(jobsToShare.map((job, index) => {
-        const share = shares[index];
-        if (!share) {
-          return this.updateJob(job.id, {
-            shareStatus: 'error',
-            shareError: 'Share link was not returned for this image.',
-          });
-        }
-
-        return this.updateJob(job.id, {
+      this.shareBatch.set(share);
+      this.isShareModalOpen.set(true);
+      await Promise.all(jobsToShare.map((job) => (
+        this.updateJob(job.id, {
           shareStatus: 'ready',
           shareId: share.id,
-          shareUrl: share.downloadUrl,
+          shareUrl: share.shareUrl,
           qrCodeDataUrl: share.qrCodeDataUrl,
           shareExpiresAt: share.expiresAt,
           shareError: undefined,
-        });
-      }));
+        })
+      )));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Image sharing failed.';
       await Promise.all(jobsToShare.map((job) => this.updateJob(job.id, {
@@ -295,18 +282,25 @@ export class ToolPageComponent implements OnInit {
   }
 
   closeShareModal(): void {
-    this.selectedShareJobId.set(null);
+    this.isShareModalOpen.set(false);
     this.copyMessage.set('');
   }
 
-  async copyShareUrl(job: ImageJob): Promise<void> {
-    if (!job.shareUrl) {
+  openShareModal(): void {
+    if (this.shareBatch()) {
+      this.isShareModalOpen.set(true);
+    }
+  }
+
+  async copyShareUrl(): Promise<void> {
+    const share = this.shareBatch();
+    if (!share?.shareUrl) {
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(job.shareUrl);
-      this.copyMessage.set('Download URL copied.');
+      await navigator.clipboard.writeText(share.shareUrl);
+      this.copyMessage.set('Share URL copied.');
     } catch {
       this.copyMessage.set('Copy failed. Select and copy the URL manually.');
     }

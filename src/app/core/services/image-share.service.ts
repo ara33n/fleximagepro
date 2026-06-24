@@ -3,9 +3,10 @@ import { environment } from '../../../environments/environment';
 
 export interface ImageShareResponse {
   id: string;
-  downloadUrl: string;
+  shareUrl: string;
   qrCodeDataUrl: string;
   expiresAt: string;
+  imageCount: number;
 }
 
 export interface ImageShareUpload {
@@ -13,12 +14,27 @@ export interface ImageShareUpload {
   fileName: string;
 }
 
+export interface SharedImage {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  downloadUrl: string;
+}
+
+export interface ImageShareBatch {
+  id: string;
+  createdAt: string;
+  expiresAt: string;
+  images: SharedImage[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ImageShareService {
   private readonly apiBaseUrl = environment.apiBaseUrl.replace(/\/+$/, '');
   private readonly allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
-  async uploadBatch(images: ImageShareUpload[]): Promise<ImageShareResponse[]> {
+  async uploadBatch(images: ImageShareUpload[]): Promise<ImageShareResponse> {
     if (!this.apiBaseUrl) {
       throw new Error('Sharing is not configured.');
     }
@@ -46,11 +62,28 @@ export class ImageShareService {
       throw new Error(await this.errorMessage(response));
     }
 
-    const body = (await response.json()) as { images?: ImageShareResponse[] };
-    if (!Array.isArray(body.images)) {
+    const body = (await response.json()) as Partial<ImageShareResponse>;
+    if (!body.id || !body.shareUrl || !body.qrCodeDataUrl || !body.expiresAt) {
       throw new Error('Image sharing failed.');
     }
-    return body.images;
+    return body as ImageShareResponse;
+  }
+
+  async getBatch(id: string): Promise<ImageShareBatch> {
+    if (!this.apiBaseUrl) {
+      throw new Error('Sharing is not configured.');
+    }
+
+    const response = await fetch(`${this.apiBaseUrl}/api/images/batch/${encodeURIComponent(id)}`);
+    if (!response.ok) {
+      throw new Error(await this.errorMessage(response));
+    }
+
+    const body = (await response.json()) as ImageShareBatch;
+    if (!body.id || !Array.isArray(body.images)) {
+      throw new Error('Share link could not be loaded.');
+    }
+    return body;
   }
 
   private async errorMessage(response: Response): Promise<string> {

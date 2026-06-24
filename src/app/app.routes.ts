@@ -6,6 +6,7 @@ import { ToolPageComponent } from './features/tool-page/tool-page.component';
 import { PrivacyPolicyComponent } from './features/privacy-policy/privacy-policy.component';
 import { TermsOfServiceComponent } from './features/terms-of-service/terms-of-service.component';
 import { ContactComponent } from './features/contact/contact.component';
+import { SharedImagesComponent } from './features/shared-images/shared-images.component';
 
 const ALL_RASTER_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/x-icon', 'image/vnd.microsoft.icon'];
 
@@ -115,6 +116,10 @@ export const routes: Routes = [
   {
     path: 'contact',
     component: ContactComponent,
+  },
+  {
+    path: 'share/:id',
+    component: SharedImagesComponent,
   },
   {
     path: '**',

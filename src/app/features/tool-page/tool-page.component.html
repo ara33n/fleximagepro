@@ -43,16 +43,16 @@
             <div class="flex flex-wrap gap-2">
               <button
                 type="button"
-                (click)="generateShareLinks()"
-                [disabled]="!completedJobs().length || isGeneratingShareLinks() || shareLinksReady()"
+                (click)="shareLinksReady() ? openShareModal() : generateShareLinks()"
+                [disabled]="!completedJobs().length || isGeneratingShareLinks()"
                 class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 @if (isGeneratingShareLinks()) {
                   Generating...
                 } @else if (shareLinksReady()) {
-                  Share Links Ready
+                  View Share Link
                 } @else {
-                  Generate Share Links
+                  Generate Share Link
                 }
               </button>
               <button
@@ -129,20 +129,6 @@
                   >
                     Download
                   </button>
-                  <button
-                    type="button"
-                    (click)="share(job)"
-                    [disabled]="job.status !== 'done' || job.shareStatus !== 'ready'"
-                    class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    @if (job.shareStatus === 'uploading') {
-                      Generating...
-                    } @else if (job.shareStatus === 'ready') {
-                      Share
-                    } @else {
-                      Share
-                    }
-                  </button>
                 </div>
               </div>
 
@@ -190,9 +176,7 @@
                       Waiting
                     }
                   </figcaption>
-                  @if (job.shareStatus === 'ready' && job.shareUrl) {
-                    <p class="mt-2 break-all text-xs text-teal-700 dark:text-teal-300">Share URL ready: {{ job.shareUrl }}</p>
-                  } @else if (job.shareStatus === 'error') {
+                  @if (job.shareStatus === 'error') {
                     <p class="mt-2 text-xs text-red-700 dark:text-red-300">{{ job.shareError }}</p>
                   }
                 </figure>
@@ -277,39 +261,37 @@
     </aside>
   </section>
 
-  @if (selectedShareJob(); as shareJob) {
-    <div class="fixed inset-0 z-50 grid place-items-center bg-zinc-950/70 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="share-title" (click)="closeShareModal()">
-      <section class="w-full max-w-md rounded-lg bg-white p-5 shadow-xl dark:bg-zinc-900" (click)="$event.stopPropagation()">
-        <div class="flex items-start justify-between gap-4">
-          <div>
-            <h2 id="share-title" class="text-lg font-semibold text-zinc-950 dark:text-white">Share download</h2>
-            <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">This link expires after 24 hours.</p>
+  @if (isShareModalOpen()) {
+    @if (shareBatch(); as share) {
+      <div class="fixed inset-0 z-50 grid place-items-center bg-zinc-950/70 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="share-title" (click)="closeShareModal()">
+        <section class="w-full max-w-md rounded-lg bg-white p-5 shadow-xl dark:bg-zinc-900" (click)="$event.stopPropagation()">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="share-title" class="text-lg font-semibold text-zinc-950 dark:text-white">Share images</h2>
+              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">This link includes all processed images and expires after 24 hours.</p>
+            </div>
+            <button type="button" (click)="closeShareModal()" class="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+              Close
+            </button>
           </div>
-          <button type="button" (click)="closeShareModal()" class="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
-            Close
-          </button>
-        </div>
 
-        @if (shareJob.qrCodeDataUrl) {
-          <div class="mt-5 grid place-items-center rounded-lg bg-zinc-50 p-4 dark:bg-zinc-950">
-            <img [src]="shareJob.qrCodeDataUrl" alt="QR code for compressed image download" class="size-64 max-w-full rounded-md bg-white p-2" />
-          </div>
-        }
-
-        @if (shareJob.shareUrl) {
           <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
-            Download URL
-            <input type="text" [value]="shareJob.shareUrl" readonly class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+            Share URL
+            <input type="text" [value]="share.shareUrl" readonly class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
           </label>
-          <button type="button" (click)="copyShareUrl(shareJob)" class="mt-4 w-full rounded-lg bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-700">
-            Copy download URL
+          <button type="button" (click)="copyShareUrl()" class="mt-4 w-full rounded-lg bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-700">
+            Copy Share URL
           </button>
-        }
 
-        @if (copyMessage()) {
-          <p class="mt-3 text-sm text-teal-700 dark:text-teal-300">{{ copyMessage() }}</p>
-        }
-      </section>
-    </div>
+          <div class="mt-5 grid place-items-center rounded-lg bg-zinc-50 p-4 dark:bg-zinc-950">
+            <img [src]="share.qrCodeDataUrl" alt="QR code for shared images page" class="size-64 max-w-full rounded-md bg-white p-2" />
+          </div>
+
+          @if (copyMessage()) {
+            <p class="mt-3 text-sm text-teal-700 dark:text-teal-300">{{ copyMessage() }}</p>
+          }
+        </section>
+      </div>
+    }
   }
 </article>

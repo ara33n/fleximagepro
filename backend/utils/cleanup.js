@@ -16,6 +16,16 @@ async function cleanupExpiredUploads() {
       if (Date.parse(metadata.expiresAt) > Date.now()) {
         return;
       }
+      if (metadata.type === 'batch') {
+        await Promise.allSettled([
+          fs.unlink(metadataPath),
+          ...(metadata.images || []).flatMap((image) => [
+            fs.unlink(path.join(uploadsDir, `${image.id}.json`)),
+            image.storedFileName ? fs.unlink(path.join(uploadsDir, image.storedFileName)) : Promise.resolve(),
+          ]),
+        ]);
+        return;
+      }
       await Promise.allSettled([
         fs.unlink(metadataPath),
         metadata.storedFileName ? fs.unlink(path.join(uploadsDir, metadata.storedFileName)) : Promise.resolve(),

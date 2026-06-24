@@ -99,10 +99,19 @@ export class ToolPageComponent implements OnInit {
   async addFiles(files: File[]): Promise<void> {
     const existing = this.jobs();
     const capacity = Math.max(0, 10 - existing.length);
+
+    if (capacity === 0) {
+      this.toast.warning('Maximum of 10 images reached. Clear some images first.');
+      return;
+    }
+
+    if (files.length > capacity) {
+      this.toast.warning(`Maximum 10 images allowed. Only the first ${capacity} image${capacity === 1 ? '' : 's'} will be added.`);
+    }
+
     const selected = files.slice(0, capacity);
 
     if (!selected.length) {
-      this.toast.warning('You can process up to 10 images at a time.');
       return;
     }
 
@@ -576,9 +585,7 @@ export class ToolPageComponent implements OnInit {
     event.preventDefault();
     this._dragDepth = 0;
     this.pageIsDragging.set(false);
-    const files = Array.from(event.dataTransfer?.files || [])
-      .filter(f => this.tool().acceptedTypes.includes(f.type))
-      .slice(0, 10);
+    const files = Array.from(event.dataTransfer?.files || []);
     if (files.length) void this.addFiles(files);
   }
 
@@ -650,8 +657,24 @@ export class ToolPageComponent implements OnInit {
         this.options.update((current) => ({ ...current, width: first.width, height: first.height }));
       }
 
-      if (restored.some((job) => job.status === 'queued' || (job.status === 'done' && !job.resultBlob))) {
+      const needsProcessing = restored.some(
+        (job) => job.status === 'queued' || (job.status === 'done' && !job.resultBlob),
+      );
+      if (needsProcessing) {
         await this.processAll();
+      } else {
+        const sharedJob = restored.find(
+          (j) => j.shareStatus === 'ready' && j.shareId && j.shareUrl && j.qrCodeDataUrl,
+        );
+        if (sharedJob?.shareId && sharedJob.shareUrl && sharedJob.qrCodeDataUrl) {
+          this.shareBatch.set({
+            id: sharedJob.shareId,
+            shareUrl: sharedJob.shareUrl,
+            qrCodeDataUrl: sharedJob.qrCodeDataUrl,
+            expiresAt: sharedJob.shareExpiresAt ?? '',
+            imageCount: restored.filter((j) => j.shareId === sharedJob.shareId).length,
+          });
+        }
       }
     } catch {
       this.toast.error('Saved images could not be restored in this browser.');

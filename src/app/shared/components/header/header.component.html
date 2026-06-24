@@ -38,10 +38,10 @@
           [attr.aria-label]="theme.darkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
         >
           <span
-            class="absolute left-1 top-1 grid size-7 place-items-center rounded-full bg-zinc-900 text-[9px] font-bold text-white shadow-sm transition-transform duration-300 dark:translate-x-5 dark:bg-teal-400 dark:text-zinc-950"
+            class="absolute left-1 top-1 grid size-7 place-items-center rounded-full bg-zinc-900 text-sm text-white shadow-sm transition-transform duration-300 dark:translate-x-5 dark:bg-teal-400 dark:text-zinc-950"
             aria-hidden="true"
           >
-            {{ theme.darkMode() ? 'DK' : 'LT' }}
+            <i class="bi" [class.bi-moon-stars-fill]="theme.darkMode()" [class.bi-sun-fill]="!theme.darkMode()"></i>
           </span>
         </button>
 

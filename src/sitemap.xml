@@ -4,49 +4,62 @@
       xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-      xmlns:fo="http://www.w3.org/1999/XSL/Format"
-      xmlns:xhtml="http://www.w3.org/1999/xhtml"
+  xmlns:fo="http://www.w3.org/1999/XSL/Format"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml"
       xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
-      http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
 
-  <url>
-    <loc>https://fleximagepro.com/</loc>
-    <lastmod>2026-06-23T19:20:18+00:00</lastmod>
-  </url>
 
-  <url>
-    <loc>https://fleximagepro.com/compress</loc>
-    <lastmod>2026-06-23T19:20:18+00:00</lastmod>
-  </url>
-
-  <url>
-    <loc>https://fleximagepro.com/convert-webp</loc>
-    <lastmod>2026-06-23T19:20:18+00:00</lastmod>
-  </url>
-
-  <url>
-    <loc>https://fleximagepro.com/resize</loc>
-    <lastmod>2026-06-23T19:20:18+00:00</lastmod>
-  </url>
-
-  <url>
-    <loc>https://fleximagepro.com/jpg-to-png</loc>
-    <lastmod>2026-06-23T19:20:18+00:00</lastmod>
-  </url>
-
-  <url>
-    <loc>https://fleximagepro.com/privacy-policy</loc>
-    <lastmod>2026-06-24T00:00:00+00:00</lastmod>
-  </url>
-
-  <url>
-    <loc>https://fleximagepro.com/terms-of-service</loc>
-    <lastmod>2026-06-24T00:00:00+00:00</lastmod>
-  </url>
-
-  <url>
-    <loc>https://fleximagepro.com/contact</loc>
-    <lastmod>2026-06-24T00:00:00+00:00</lastmod>
-  </url>
+<url>
+  <loc>https://fleximagepro.com/</loc>
+  <lastmod>2026-06-25T20:42:30+00:00</lastmod>
+  <priority>1.00</priority>
+</url>
+<url>
+  <loc>https://fleximagepro.com/compress</loc>
+  <lastmod>2026-06-25T20:42:30+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://fleximagepro.com/convert-webp</loc>
+  <lastmod>2026-06-25T20:42:30+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://fleximagepro.com/resize</loc>
+  <lastmod>2026-06-25T20:42:30+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://fleximagepro.com/jpg-to-png</loc>
+  <lastmod>2026-06-25T20:42:30+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://fleximagepro.com/png-to-svg</loc>
+  <lastmod>2026-06-25T20:42:30+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://fleximagepro.com/images-to-pdf</loc>
+  <lastmod>2026-06-25T20:42:30+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://fleximagepro.com/privacy-policy</loc>
+  <lastmod>2026-06-25T20:42:30+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://fleximagepro.com/terms-of-service</loc>
+  <lastmod>2026-06-25T20:42:30+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://fleximagepro.com/contact</loc>
+  <lastmod>2026-06-25T20:42:30+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
 
 </urlset>

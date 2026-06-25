@@ -34,14 +34,20 @@
         <button
           type="button"
           (click)="theme.toggle()"
-          class="focus-ring relative h-9 w-14 shrink-0 rounded-full border border-zinc-300 bg-white p-1 shadow-sm transition hover:border-teal-500 active:scale-[0.98] dark:border-zinc-600 dark:bg-zinc-800 dark:hover:border-teal-500"
+          class="focus-ring relative inline-flex h-8 w-16 shrink-0 cursor-pointer items-center rounded-full bg-zinc-200 p-1 transition-colors duration-300 hover:bg-zinc-300 dark:bg-teal-500 dark:hover:bg-teal-400"
           [attr.aria-label]="theme.darkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
         >
           <span
-            class="absolute left-1 top-1 grid size-7 place-items-center rounded-full bg-zinc-900 text-sm text-white shadow-sm transition-transform duration-300 dark:translate-x-5 dark:bg-teal-400 dark:text-zinc-950"
+            class="inline-flex size-6 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 dark:translate-x-8"
             aria-hidden="true"
           >
-            <i class="bi" [class.bi-moon-stars-fill]="theme.darkMode()" [class.bi-sun-fill]="!theme.darkMode()"></i>
+            <i
+              class="bi text-[11px] transition-colors duration-300"
+              [class.bi-moon-stars-fill]="theme.darkMode()"
+              [class.bi-sun-fill]="!theme.darkMode()"
+              [class.text-teal-600]="theme.darkMode()"
+              [class.text-amber-500]="!theme.darkMode()"
+            ></i>
           </span>
         </button>
 

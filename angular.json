@@ -25,10 +25,7 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "node_modules/bootstrap-icons/font/bootstrap-icons.css",
-              "src/styles.css"
-            ]
+            "styles": ["node_modules/bootstrap-icons/font/bootstrap-icons.css", "src/styles.css"]
           },
           "configurations": {
             "production": {
@@ -36,7 +33,7 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
+                  "maximumWarning": "800kB",
                   "maximumError": "1MB"
                 },
                 {

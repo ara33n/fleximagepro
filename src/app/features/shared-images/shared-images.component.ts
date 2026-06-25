@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ImageShareBatch, ImageShareService, SharedImage } from '../../core/services/image-share.service';
 import { SeoService } from '../../core/services/seo.service';
@@ -18,6 +19,7 @@ export class SharedImagesComponent implements OnInit {
   private readonly seo = inject(SeoService);
   private readonly toast = inject(ToastService);
   private readonly zip = inject(ZipService);
+  private readonly sanitizer = inject(DomSanitizer);
 
   readonly share = signal<ImageShareBatch | null>(null);
   readonly isLoading = signal(true);
@@ -26,9 +28,9 @@ export class SharedImagesComponent implements OnInit {
 
   ngOnInit(): void {
     this.seo.update(
-      'Shared Images - FlexImagePro',
-      'View and download images shared from FlexImagePro. Shared image links expire after 24 hours.',
-      'shared images, image download, FlexImagePro share',
+      'Shared Files - FlexImagePro',
+      'View and download files shared from FlexImagePro. Shared links expire after 24 hours.',
+      'shared files, image download, PDF download, FlexImagePro share',
     );
     void this.loadShare();
   }
@@ -45,7 +47,7 @@ export class SharedImagesComponent implements OnInit {
       const entries = await Promise.all(share.images.map(async (image) => {
         const response = await fetch(image.downloadUrl);
         if (!response.ok) {
-          throw new Error('One or more images could not be downloaded.');
+          throw new Error('One or more files could not be downloaded.');
         }
         return {
           name: this.uniqueName(image.fileName, names),
@@ -65,6 +67,18 @@ export class SharedImagesComponent implements OnInit {
 
   download(image: SharedImage): void {
     this.clickDownload(image.downloadUrl, image.fileName);
+  }
+
+  isPdf(image: SharedImage): boolean {
+    return image.mimeType === 'application/pdf' || image.fileName.toLowerCase().endsWith('.pdf');
+  }
+
+  previewUrl(image: SharedImage): SafeResourceUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(this.inlineUrl(image));
+  }
+
+  inlineUrl(image: SharedImage): string {
+    return image.previewUrl || image.downloadUrl.replace(/\/download(\?.*)?$/, '/view$1');
   }
 
   formatBytes(bytes = 0): string {

@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
+import { ImageShareResponse, ImageShareService } from '../../core/services/image-share.service';
 import { SeoService } from '../../core/services/seo.service';
 import { PdfGeneratorService, PdfImageFit, PdfOrientation, PdfPageSize } from '../../core/services/pdf-generator.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -24,17 +26,7 @@ interface PdfOptions {
   quality: number;
 }
 
-const ACCEPTED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/avif',
-  'image/x-icon',
-  'image/vnd.microsoft.icon',
-  'image/svg+xml',
-  'image/gif',
-  'image/bmp',
-];
+const ACCEPTED_IMAGE_TYPES = ['image/*'];
 
 @Component({
   selector: 'app-images-to-pdf',
@@ -46,13 +38,22 @@ const ACCEPTED_IMAGE_TYPES = [
 export class ImagesToPdfComponent {
   private readonly seo = inject(SeoService);
   private readonly pdf = inject(PdfGeneratorService);
+  private readonly imageShare = inject(ImageShareService);
   private readonly toast = inject(ToastService);
+  private readonly sanitizer = inject(DomSanitizer);
   private readonly destroyRef = inject(DestroyRef);
   private dragDepth = 0;
 
   readonly acceptedTypes = ACCEPTED_IMAGE_TYPES;
   readonly jobs = signal<PdfImageJob[]>([]);
   readonly isCreating = signal(false);
+  readonly isGeneratingShareLink = signal(false);
+  readonly pdfBlob = signal<Blob | null>(null);
+  readonly pdfUrl = signal<string | null>(null);
+  readonly pdfDirty = signal(true);
+  readonly shareBatch = signal<ImageShareResponse | null>(null);
+  readonly isShareModalOpen = signal(false);
+  readonly isPreviewModalOpen = signal(false);
   readonly pageIsDragging = signal(false);
   readonly options = signal<PdfOptions>({
     pageSize: 'a4',
@@ -63,6 +64,10 @@ export class ImagesToPdfComponent {
   });
 
   readonly totalSize = computed(() => this.jobs().reduce((total, job) => total + job.size, 0));
+  readonly pdfPreviewUrl = computed(() => {
+    const url = this.pdfUrl();
+    return url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null;
+  });
 
   constructor() {
     this.seo.update(
@@ -70,7 +75,10 @@ export class ImagesToPdfComponent {
       'Convert multiple images to one PDF in your browser. Upload JPG, PNG, WebP, AVIF, SVG, GIF, BMP, ICO, HEIC and other browser-supported image files with private local processing.',
       'images to PDF, image to PDF converter, JPG to PDF, PNG to PDF, WebP to PDF, convert images to PDF online',
     );
-    this.destroyRef.onDestroy(() => this.revokeUrls(this.jobs()));
+    this.destroyRef.onDestroy(() => {
+      this.revokeUrls(this.jobs());
+      this.revokePdfUrl();
+    });
   }
 
   async addFiles(files: File[]): Promise<void> {
@@ -107,6 +115,7 @@ export class ImagesToPdfComponent {
 
     if (nextJobs.length) {
       this.jobs.set([...existing, ...nextJobs]);
+      this.markPdfDirty();
     }
   }
 
@@ -116,6 +125,7 @@ export class ImagesToPdfComponent {
       URL.revokeObjectURL(job.url);
     }
     this.jobs.update((items) => items.filter((item) => item.id !== jobId));
+    this.markPdfDirty();
   }
 
   move(jobId: string, direction: -1 | 1): void {
@@ -127,11 +137,31 @@ export class ImagesToPdfComponent {
     }
     [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
     this.jobs.set(items);
+    this.markPdfDirty();
   }
 
   clearAll(): void {
     this.revokeUrls(this.jobs());
     this.jobs.set([]);
+    this.markPdfDirty();
+  }
+
+  async createPreview(): Promise<void> {
+    if (!this.jobs().length || this.isCreating()) {
+      return;
+    }
+
+    this.isCreating.set(true);
+    try {
+      const blob = await this.buildPdfBlob();
+      this.setPdfBlob(blob);
+      this.isPreviewModalOpen.set(true);
+      this.toast.success('PDF preview is ready.');
+    } catch (error) {
+      this.toast.error(error instanceof Error ? error.message : 'PDF preview failed.');
+    } finally {
+      this.isCreating.set(false);
+    }
   }
 
   async downloadPdf(): Promise<void> {
@@ -142,10 +172,10 @@ export class ImagesToPdfComponent {
 
     this.isCreating.set(true);
     try {
-      const blob = await this.pdf.create(
-        jobs.map((job) => ({ file: job.file, name: job.name })),
-        this.options(),
-      );
+      const blob = this.pdfBlob() && !this.pdfDirty() ? this.pdfBlob() as Blob : await this.buildPdfBlob();
+      if (blob !== this.pdfBlob()) {
+        this.setPdfBlob(blob);
+      }
       const url = URL.createObjectURL(blob);
       this.clickDownload(url, 'fleximagepro-images.pdf');
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -156,24 +186,86 @@ export class ImagesToPdfComponent {
     }
   }
 
+  async generateShareLink(): Promise<void> {
+    if (!this.jobs().length || this.isGeneratingShareLink()) {
+      return;
+    }
+
+    this.isGeneratingShareLink.set(true);
+    try {
+      const blob = this.pdfBlob() && !this.pdfDirty() ? this.pdfBlob() as Blob : await this.buildPdfBlob();
+      if (blob !== this.pdfBlob()) {
+        this.setPdfBlob(blob);
+      }
+      const share = await this.imageShare.uploadBatch([{ blob, fileName: 'fleximagepro-images.pdf' }]);
+      this.shareBatch.set(share);
+      this.isShareModalOpen.set(true);
+    } catch (error) {
+      this.toast.error(error instanceof Error ? error.message : 'PDF sharing failed.');
+    } finally {
+      this.isGeneratingShareLink.set(false);
+    }
+  }
+
+  closeShareModal(): void {
+    this.isShareModalOpen.set(false);
+  }
+
+  openPreviewModal(): void {
+    if (this.pdfUrl()) {
+      this.isPreviewModalOpen.set(true);
+    }
+  }
+
+  closePreviewModal(): void {
+    this.isPreviewModalOpen.set(false);
+  }
+
+  async copyShareUrl(): Promise<void> {
+    const share = this.shareBatch();
+    if (!share?.shareUrl) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(share.shareUrl);
+      this.toast.success('Share URL copied to clipboard.');
+    } catch {
+      this.toast.error('Copy failed. Select and copy the URL manually.');
+    }
+  }
+
+  downloadQrCode(): void {
+    const share = this.shareBatch();
+    if (!share?.qrCodeDataUrl) {
+      return;
+    }
+    this.clickDownload(share.qrCodeDataUrl, `fleximagepro-pdf-share-${share.id}-qr.png`);
+  }
+
   updatePageSize(event: Event): void {
     this.options.update((current) => ({ ...current, pageSize: (event.target as HTMLSelectElement).value as PdfPageSize }));
+    this.markPdfDirty();
   }
 
   updateOrientation(event: Event): void {
     this.options.update((current) => ({ ...current, orientation: (event.target as HTMLSelectElement).value as PdfOrientation }));
+    this.markPdfDirty();
   }
 
   updateFit(event: Event): void {
     this.options.update((current) => ({ ...current, fit: (event.target as HTMLSelectElement).value as PdfImageFit }));
+    this.markPdfDirty();
   }
 
   updateMargin(event: Event): void {
     this.options.update((current) => ({ ...current, margin: Number((event.target as HTMLInputElement).value) }));
+    this.markPdfDirty();
   }
 
   updateQuality(event: Event): void {
     this.options.update((current) => ({ ...current, quality: Number((event.target as HTMLInputElement).value) }));
+    this.markPdfDirty();
   }
 
   formatBytes(bytes = 0): string {
@@ -254,5 +346,37 @@ export class ImagesToPdfComponent {
     for (const job of jobs) {
       URL.revokeObjectURL(job.url);
     }
+  }
+
+  private async buildPdfBlob(): Promise<Blob> {
+    return this.pdf.create(
+      this.jobs().map((job) => ({ file: job.file, name: job.name })),
+      this.options(),
+    );
+  }
+
+  private setPdfBlob(blob: Blob): void {
+    this.revokePdfUrl();
+    this.pdfBlob.set(blob);
+    this.pdfUrl.set(URL.createObjectURL(blob));
+    this.pdfDirty.set(false);
+    this.shareBatch.set(null);
+  }
+
+  private revokePdfUrl(): void {
+    const currentUrl = this.pdfUrl();
+    if (currentUrl) {
+      URL.revokeObjectURL(currentUrl);
+    }
+    this.pdfUrl.set(null);
+  }
+
+  private markPdfDirty(): void {
+    this.revokePdfUrl();
+    this.pdfBlob.set(null);
+    this.pdfDirty.set(true);
+    this.shareBatch.set(null);
+    this.isShareModalOpen.set(false);
+    this.isPreviewModalOpen.set(false);
   }
 }

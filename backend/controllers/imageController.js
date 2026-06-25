@@ -11,7 +11,7 @@ const ttlMs = Number(process.env.UPLOAD_TTL_HOURS || 24) * 60 * 60 * 1000;
 async function uploadCompressedImage(req, res, next) {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'Please upload a JPG, PNG, or WebP image.' });
+      return res.status(400).json({ error: 'Please upload a JPG, PNG, WebP, SVG, or PDF file.' });
     }
 
     res.status(201).json(await createShareResponse(req.file));
@@ -24,7 +24,7 @@ async function uploadCompressedImages(req, res, next) {
   try {
     const files = req.files || [];
     if (!files.length) {
-      return res.status(400).json({ error: 'Please upload at least one JPG, PNG, or WebP image.' });
+      return res.status(400).json({ error: 'Please upload at least one JPG, PNG, WebP, SVG, or PDF file.' });
     }
     if (files.length > 10) {
       return res.status(400).json({ error: 'You can share up to 10 images at a time.' });
@@ -69,6 +69,7 @@ async function getImageBatch(req, res, next) {
         fileName: image.originalName,
         mimeType: image.mimeType,
         size: image.size,
+        previewUrl: image.previewUrl || image.downloadUrl.replace(/\/download$/, '/view'),
         downloadUrl: image.downloadUrl,
       })),
     });
@@ -78,6 +79,14 @@ async function getImageBatch(req, res, next) {
 }
 
 async function downloadImage(req, res, next) {
+  await sendStoredFile(req, res, next, 'attachment');
+}
+
+async function viewImage(req, res, next) {
+  await sendStoredFile(req, res, next, 'inline');
+}
+
+async function sendStoredFile(req, res, next, disposition) {
   try {
     const { id } = req.params;
     if (!isUuid(id)) {
@@ -102,6 +111,18 @@ async function downloadImage(req, res, next) {
     }
 
     const filePath = path.join(uploadsDir, metadata.storedFileName);
+    if (disposition === 'inline') {
+      res.setHeader('Content-Type', metadata.mimeType || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `inline; filename="${encodeHeaderValue(metadata.originalName)}"`);
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.sendFile(filePath, (error) => {
+        if (error && !res.headersSent) {
+          next(error);
+        }
+      });
+      return;
+    }
+
     res.download(filePath, metadata.originalName, (error) => {
       if (error && !res.headersSent) {
         next(error);
@@ -190,6 +211,7 @@ async function createShareResponse(file) {
 async function createImageMetadata(file, expiresAt, createdAt) {
   const id = path.parse(file.filename).name;
   const downloadUrl = `${publicBaseUrl}/api/images/${id}/download`;
+  const previewUrl = `${publicBaseUrl}/api/images/${id}/view`;
   const metadata = {
     type: 'image',
     id,
@@ -197,6 +219,7 @@ async function createImageMetadata(file, expiresAt, createdAt) {
     originalName: file.originalname,
     mimeType: file.mimetype,
     size: file.size,
+    previewUrl,
     downloadUrl,
     createdAt,
     expiresAt,
@@ -215,9 +238,14 @@ function isUuid(value) {
   return /^[a-f0-9-]{36}$/i.test(value);
 }
 
+function encodeHeaderValue(value) {
+  return String(value || 'file').replace(/["\r\n]/g, '_');
+}
+
 module.exports = {
   downloadImage,
   getImageBatch,
   uploadCompressedImage,
   uploadCompressedImages,
+  viewImage,
 };

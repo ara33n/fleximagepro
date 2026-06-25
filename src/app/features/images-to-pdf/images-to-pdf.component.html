@@ -34,11 +34,36 @@
             <div class="flex flex-wrap gap-2">
               <button
                 type="button"
-                (click)="downloadPdf()"
+                (click)="createPreview()"
                 [disabled]="isCreating()"
                 class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {{ isCreating() ? 'Creating PDF...' : 'Download PDF' }}
+                {{ isCreating() ? 'Creating PDF...' : (pdfUrl() && !pdfDirty() ? 'Refresh Preview' : 'Create Preview') }}
+              </button>
+              <button
+                type="button"
+                (click)="downloadPdf()"
+                [disabled]="isCreating()"
+                class="rounded-lg bg-zinc-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-zinc-950 dark:hover:bg-teal-300"
+              >
+                Download PDF
+              </button>
+              @if (pdfUrl()) {
+                <button
+                  type="button"
+                  (click)="openPreviewModal()"
+                  class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                >
+                  View PDF
+                </button>
+              }
+              <button
+                type="button"
+                (click)="generateShareLink()"
+                [disabled]="isCreating() || isGeneratingShareLink()"
+                class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              >
+                {{ isGeneratingShareLink() ? 'Generating...' : 'Generate Share Link' }}
               </button>
               <button type="button" (click)="clearAll()" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
                 Clear
@@ -97,7 +122,7 @@
 
         <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
           Page size
-          <select [value]="options().pageSize" (change)="updatePageSize($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
+          <select id="pdf-page-size" name="pdfPageSize" [value]="options().pageSize" (change)="updatePageSize($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
             <option value="a4">A4</option>
             <option value="letter">Letter</option>
           </select>
@@ -105,7 +130,7 @@
 
         <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
           Orientation
-          <select [value]="options().orientation" (change)="updateOrientation($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
+          <select id="pdf-orientation" name="pdfOrientation" [value]="options().orientation" (change)="updateOrientation($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
             <option value="auto">Auto per image</option>
             <option value="portrait">Portrait</option>
             <option value="landscape">Landscape</option>
@@ -114,21 +139,32 @@
 
         <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
           Image fit
-          <select [value]="options().fit" (change)="updateFit($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
+          <select id="pdf-fit" name="pdfFit" [value]="options().fit" (change)="updateFit($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
             <option value="contain">Fit full image</option>
             <option value="cover">Fill page</option>
           </select>
         </label>
 
         <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200" for="pdf-margin">Margin: {{ options().margin }} pt</label>
-        <input id="pdf-margin" type="range" min="0" max="72" step="1" [value]="options().margin" (input)="updateMargin($event)" class="mt-3 w-full" [style]="{'--fill': (options().margin / 72 * 100).toFixed(1) + '%'}" />
+        <input id="pdf-margin" name="pdfMargin" type="range" min="0" max="72" step="1" [value]="options().margin" (input)="updateMargin($event)" class="mt-3 w-full" [style]="{'--fill': (options().margin / 72 * 100).toFixed(1) + '%'}" />
 
         <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200" for="pdf-quality">Image quality: {{ options().quality }}%</label>
-        <input id="pdf-quality" type="range" min="35" max="95" step="1" [value]="options().quality" (input)="updateQuality($event)" class="mt-3 w-full" [style]="{'--fill': ((options().quality - 35) / 60 * 100).toFixed(1) + '%'}" />
+        <input id="pdf-quality" name="pdfQuality" type="range" min="35" max="95" step="1" [value]="options().quality" (input)="updateQuality($event)" class="mt-3 w-full" [style]="{'--fill': ((options().quality - 35) / 60 * 100).toFixed(1) + '%'}" />
 
         @if (jobs().length) {
+          <button type="button" (click)="createPreview()" [disabled]="isCreating()" class="mt-6 w-full rounded-lg border border-teal-300 px-4 py-3 text-sm font-semibold text-teal-700 transition hover:bg-teal-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 dark:border-teal-800 dark:text-teal-300 dark:hover:bg-teal-950">
+            {{ isCreating() ? 'Creating PDF...' : (pdfUrl() && !pdfDirty() ? 'Refresh Preview' : 'Create Preview') }}
+          </button>
           <button type="button" (click)="downloadPdf()" [disabled]="isCreating()" class="mt-6 w-full rounded-lg bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50">
             {{ isCreating() ? 'Creating PDF...' : 'Download PDF' }}
+          </button>
+          @if (pdfUrl()) {
+            <button type="button" (click)="openPreviewModal()" class="mt-3 w-full rounded-lg border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 active:scale-[0.99] dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+              View PDF
+            </button>
+          }
+          <button type="button" (click)="generateShareLink()" [disabled]="isCreating() || isGeneratingShareLink()" class="mt-3 w-full rounded-lg border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+            {{ isGeneratingShareLink() ? 'Generating Share Link...' : 'Generate Share Link' }}
           </button>
         }
       </section>
@@ -138,4 +174,71 @@
       </div>
     </aside>
   </section>
+
+  @if (isPreviewModalOpen()) {
+    @if (pdfPreviewUrl(); as previewUrl) {
+      <div class="fixed inset-0 z-50 flex flex-col bg-zinc-950/80 p-3 sm:p-5" role="dialog" aria-modal="true" aria-labelledby="pdf-preview-title">
+        <section class="mx-auto flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl dark:bg-zinc-900">
+          <div class="flex shrink-0 flex-col gap-3 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 id="pdf-preview-title" class="text-base font-semibold text-zinc-950 dark:text-white">PDF Preview</h2>
+              @if (pdfBlob(); as blob) {
+                <p class="mt-1 text-xs text-zinc-500">{{ formatBytes(blob.size) }}</p>
+              }
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" (click)="downloadPdf()" [disabled]="isCreating()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50">
+                Download PDF
+              </button>
+              <button type="button" (click)="generateShareLink()" [disabled]="isGeneratingShareLink()" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+                {{ isGeneratingShareLink() ? 'Generating...' : 'Share' }}
+              </button>
+              <button type="button" (click)="closePreviewModal()" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+                Close
+              </button>
+            </div>
+          </div>
+          @if (pdfDirty()) {
+            <p class="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+              PDF options changed. Refresh the preview before sharing the latest version.
+            </p>
+          }
+          <iframe [src]="previewUrl" title="Generated PDF preview" class="min-h-0 flex-1 bg-white"></iframe>
+        </section>
+      </div>
+    }
+  }
+
+  @if (isShareModalOpen()) {
+    @if (shareBatch(); as share) {
+      <div class="fixed inset-0 z-50 grid place-items-center bg-zinc-950/70 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="pdf-share-title" (click)="closeShareModal()">
+        <section class="w-full max-w-md rounded-lg bg-white p-5 shadow-xl dark:bg-zinc-900" (click)="$event.stopPropagation()">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="pdf-share-title" class="text-lg font-semibold text-zinc-950 dark:text-white">Share PDF</h2>
+              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">This PDF link expires after 24 hours.</p>
+            </div>
+            <button type="button" (click)="closeShareModal()" class="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+              Close
+            </button>
+          </div>
+
+          <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200" for="pdf-share-url">
+            Share URL
+            <input id="pdf-share-url" name="pdfShareUrl" type="text" [value]="share.shareUrl" readonly class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+          </label>
+          <button type="button" (click)="copyShareUrl()" class="mt-4 w-full rounded-lg bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-700">
+            Copy Share URL
+          </button>
+
+          <div class="mt-5 grid place-items-center rounded-lg bg-zinc-50 p-4 dark:bg-zinc-950">
+            <img [src]="share.qrCodeDataUrl" alt="QR code for shared PDF page" class="size-64 max-w-full rounded-md bg-white p-2" />
+          </div>
+          <button type="button" (click)="downloadQrCode()" class="mt-4 w-full rounded-lg border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+            Download QR Code
+          </button>
+        </section>
+      </div>
+    }
+  }
 </article>

@@ -3,8 +3,8 @@ const crypto = require('crypto');
 const multer = require('multer');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
-const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
-const allowedExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp', '.svg']);
+const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'application/pdf']);
+const allowedExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp', '.svg', '.pdf']);
 const maxFileSizeMb = Number(process.env.MAX_UPLOAD_MB || 25);
 
 const storage = multer.diskStorage({
@@ -25,7 +25,7 @@ const upload = multer({
   fileFilter(_req, file, callback) {
     const extension = path.extname(file.originalname).toLowerCase();
     if (!allowedMimeTypes.has(file.mimetype) || !allowedExtensions.has(extension)) {
-      callback(createHttpError(415, 'Only JPG, PNG, WebP, and SVG images are allowed.'));
+      callback(createHttpError(415, 'Only JPG, PNG, WebP, SVG images, and PDF files are allowed.'));
       return;
     }
     callback(null, true);
@@ -37,6 +37,7 @@ function extensionForMime(mimeType) {
   if (mimeType === 'image/png') return '.png';
   if (mimeType === 'image/webp') return '.webp';
   if (mimeType === 'image/svg+xml') return '.svg';
+  if (mimeType === 'application/pdf') return '.pdf';
   return '';
 }
 

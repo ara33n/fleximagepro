@@ -13,6 +13,7 @@ const MIME_LABELS: Record<string, string> = {
   'image/svg+xml': 'SVG',
   'image/gif': 'GIF',
   'image/bmp': 'BMP',
+  'image/*': 'Images',
 };
 
 const EXT_TO_MIME: Record<string, string> = {
@@ -89,11 +90,11 @@ export class UploadZoneComponent {
       if (HEIC_TYPES.has(mime)) { toConvert.push(file); continue; }
 
       // Directly accepted — add without any async work
-      if (this.accept().includes(mime)) { ready.push(file); continue; }
+      if (this.accepts(mime)) { ready.push(file); continue; }
 
       // iOS sometimes delivers HEIC photos as JPEG for PNG-only tools (e.g. PNG→SVG).
       // Route to async conversion so those users can still upload camera photos.
-      if (mime === 'image/jpeg' && this.accept().includes('image/png')) {
+      if (mime === 'image/jpeg' && (this.accept().includes('image/png') || this.accept().includes('image/*'))) {
         toConvert.push(file);
         continue;
       }
@@ -126,7 +127,7 @@ export class UploadZoneComponent {
       const mime = this.resolveMime(file);
       try {
         const png = await this.toPng(file, mime);
-        if (this.accept().includes('image/png')) {
+        if (this.accept().includes('image/png') || this.accept().includes('image/*')) {
           converted.push(png);
         } else {
           rejected++;
@@ -208,6 +209,10 @@ export class UploadZoneComponent {
     if (file.type) return file.type;
     const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
     return EXT_TO_MIME[ext] ?? '';
+  }
+
+  private accepts(mime: string): boolean {
+    return this.accept().includes(mime) || (mime.startsWith('image/') && this.accept().includes('image/*'));
   }
 
   private acceptLabel(): string {

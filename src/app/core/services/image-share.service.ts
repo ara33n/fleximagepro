@@ -19,6 +19,7 @@ export interface SharedImage {
   fileName: string;
   mimeType: string;
   size: number;
+  previewUrl?: string;
   downloadUrl: string;
 }
 
@@ -32,7 +33,7 @@ export interface ImageShareBatch {
 @Injectable({ providedIn: 'root' })
 export class ImageShareService {
   private readonly apiBaseUrl = environment.apiBaseUrl.replace(/\/+$/, '');
-  private readonly allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
+  private readonly allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'application/pdf']);
 
   async uploadBatch(images: ImageShareUpload[]): Promise<ImageShareResponse> {
     if (!this.apiBaseUrl) {
@@ -45,7 +46,7 @@ export class ImageShareService {
       throw new Error('You can share up to 10 images at a time.');
     }
     if (images.some((image) => !this.allowedTypes.has(image.blob.type))) {
-      throw new Error('Sharing supports JPG, PNG, WebP, and SVG images only.');
+      throw new Error('Sharing supports JPG, PNG, WebP, SVG, and PDF files only.');
     }
 
     const formData = new FormData();

@@ -44,8 +44,8 @@ app.use((req, res) => {
 app.use((error, _req, res, _next) => {
   if (error.name === 'MulterError') {
     const message = error.code === 'LIMIT_FILE_SIZE'
-      ? 'Uploaded image is too large.'
-      : 'Image upload failed.';
+      ? 'Uploaded file is too large.'
+      : 'File upload failed.';
     return res.status(400).json({ error: message });
   }
 

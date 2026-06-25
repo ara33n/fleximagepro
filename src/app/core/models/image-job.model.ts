@@ -19,6 +19,23 @@ export interface ToolConfig {
   titleTag: string;
   metaDescription: string;
   keywords: string;
+  seoContent?: ToolSeoContent;
+  faqs?: ToolFaq[];
+}
+
+export interface ToolSeoSection {
+  heading: string;
+  paragraphs: string[];
+}
+
+export interface ToolFaq {
+  question: string;
+  answer: string;
+}
+
+export interface ToolSeoContent {
+  intro: string[];
+  sections: ToolSeoSection[];
 }
 
 export interface ImageJob {

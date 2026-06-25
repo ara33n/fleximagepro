@@ -2,12 +2,14 @@ import { DOCUMENT } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { environment } from '../../../environments/environment';
+import { ToolFaq } from '../models/image-job.model';
 
 @Injectable({ providedIn: 'root' })
 export class SeoService {
   private readonly document = inject(DOCUMENT);
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
+  private readonly faqSchemaId = 'faq-schema';
 
   update(title: string, description: string, keywords?: string): void {
     this.title.setTitle(title);
@@ -23,6 +25,38 @@ export class SeoService {
     this.meta.updateTag({ property: 'og:type', content: 'website' });
     this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
     this.updateCanonicalUrl();
+    this.updateFaqSchema();
+  }
+
+  updateFaqSchema(faqs: ToolFaq[] = []): void {
+    const existing = this.document.getElementById(this.faqSchemaId);
+
+    if (!faqs.length) {
+      existing?.remove();
+      return;
+    }
+
+    const schema = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map((faq) => ({
+        '@type': 'Question',
+        name: faq.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: faq.answer,
+        },
+      })),
+    };
+
+    const script = existing || this.document.createElement('script');
+    script.id = this.faqSchemaId;
+    script.setAttribute('type', 'application/ld+json');
+    script.textContent = JSON.stringify(schema);
+
+    if (!existing) {
+      this.document.head.appendChild(script);
+    }
   }
 
   private updateCanonicalUrl(): void {

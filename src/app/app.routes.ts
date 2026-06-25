@@ -8,6 +8,18 @@ import { TermsOfServiceComponent } from './features/terms-of-service/terms-of-se
 import { ContactComponent } from './features/contact/contact.component';
 import { SharedImagesComponent } from './features/shared-images/shared-images.component';
 import { ImagesToPdfComponent } from './features/images-to-pdf/images-to-pdf.component';
+import {
+  compressFaqs,
+  compressSeoContent,
+  jpgPngFaqs,
+  jpgPngSeoContent,
+  pngSvgFaqs,
+  pngSvgSeoContent,
+  resizeFaqs,
+  resizeSeoContent,
+  webpFaqs,
+  webpSeoContent,
+} from './core/content/tool-seo-content';
 
 const ALL_RASTER_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/x-icon', 'image/vnd.microsoft.icon'];
 
@@ -22,6 +34,8 @@ const compressTool: ToolConfig = {
   titleTag: 'Image Compressor - Compress JPG, PNG, WebP, AVIF and ICO Online',
   metaDescription: 'Compress JPEG, PNG, WebP, AVIF, and ICO images online in your browser. Private image compressor with no uploads, instant previews, and bulk ZIP downloads.',
   keywords: 'image compressor, compress image online, compress JPG, compress PNG, compress AVIF, compress ICO, reduce image size, WebP compressor, private image compression',
+  seoContent: compressSeoContent,
+  faqs: compressFaqs,
 };
 
 const webpTool: ToolConfig = {
@@ -32,9 +46,11 @@ const webpTool: ToolConfig = {
   acceptedTypes: ALL_RASTER_TYPES,
   mode: 'convert-webp',
   defaultOutput: 'webp',
-  titleTag: 'Image to WebP Converter - Private Browser Tool',
-  metaDescription: 'Convert JPG, PNG, WebP, AVIF, and ICO images to WebP in the browser using Canvas and File APIs. Bulk WebP converter with private local processing.',
-  keywords: 'image to WebP, WebP converter, JPG to WebP, PNG to WebP, AVIF to WebP, convert image online, browser image converter',
+  titleTag: 'PNG to WebP Converter - Convert Images to WebP Online',
+  metaDescription: 'Convert PNG, JPG, AVIF, ICO, and WebP images to WebP in your browser. Private PNG to WebP converter with previews, quality control, and ZIP downloads.',
+  keywords: 'png to webp, png to webp converter, convert png to webp, png to webp hq, png to webp converter free, jpg to webp, image to WebP, WebP converter, convert image online',
+  seoContent: webpSeoContent,
+  faqs: webpFaqs,
 };
 
 const resizeTool: ToolConfig = {
@@ -46,8 +62,10 @@ const resizeTool: ToolConfig = {
   mode: 'resize',
   defaultOutput: 'original',
   titleTag: 'Image Resizer - Resize Images Online Privately',
-  metaDescription: 'Resize JPG, PNG, WebP, AVIF, and ICO images online with custom dimensions, aspect ratio lock, instant previews, and private browser-side processing.',
-  keywords: 'image resizer, resize image online, resize JPG, resize PNG, change image dimensions, bulk image resize',
+  metaDescription: 'Resize JPG, PNG, WebP, AVIF, and ICO images online with custom dimensions, crop controls, aspect ratio lock, instant previews, and private browser-side processing.',
+  keywords: 'image resizer, resize image online, resize photo online, change size image, image size resizer, adjust picture dimensions, photo dimension editor, crop image, pixels to inches, px to inches, bulk image resize',
+  seoContent: resizeSeoContent,
+  faqs: resizeFaqs,
 };
 
 const jpgPngTool: ToolConfig = {
@@ -59,8 +77,10 @@ const jpgPngTool: ToolConfig = {
   mode: 'jpg-png',
   defaultOutput: 'auto',
   titleTag: 'JPG to PNG Converter and PNG to JPG Converter',
-  metaDescription: 'Convert JPG to PNG and PNG to JPG in your browser with no upload required. Bulk image format converter with instant private downloads.',
-  keywords: 'JPG to PNG, PNG to JPG, image format converter, convert JPG online, convert PNG online, bulk image converter',
+  metaDescription: 'Convert JPG to PNG and PNG to JPG in your browser with no upload required. Bulk image format converter with previews, quality control, and private downloads.',
+  keywords: 'JPG to PNG, PNG to JPG, image format converter, png format converter, turn image to png, convert an image to png, photo convert png, convert JPG online, convert PNG online',
+  seoContent: jpgPngSeoContent,
+  faqs: jpgPngFaqs,
 };
 
 const pngToSvgTool: ToolConfig = {
@@ -74,6 +94,8 @@ const pngToSvgTool: ToolConfig = {
   titleTag: 'PNG to SVG Converter - Free Online Raster to Vector Tool',
   metaDescription: 'Convert PNG images to SVG vector format in your browser. Free raster to vector tracer with no uploads and instant downloads.',
   keywords: 'PNG to SVG, JPG to SVG, image to SVG, raster to vector, convert PNG to SVG, free SVG converter, vector tracing online',
+  seoContent: pngSvgSeoContent,
+  faqs: pngSvgFaqs,
 };
 
 export const routes: Routes = [

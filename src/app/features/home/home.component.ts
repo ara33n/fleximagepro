@@ -1,5 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnDestroy, signal } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { SeoService } from '../../core/services/seo.service';
@@ -16,77 +15,6 @@ interface FaqItem {
   question: string;
   answer: string;
 }
-
-const FAQ_SCHEMA = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
-    {
-      '@type': 'Question',
-      name: 'Is FlexImagePro free to use?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Yes, FlexImagePro is completely free to use. All image tools — including the compressor, WebP converter, image resizer, and JPG/PNG converter — are available at no cost with no sign-up required.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Are my images uploaded to a server?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'No. FlexImagePro processes every image directly in your browser using the HTML5 Canvas API. Your files never leave your device and are never transmitted to any server.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Which image formats are supported?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'FlexImagePro supports JPEG (JPG), PNG, and WebP formats for compression and resizing. The JPG to PNG converter handles JPEG and PNG, and the WebP converter can export any of these formats to WebP.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Can I compress multiple images at once?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Yes. You can upload and process up to 10 images in a single batch. Once processed, you can download them individually or as a single ZIP archive with one click.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Can I convert JPG to WebP?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Yes. The Image to WebP Converter tool lets you convert JPEG, PNG, or WebP images to the WebP format, which produces smaller file sizes with similar or better visual quality — ideal for web performance.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Can I resize images without losing quality?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'FlexImagePro uses high-quality Canvas rendering to resize images. For best results, resize downwards (making images smaller) rather than upwards, as enlarging any image introduces interpolation artefacts regardless of the tool used.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Does FlexImagePro work on mobile devices?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Yes. FlexImagePro is fully responsive and works on smartphones, tablets, and desktop browsers. The Canvas API is supported on all modern mobile browsers including Safari on iOS and Chrome on Android.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Is image processing private and secure?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Completely. Because all processing happens locally in your browser, no image data is ever sent to a server or third party. FlexImagePro does not store, analyse, or have access to any of your images.',
-      },
-    },
-  ],
-};
 
 @Component({
   selector: 'app-home',
@@ -106,10 +34,8 @@ const FAQ_SCHEMA = {
     ]),
   ],
 })
-export class HomeComponent implements OnDestroy {
+export class HomeComponent {
   private readonly seo = inject(SeoService);
-  private readonly doc = inject(DOCUMENT);
-  private faqScript: HTMLScriptElement | null = null;
 
   readonly openFaq = signal<number | null>(null);
 
@@ -176,12 +102,12 @@ export class HomeComponent implements OnDestroy {
     {
       question: 'Which image formats are supported?',
       answer:
-        'FlexImagePro supports JPEG (JPG), PNG, and WebP formats for compression and resizing. The JPG to PNG converter handles JPEG and PNG, and the WebP converter can export any of these formats to WebP.',
+        'FlexImagePro supports JPG, PNG, WebP, AVIF, ICO, SVG, GIF, BMP, and other browser-supported image formats depending on the selected tool. The Images to PDF converter can combine many common image files into one PDF.',
     },
     {
       question: 'Can I compress multiple images at once?',
       answer:
-        'Yes. You can upload and process up to 10 images in a single batch. Once processed, you can download them individually or as a single ZIP archive with one click.',
+        'Yes. Most image tools process up to 10 images in a batch, and the Images to PDF converter supports up to 20 images for one PDF document.',
     },
     {
       question: 'Can I convert JPG to WebP?',
@@ -210,15 +136,7 @@ export class HomeComponent implements OnDestroy {
       'FlexImagePro - Compress, Convert and Resize Images',
       'Free browser-side image tools for compression, WebP conversion, resizing, and JPG/PNG conversion. No uploads or backend required.',
     );
-    this.faqScript = this.doc.createElement('script');
-    this.faqScript.type = 'application/ld+json';
-    this.faqScript.text = JSON.stringify(FAQ_SCHEMA);
-    this.doc.head.appendChild(this.faqScript);
-  }
-
-  ngOnDestroy(): void {
-    this.faqScript?.remove();
-    this.faqScript = null;
+    this.seo.updateFaqSchema(this.faqs);
   }
 
   trackByPath(_: number, item: ToolCard): string {

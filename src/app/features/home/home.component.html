@@ -38,7 +38,7 @@
 
         <!-- Headline -->
         <h1 class="mt-5 text-balance text-4xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-5xl lg:text-6xl">
-          Compress, Resize &amp; Convert
+          Compress, Resize, Convert &amp; PDF
           <span class="block text-teal-600 dark:text-transparent" style="-webkit-background-clip:text;background-clip:text;background-image:linear-gradient(135deg,#2dd4bf,#0d9488)">
             Images Online — Free
           </span>
@@ -46,7 +46,7 @@
 
         <!-- Description -->
         <p class="mt-5 max-w-2xl text-base leading-8 text-zinc-600 dark:text-zinc-300 sm:text-lg">
-          FlexImagePro runs entirely in your browser using the Canvas API.
+          FlexImagePro runs image compression, resizing, format conversion, and image to PDF creation in your browser.
           Your files never leave your device — fast, private, and completely free.
         </p>
 
@@ -151,73 +151,38 @@
       alt="Seobility Score for fleximagepro.com"
   /></a> -->
 
-  <section
-    class="mx-auto max-w-3xl px-4 py-12 sm:px-6 md:py-16 lg:px-8"
-    aria-labelledby="faq-heading"
-  >
-    <div class="mb-8 text-center">
+  <section class="bg-white py-12 dark:bg-zinc-950" aria-labelledby="faq-heading">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
       <p class="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
         FAQ
       </p>
-      <h2
-        id="faq-heading"
-        class="mt-1 text-2xl font-bold tracking-tight text-zinc-950 dark:text-white"
-      >
+      <h2 id="faq-heading" class="mt-1 text-2xl font-bold tracking-tight text-zinc-950 dark:text-white">
         Frequently Asked Questions
       </h2>
-    </div>
 
-    <dl class="divide-y divide-zinc-200 dark:divide-zinc-800">
+      <div class="mt-6 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
       @for (faq of faqs; track $index) {
-        <div class="py-1">
-          <dt>
-            <button
-              type="button"
-              class="group flex w-full items-center justify-between gap-4 rounded-lg px-3 py-4 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900"
-              [attr.aria-expanded]="openFaq() === $index"
-              (click)="toggleFaq($index)"
-            >
-              <h3 class="text-sm font-semibold text-zinc-950 dark:text-white">
-                {{ faq.question }}
-              </h3>
-              <span
-                class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-zinc-500 transition-colors group-hover:border-teal-400 group-hover:text-teal-600 dark:border-zinc-700 dark:text-zinc-400 dark:group-hover:border-teal-600 dark:group-hover:text-teal-400"
-                aria-hidden="true"
-              >
-                @if (openFaq() === $index) {
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 16 16"
-                    fill="currentColor"
-                    class="h-3.5 w-3.5"
-                  >
-                    <path d="M3.75 7.25a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5Z" />
-                  </svg>
-                } @else {
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 16 16"
-                    fill="currentColor"
-                    class="h-3.5 w-3.5"
-                  >
-                    <path
-                      d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"
-                    />
-                  </svg>
-                }
-              </span>
-            </button>
-          </dt>
+        <div class="p-5">
+          <button
+            type="button"
+            class="group flex w-full items-start justify-between gap-4 text-left text-base font-semibold text-zinc-950 dark:text-white"
+            [attr.aria-expanded]="openFaq() === $index"
+            (click)="toggleFaq($index)"
+          >
+            <span>{{ faq.question }}</span>
+            <span class="mt-1 text-xl leading-none text-teal-600 dark:text-teal-400">{{ openFaq() === $index ? '-' : '+' }}</span>
+          </button>
           @if (openFaq() === $index) {
-            <dd @slideDown class="overflow-hidden">
-              <p class="px-3 pb-5 pt-1 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
+            <div @slideDown>
+              <p class="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">
                 {{ faq.answer }}
               </p>
-            </dd>
+            </div>
           }
         </div>
       }
-    </dl>
+      </div>
+    </div>
   </section>
 
   <section class="bg-zinc-50 py-12 dark:bg-zinc-900 md:py-16" aria-labelledby="why-heading">

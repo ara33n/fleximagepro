@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
+import { animate, style, transition, trigger } from '@angular/animations';
 import { DomSanitizer } from '@angular/platform-browser';
+import { imagesToPdfFaqs, imagesToPdfSeoContent } from '../../core/content/tool-seo-content';
 import { ImageShareResponse, ImageShareService } from '../../core/services/image-share.service';
 import { SeoService } from '../../core/services/seo.service';
 import { PdfGeneratorService, PdfImageFit, PdfOrientation, PdfPageSize } from '../../core/services/pdf-generator.service';
@@ -35,6 +37,17 @@ const ACCEPTED_IMAGE_TYPES = ['image/*'];
   imports: [UploadZoneComponent, AdSlotComponent, QrCodeCardComponent],
   templateUrl: './images-to-pdf.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  animations: [
+    trigger('slideDown', [
+      transition(':enter', [
+        style({ height: 0, opacity: 0, overflow: 'hidden' }),
+        animate('260ms cubic-bezier(0.4,0,0.2,1)', style({ height: '*', opacity: 1 })),
+      ]),
+      transition(':leave', [
+        animate('200ms cubic-bezier(0.4,0,0.2,1)', style({ height: 0, opacity: 0, overflow: 'hidden' })),
+      ]),
+    ]),
+  ],
 })
 export class ImagesToPdfComponent {
   private readonly seo = inject(SeoService);
@@ -56,6 +69,9 @@ export class ImagesToPdfComponent {
   readonly isShareModalOpen = signal(false);
   readonly isPreviewModalOpen = signal(false);
   readonly pageIsDragging = signal(false);
+  readonly seoContent = imagesToPdfSeoContent;
+  readonly faqs = imagesToPdfFaqs;
+  readonly openFaq = signal<number | null>(null);
   readonly options = signal<PdfOptions>({
     pageSize: 'a4',
     orientation: 'auto',
@@ -76,10 +92,15 @@ export class ImagesToPdfComponent {
       'Convert multiple images to one PDF in your browser. Upload JPG, PNG, WebP, AVIF, SVG, GIF, BMP, ICO, HEIC and other browser-supported image files with private local processing.',
       'images to PDF, image to PDF converter, JPG to PDF, PNG to PDF, WebP to PDF, convert images to PDF online',
     );
+    this.seo.updateFaqSchema(this.faqs);
     this.destroyRef.onDestroy(() => {
       this.revokeUrls(this.jobs());
       this.revokePdfUrl();
     });
+  }
+
+  toggleFaq(index: number): void {
+    this.openFaq.update((current) => (current === index ? null : index));
   }
 
   async addFiles(files: File[]): Promise<void> {

@@ -175,6 +175,55 @@
     </aside>
   </section>
 
+  <section class="border-y border-zinc-200 bg-zinc-50 py-12 dark:border-zinc-800 dark:bg-zinc-950">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <div class="space-y-5 text-base leading-8 text-zinc-700 dark:text-zinc-300">
+        @for (paragraph of seoContent.intro; track paragraph) {
+          <p>{{ paragraph }}</p>
+        }
+      </div>
+
+      <div class="mt-10 space-y-10">
+        @for (section of seoContent.sections; track section.heading) {
+          <section>
+            <h2 class="text-2xl font-bold tracking-tight text-zinc-950 dark:text-white">{{ section.heading }}</h2>
+            <div class="mt-4 space-y-4 text-base leading-8 text-zinc-700 dark:text-zinc-300">
+              @for (paragraph of section.paragraphs; track paragraph) {
+                <p>{{ paragraph }}</p>
+              }
+            </div>
+          </section>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white py-12 dark:bg-zinc-950" aria-labelledby="pdf-faq-heading">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <h2 id="pdf-faq-heading" class="text-2xl font-bold tracking-tight text-zinc-950 dark:text-white">FAQs</h2>
+      <div class="mt-6 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
+        @for (faq of faqs; track faq.question) {
+          <div class="p-5">
+            <button
+              type="button"
+              class="group flex w-full items-start justify-between gap-4 text-left text-base font-semibold text-zinc-950 dark:text-white"
+              [attr.aria-expanded]="openFaq() === $index"
+              (click)="toggleFaq($index)"
+            >
+              <span>{{ faq.question }}</span>
+              <span class="mt-1 text-xl leading-none text-teal-600 dark:text-teal-400">{{ openFaq() === $index ? '-' : '+' }}</span>
+            </button>
+            @if (openFaq() === $index) {
+              <div @slideDown>
+                <p class="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">{{ faq.answer }}</p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
   @if (isPreviewModalOpen()) {
     @if (pdfPreviewUrl(); as previewUrl) {
       <div class="fixed inset-0 z-50 flex flex-col bg-zinc-950/80 p-3 sm:p-5" role="dialog" aria-modal="true" aria-labelledby="pdf-preview-title">

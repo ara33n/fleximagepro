@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { animate, style, transition, trigger } from '@angular/animations';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CropRect, ImageJob, OutputFormat, ToolConfig } from '../../core/models/image-job.model';
 import { ImageProcessorService } from '../../core/services/image-processor.service';
@@ -28,6 +29,17 @@ interface ToolOptions {
   imports: [UploadZoneComponent, AdSlotComponent, QrCodeCardComponent],
   templateUrl: './tool-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  animations: [
+    trigger('slideDown', [
+      transition(':enter', [
+        style({ height: 0, opacity: 0, overflow: 'hidden' }),
+        animate('260ms cubic-bezier(0.4,0,0.2,1)', style({ height: '*', opacity: 1 })),
+      ]),
+      transition(':leave', [
+        animate('200ms cubic-bezier(0.4,0,0.2,1)', style({ height: 0, opacity: 0, overflow: 'hidden' })),
+      ]),
+    ]),
+  ],
 })
 export class ToolPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -69,6 +81,7 @@ export class ToolPageComponent implements OnInit {
   readonly shareBatch = signal<ImageShareResponse | null>(null);
   readonly isShareModalOpen = signal(false);
   readonly pageIsDragging = signal(false);
+  readonly openFaq = signal<number | null>(null);
   private _dragDepth = 0;
 
   // Crop modal state
@@ -107,6 +120,7 @@ export class ToolPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.seo.update(this.tool().titleTag, this.tool().metaDescription, this.tool().keywords);
+    this.seo.updateFaqSchema(this.tool().faqs);
     const pending = this.pendingFiles.take();
     if (pending.length) {
       void this.addFiles(pending);
@@ -114,6 +128,10 @@ export class ToolPageComponent implements OnInit {
       void this.restoreSession();
     }
     this.destroyRef.onDestroy(() => this.revokeUrls(this.jobs()));
+  }
+
+  toggleFaq(index: number): void {
+    this.openFaq.update((current) => (current === index ? null : index));
   }
 
   async addFiles(files: File[]): Promise<void> {

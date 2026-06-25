@@ -148,6 +148,12 @@ export class HomeComponent implements OnDestroy {
       path: '/png-to-svg',
       badge: 'Vector',
     },
+    {
+      title: 'Images to PDF',
+      description: 'Combine JPG, PNG, WebP, AVIF, SVG, GIF, BMP, ICO and phone photos into one PDF.',
+      path: '/images-to-pdf',
+      badge: 'PDF',
+    },
   ];
 
   readonly steps = [

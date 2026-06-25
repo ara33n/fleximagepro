@@ -20,6 +20,7 @@ export class HeaderComponent {
     { label: 'Resize', path: '/resize' },
     { label: 'JPG / PNG', path: '/jpg-to-png' },
     { label: 'PNG → SVG', path: '/png-to-svg' },
+    { label: 'Images to PDF', path: '/images-to-pdf' },
   ];
 
   toggleMenu(): void {

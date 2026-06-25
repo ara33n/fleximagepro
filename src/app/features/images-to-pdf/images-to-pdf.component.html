@@ -1,0 +1,141 @@
+<article class="relative">
+  @if (pageIsDragging() && jobs().length) {
+    <div class="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-teal-500 bg-teal-50/80 dark:bg-teal-950/80">
+      <i class="bi bi-file-earmark-pdf mb-3 text-5xl text-teal-600 dark:text-teal-300"></i>
+      <p class="text-lg font-semibold text-teal-700 dark:text-teal-300">Drop to add images</p>
+    </div>
+  }
+
+  <section class="bg-white dark:bg-zinc-950">
+    <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <p class="text-sm font-semibold uppercase tracking-wide text-teal-600 dark:text-teal-400">JPG, PNG, WebP, AVIF, SVG, GIF, BMP, ICO</p>
+      <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-4xl">Images to PDF Converter</h1>
+      <p class="mt-4 max-w-3xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
+        Upload images in browser-supported formats and combine them into one private PDF without sending files to a server.
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto grid max-w-7xl gap-8 px-4 pb-14 sm:px-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:px-8">
+    <div class="space-y-6">
+      @if (!jobs().length) {
+        <app-upload-zone [accept]="acceptedTypes" (filesSelected)="addFiles($event)" />
+      } @else if (jobs().length < 20) {
+        <app-upload-zone [accept]="acceptedTypes" (filesSelected)="addFiles($event)" [compact]="true" />
+      }
+
+      @if (jobs().length) {
+        <section class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="pdf-summary-heading">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 id="pdf-summary-heading" class="text-lg font-semibold text-zinc-950 dark:text-white">PDF Queue</h2>
+              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{{ jobs().length }} image{{ jobs().length === 1 ? '' : 's' }} selected. Total input: {{ formatBytes(totalSize()) }}.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                (click)="downloadPdf()"
+                [disabled]="isCreating()"
+                class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {{ isCreating() ? 'Creating PDF...' : 'Download PDF' }}
+              </button>
+              <button type="button" (click)="clearAll()" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+                Clear
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Selected image order">
+          @for (job of jobs(); track trackByJob($index, job)) {
+            <article class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div class="relative overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-950">
+                <img [src]="job.url" [alt]="'Preview for ' + job.name" class="aspect-[4/3] w-full object-contain" loading="lazy" />
+                <span class="absolute left-2 top-2 rounded-md bg-zinc-950/80 px-2 py-1 text-xs font-semibold text-white">Page {{ $index + 1 }}</span>
+              </div>
+              <div class="mt-4">
+                <h2 class="break-all text-sm font-semibold text-zinc-950 dark:text-white">{{ job.name }}</h2>
+                <p class="mt-1 text-xs text-zinc-500">{{ job.width }} x {{ job.height }} px - {{ formatBytes(job.size) }}</p>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  (click)="move(job.id, -1)"
+                  [disabled]="$first"
+                  class="rounded-lg border border-zinc-300 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                  aria-label="Move image up"
+                >
+                  <i class="bi bi-arrow-up"></i>
+                </button>
+                <button
+                  type="button"
+                  (click)="move(job.id, 1)"
+                  [disabled]="$last"
+                  class="rounded-lg border border-zinc-300 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                  aria-label="Move image down"
+                >
+                  <i class="bi bi-arrow-down"></i>
+                </button>
+                <button
+                  type="button"
+                  (click)="remove(job.id)"
+                  class="ml-auto rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+                >
+                  Remove
+                </button>
+              </div>
+            </article>
+          }
+        </section>
+      }
+    </div>
+
+    <aside class="space-y-8 lg:pt-1">
+      <section class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="pdf-options-heading">
+        <h2 id="pdf-options-heading" class="text-lg font-semibold text-zinc-950 dark:text-white">PDF Options</h2>
+
+        <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+          Page size
+          <select [value]="options().pageSize" (change)="updatePageSize($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
+            <option value="a4">A4</option>
+            <option value="letter">Letter</option>
+          </select>
+        </label>
+
+        <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+          Orientation
+          <select [value]="options().orientation" (change)="updateOrientation($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
+            <option value="auto">Auto per image</option>
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
+        </label>
+
+        <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+          Image fit
+          <select [value]="options().fit" (change)="updateFit($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
+            <option value="contain">Fit full image</option>
+            <option value="cover">Fill page</option>
+          </select>
+        </label>
+
+        <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200" for="pdf-margin">Margin: {{ options().margin }} pt</label>
+        <input id="pdf-margin" type="range" min="0" max="72" step="1" [value]="options().margin" (input)="updateMargin($event)" class="mt-3 w-full" [style]="{'--fill': (options().margin / 72 * 100).toFixed(1) + '%'}" />
+
+        <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200" for="pdf-quality">Image quality: {{ options().quality }}%</label>
+        <input id="pdf-quality" type="range" min="35" max="95" step="1" [value]="options().quality" (input)="updateQuality($event)" class="mt-3 w-full" [style]="{'--fill': ((options().quality - 35) / 60 * 100).toFixed(1) + '%'}" />
+
+        @if (jobs().length) {
+          <button type="button" (click)="downloadPdf()" [disabled]="isCreating()" class="mt-6 w-full rounded-lg bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50">
+            {{ isCreating() ? 'Creating PDF...' : 'Download PDF' }}
+          </button>
+        }
+      </section>
+
+      <div class="lg:sticky lg:top-28">
+        <app-ad-slot label="Sidebar" />
+      </div>
+    </aside>
+  </section>
+</article>

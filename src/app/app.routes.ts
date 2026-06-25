@@ -7,6 +7,7 @@ import { PrivacyPolicyComponent } from './features/privacy-policy/privacy-policy
 import { TermsOfServiceComponent } from './features/terms-of-service/terms-of-service.component';
 import { ContactComponent } from './features/contact/contact.component';
 import { SharedImagesComponent } from './features/shared-images/shared-images.component';
+import { ImagesToPdfComponent } from './features/images-to-pdf/images-to-pdf.component';
 
 const ALL_RASTER_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/x-icon', 'image/vnd.microsoft.icon'];
 
@@ -104,6 +105,10 @@ export const routes: Routes = [
     path: 'png-to-svg',
     component: ToolPageComponent,
     data: { tool: pngToSvgTool },
+  },
+  {
+    path: 'images-to-pdf',
+    component: ImagesToPdfComponent,
   },
   {
     path: 'privacy-policy',

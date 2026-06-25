@@ -11,12 +11,15 @@ const MIME_LABELS: Record<string, string> = {
   'image/x-icon': 'ICO',
   'image/vnd.microsoft.icon': 'ICO',
   'image/svg+xml': 'SVG',
+  'image/gif': 'GIF',
+  'image/bmp': 'BMP',
 };
 
 const EXT_TO_MIME: Record<string, string> = {
   jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
   webp: 'image/webp', avif: 'image/avif', ico: 'image/x-icon',
-  svg: 'image/svg+xml', heic: 'image/heic', heif: 'image/heif',
+  svg: 'image/svg+xml', gif: 'image/gif', bmp: 'image/bmp',
+  heic: 'image/heic', heif: 'image/heif',
 };
 
 // iOS Safari canvas pixel budget — stay under this to avoid silent toBlob failures

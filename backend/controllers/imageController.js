@@ -172,11 +172,7 @@ async function createBatchShareResponse(files) {
     'utf8',
   );
 
-  const qrCodeDataUrl = await QRCode.toDataURL(shareUrl, {
-    errorCorrectionLevel: 'M',
-    margin: 1,
-    width: 320,
-  });
+  const qrCodeDataUrl = await createBrandedQrCodeDataUrl(shareUrl);
 
   return {
     id,
@@ -194,11 +190,7 @@ async function createShareResponse(file) {
     new Date().toISOString(),
   );
 
-  const qrCodeDataUrl = await QRCode.toDataURL(metadata.downloadUrl, {
-    errorCorrectionLevel: 'M',
-    margin: 1,
-    width: 320,
-  });
+  const qrCodeDataUrl = await createBrandedQrCodeDataUrl(metadata.downloadUrl);
 
   return {
     id: metadata.id,
@@ -240,6 +232,42 @@ function isUuid(value) {
 
 function encodeHeaderValue(value) {
   return String(value || 'file').replace(/["\r\n]/g, '_');
+}
+
+async function createBrandedQrCodeDataUrl(value) {
+  const qrSvg = await QRCode.toString(value, {
+    type: 'svg',
+    errorCorrectionLevel: 'M',
+    margin: 1,
+    width: 272,
+    color: {
+      dark: '#0f172a',
+      light: '#ffffff',
+    },
+  });
+  const qrInner = qrSvg
+    .replace(/<\?xml[^>]*>/g, '')
+    .replace(/<!DOCTYPE[^>]*>/g, '')
+    .replace(/<svg[^>]*>/, '')
+    .replace('</svg>', '');
+
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="440" viewBox="0 0 360 440">
+  <rect width="360" height="440" rx="28" fill="#ffffff"/>
+  <rect x="18" y="18" width="324" height="404" rx="22" fill="#f8fafc" stroke="#d4d4d8"/>
+  <g transform="translate(72 34)">
+    <rect x="0" y="0" width="42" height="42" rx="12" fill="#0f766e"/>
+    <text x="21" y="28" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#ffffff">F</text>
+    <text x="54" y="18" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#18181b">FlexImagePro</text>
+    <text x="54" y="36" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="600" fill="#0f766e">Private shared file</text>
+  </g>
+  <rect x="44" y="96" width="272" height="272" rx="18" fill="#ffffff"/>
+  <g transform="translate(44 96)">${qrInner}</g>
+  <text x="180" y="394" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#18181b">Scan to open</text>
+  <text x="180" y="414" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#71717a">Link expires after 24 hours</text>
+</svg>`.trim();
+
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
 
 module.exports = {

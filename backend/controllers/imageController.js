@@ -4,8 +4,15 @@ const crypto = require('crypto');
 const QRCode = require('qrcode');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
-const publicBaseUrl = (process.env.PUBLIC_BASE_URL || 'https://backend.fleximagepro.com').replace(/\/+$/, '');
-const frontendBaseUrl = (process.env.FRONTEND_BASE_URL || process.env.FRONTEND_ORIGIN || 'https://fleximagepro.com').replace(/\/+$/, '');
+const publicBaseUrl = (process.env.PUBLIC_BASE_URL || 'https://backend.fleximagepro.com').replace(
+  /\/+$/,
+  '',
+);
+const frontendBaseUrl = (
+  process.env.FRONTEND_BASE_URL ||
+  process.env.FRONTEND_ORIGIN ||
+  'https://fleximagepro.com'
+).replace(/\/+$/, '');
 const ttlMs = Number(process.env.UPLOAD_TTL_HOURS || 24) * 60 * 60 * 1000;
 
 async function uploadCompressedImage(req, res, next) {
@@ -24,7 +31,9 @@ async function uploadCompressedImages(req, res, next) {
   try {
     const files = req.files || [];
     if (!files.length) {
-      return res.status(400).json({ error: 'Please upload at least one JPG, PNG, WebP, SVG, or PDF file.' });
+      return res
+        .status(400)
+        .json({ error: 'Please upload at least one JPG, PNG, WebP, SVG, or PDF file.' });
     }
     if (files.length > 10) {
       return res.status(400).json({ error: 'You can share up to 10 images at a time.' });
@@ -113,7 +122,10 @@ async function sendStoredFile(req, res, next, disposition) {
     const filePath = path.join(uploadsDir, metadata.storedFileName);
     if (disposition === 'inline') {
       res.setHeader('Content-Type', metadata.mimeType || 'application/octet-stream');
-      res.setHeader('Content-Disposition', `inline; filename="${encodeHeaderValue(metadata.originalName)}"`);
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="${encodeHeaderValue(metadata.originalName)}"`,
+      );
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.sendFile(filePath, (error) => {
         if (error && !res.headersSent) {
@@ -145,7 +157,9 @@ async function removeBatchUploadFiles(metadata) {
     fs.unlink(path.join(uploadsDir, `${metadata.id}.json`)),
     ...(metadata.images || []).flatMap((image) => [
       fs.unlink(path.join(uploadsDir, `${image.id}.json`)),
-      image.storedFileName ? fs.unlink(path.join(uploadsDir, image.storedFileName)) : Promise.resolve(),
+      image.storedFileName
+        ? fs.unlink(path.join(uploadsDir, image.storedFileName))
+        : Promise.resolve(),
     ]),
   ];
   await Promise.allSettled(removals);
@@ -156,7 +170,9 @@ async function createBatchShareResponse(files) {
   const shareUrl = `${frontendBaseUrl}/share/${id}`;
   const expiresAt = new Date(Date.now() + ttlMs).toISOString();
   const createdAt = new Date().toISOString();
-  const images = await Promise.all(files.map((file) => createImageMetadata(file, expiresAt, createdAt)));
+  const images = await Promise.all(
+    files.map((file) => createImageMetadata(file, expiresAt, createdAt)),
+  );
   const metadata = {
     type: 'batch',
     id,
@@ -172,7 +188,11 @@ async function createBatchShareResponse(files) {
     'utf8',
   );
 
-  const qrCodeDataUrl = await createBrandedQrCodeDataUrl(shareUrl);
+  const qrCodeDataUrl = await QRCode.toDataURL(shareUrl, {
+    errorCorrectionLevel: 'M',
+    margin: 1,
+    width: 320,
+  });
 
   return {
     id,
@@ -190,7 +210,11 @@ async function createShareResponse(file) {
     new Date().toISOString(),
   );
 
-  const qrCodeDataUrl = await createBrandedQrCodeDataUrl(metadata.downloadUrl);
+  const qrCodeDataUrl = await QRCode.toDataURL(metadata.downloadUrl, {
+    errorCorrectionLevel: 'M',
+    margin: 1,
+    width: 320,
+  });
 
   return {
     id: metadata.id,
@@ -232,42 +256,6 @@ function isUuid(value) {
 
 function encodeHeaderValue(value) {
   return String(value || 'file').replace(/["\r\n]/g, '_');
-}
-
-async function createBrandedQrCodeDataUrl(value) {
-  const qrSvg = await QRCode.toString(value, {
-    type: 'svg',
-    errorCorrectionLevel: 'M',
-    margin: 1,
-    width: 272,
-    color: {
-      dark: '#0f172a',
-      light: '#ffffff',
-    },
-  });
-  const qrInner = qrSvg
-    .replace(/<\?xml[^>]*>/g, '')
-    .replace(/<!DOCTYPE[^>]*>/g, '')
-    .replace(/<svg[^>]*>/, '')
-    .replace('</svg>', '');
-
-  const svg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="360" height="440" viewBox="0 0 360 440">
-  <rect width="360" height="440" rx="28" fill="#ffffff"/>
-  <rect x="18" y="18" width="324" height="404" rx="22" fill="#f8fafc" stroke="#d4d4d8"/>
-  <g transform="translate(72 34)">
-    <rect x="0" y="0" width="42" height="42" rx="12" fill="#0f766e"/>
-    <text x="21" y="28" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#ffffff">F</text>
-    <text x="54" y="18" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#18181b">FlexImagePro</text>
-    <text x="54" y="36" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="600" fill="#0f766e">Private shared file</text>
-  </g>
-  <rect x="44" y="96" width="272" height="272" rx="18" fill="#ffffff"/>
-  <g transform="translate(44 96)">${qrInner}</g>
-  <text x="180" y="394" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#18181b">Scan to open</text>
-  <text x="180" y="414" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#71717a">Link expires after 24 hours</text>
-</svg>`.trim();
-
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
 
 module.exports = {

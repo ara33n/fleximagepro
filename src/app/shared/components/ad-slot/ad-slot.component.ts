@@ -25,10 +25,11 @@ declare global {
   standalone: true,
   template: `
     @if (shouldRender()) {
-      <div
+      <aside
         class="relative flex min-h-28 overflow-hidden rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-        aria-label="{{ label() }} sponsored placement"
+        [attr.aria-labelledby]="titleId()"
       >
+        <h2 [id]="titleId()" class="sr-only">{{ label() }} sponsored placement</h2>
         <ins
           #adElement
           class="adsbygoogle block min-h-24 w-full"
@@ -38,7 +39,7 @@ declare global {
           data-ad-format="auto"
           data-full-width-responsive="true"
         ></ins>
-      </div>
+      </aside>
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,6 +54,7 @@ export class AdSlotComponent {
   readonly adSlot = input<string>('');
 
   readonly clientId = environment.adsenseClientId;
+  readonly titleId = computed(() => `ad-slot-title-${this.slotKey()}`);
   readonly slotId = computed(() => this.adSlot() || this.slotConfig[this.slotKey()] || '');
   readonly isConfigured = computed(() => Boolean(this.clientId && this.slotId()));
   readonly isHidden = signal(false);

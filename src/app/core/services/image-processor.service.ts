@@ -3,6 +3,8 @@ import { OutputFormat, ProcessOptions, ProcessedImage } from '../models/image-jo
 
 @Injectable({ providedIn: 'root' })
 export class ImageProcessorService {
+  private readonly pngQuantizationLevels = [64, 32, 16, 8, 4, 3, 2];
+
   async getDimensions(file: File): Promise<{ width: number; height: number }> {
     const bitmap = await createImageBitmap(file);
     const dimensions = { width: bitmap.width, height: bitmap.height };
@@ -12,6 +14,8 @@ export class ImageProcessorService {
 
   async process(file: File, options: ProcessOptions): Promise<ProcessedImage> {
     const bitmap = await createImageBitmap(file);
+    const sourceWidth = bitmap.width;
+    const sourceHeight = bitmap.height;
 
     // Source region (crop area or full image)
     const sx = Math.max(0, options.cropRect?.x ?? 0);
@@ -42,9 +46,23 @@ export class ImageProcessorService {
     context.drawImage(bitmap, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
     bitmap.close();
 
-    const mimeType = this.mimeForFormat(format);
-    const quality = format === 'png' ? undefined : Math.min(1, Math.max(0.1, options.quality / 100));
-    const blob = await this.canvasToBlob(canvas, mimeType, quality);
+    const blob = format === 'png'
+      ? await this.canvasToCompressedPng(canvas, options.quality, file.size)
+      : await this.canvasToBlob(
+          canvas,
+          this.mimeForFormat(format),
+          Math.min(1, Math.max(0.1, options.quality / 100)),
+        );
+
+    if (options.mode === 'compress' && blob.size > file.size) {
+      return {
+        blob: file,
+        url: URL.createObjectURL(file),
+        fileName: file.name,
+        width: sourceWidth,
+        height: sourceHeight,
+      };
+    }
 
     return {
       blob,
@@ -103,6 +121,74 @@ export class ImageProcessorService {
         quality,
       );
     });
+  }
+
+  private async canvasToCompressedPng(canvas: HTMLCanvasElement, quality: number, sourceSize: number): Promise<Blob> {
+    const originalBlob = await this.canvasToBlob(canvas, 'image/png');
+
+    if (quality >= 95 && originalBlob.size <= sourceSize) {
+      return originalBlob;
+    }
+
+    const context = canvas.getContext('2d', { alpha: true });
+    if (!context) {
+      return originalBlob;
+    }
+
+    const originalImageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const startIndex = this.pngQuantizationStartIndex(quality);
+    let bestBlob = originalBlob;
+    let bestSize = originalBlob.size;
+
+    for (let index = startIndex; index < this.pngQuantizationLevels.length; index++) {
+      const levels = this.pngQuantizationLevels[index];
+      const compressedImageData = new ImageData(
+        new Uint8ClampedArray(originalImageData.data),
+        originalImageData.width,
+        originalImageData.height,
+      );
+
+      this.quantizeImageData(compressedImageData, levels);
+      context.putImageData(compressedImageData, 0, 0);
+
+      const blob = await this.canvasToBlob(canvas, 'image/png');
+      if (blob.size < bestSize) {
+        bestBlob = blob;
+        bestSize = blob.size;
+      }
+      if (blob.size <= sourceSize * 0.95) {
+        break;
+      }
+    }
+
+    context.putImageData(originalImageData, 0, 0);
+    return bestBlob;
+  }
+
+  private pngQuantizationStartIndex(quality: number): number {
+    if (quality >= 90) return 0;
+    if (quality >= 75) return 1;
+    if (quality >= 55) return 2;
+    if (quality >= 35) return 3;
+    return 4;
+  }
+
+  private quantizeImageData(imageData: ImageData, levels: number): void {
+    const data = imageData.data;
+    const step = 255 / Math.max(1, levels - 1);
+
+    for (let index = 0; index < data.length; index += 4) {
+      if (data[index + 3] === 0) {
+        data[index] = 0;
+        data[index + 1] = 0;
+        data[index + 2] = 0;
+        continue;
+      }
+
+      data[index] = Math.round(Math.round(data[index] / step) * step);
+      data[index + 1] = Math.round(Math.round(data[index + 1] / step) * step);
+      data[index + 2] = Math.round(Math.round(data[index + 2] / step) * step);
+    }
   }
 
   private resolveFormat(file: File, outputFormat: OutputFormat): 'jpeg' | 'png' | 'webp' {

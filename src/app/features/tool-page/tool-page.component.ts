@@ -616,6 +616,9 @@ export class ToolPageComponent implements OnInit {
     if (tool.mode === 'png-to-svg') {
       return 'svg';
     }
+    if (tool.mode === 'compress') {
+      return 'original';
+    }
     if (tool.mode === 'jpg-png') {
       return this.options().outputFormat === 'auto' ? 'auto' : this.options().outputFormat;
     }

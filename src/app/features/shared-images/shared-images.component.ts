@@ -25,6 +25,7 @@ export class SharedImagesComponent implements OnInit {
   readonly isLoading = signal(true);
   readonly isZipping = signal(false);
   readonly errorMessage = signal('');
+  readonly previewImage = signal<SharedImage | null>(null);
 
   ngOnInit(): void {
     this.seo.update(
@@ -67,6 +68,14 @@ export class SharedImagesComponent implements OnInit {
 
   download(image: SharedImage): void {
     this.clickDownload(image.downloadUrl, image.fileName);
+  }
+
+  openPreview(image: SharedImage): void {
+    this.previewImage.set(image);
+  }
+
+  closePreview(): void {
+    this.previewImage.set(null);
   }
 
   isPdf(image: SharedImage): boolean {

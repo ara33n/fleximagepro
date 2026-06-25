@@ -1,7 +1,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
-const QRCode = require('qrcode');
+const { createBrandedQrDataUrl } = require('../services/brandedQrService');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 const publicBaseUrl = (process.env.PUBLIC_BASE_URL || 'https://backend.fleximagepro.com').replace(
@@ -188,11 +188,7 @@ async function createBatchShareResponse(files) {
     'utf8',
   );
 
-  const qrCodeDataUrl = await QRCode.toDataURL(shareUrl, {
-    errorCorrectionLevel: 'M',
-    margin: 1,
-    width: 320,
-  });
+  const qrCodeDataUrl = await createBrandedQrDataUrl(shareUrl);
 
   return {
     id,
@@ -210,11 +206,7 @@ async function createShareResponse(file) {
     new Date().toISOString(),
   );
 
-  const qrCodeDataUrl = await QRCode.toDataURL(metadata.downloadUrl, {
-    errorCorrectionLevel: 'M',
-    margin: 1,
-    width: 320,
-  });
+  const qrCodeDataUrl = await createBrandedQrDataUrl(metadata.downloadUrl);
 
   return {
     id: metadata.id,

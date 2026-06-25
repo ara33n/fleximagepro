@@ -5,6 +5,7 @@ import { SeoService } from '../../core/services/seo.service';
 import { PdfGeneratorService, PdfImageFit, PdfOrientation, PdfPageSize } from '../../core/services/pdf-generator.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AdSlotComponent } from '../../shared/components/ad-slot/ad-slot.component';
+import { QrCodeCardComponent } from '../../shared/components/qr-code-card/qr-code-card.component';
 import { UploadZoneComponent } from '../../shared/components/upload-zone/upload-zone.component';
 
 interface PdfImageJob {
@@ -31,7 +32,7 @@ const ACCEPTED_IMAGE_TYPES = ['image/*'];
 @Component({
   selector: 'app-images-to-pdf',
   standalone: true,
-  imports: [UploadZoneComponent, AdSlotComponent],
+  imports: [UploadZoneComponent, AdSlotComponent, QrCodeCardComponent],
   templateUrl: './images-to-pdf.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

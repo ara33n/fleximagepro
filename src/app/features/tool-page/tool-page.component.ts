@@ -10,6 +10,7 @@ import { SeoService } from '../../core/services/seo.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ZipService } from '../../core/services/zip.service';
 import { AdSlotComponent } from '../../shared/components/ad-slot/ad-slot.component';
+import { QrCodeCardComponent } from '../../shared/components/qr-code-card/qr-code-card.component';
 import { UploadZoneComponent } from '../../shared/components/upload-zone/upload-zone.component';
 
 interface ToolOptions {
@@ -24,7 +25,7 @@ interface ToolOptions {
 @Component({
   selector: 'app-tool-page',
   standalone: true,
-  imports: [UploadZoneComponent, AdSlotComponent],
+  imports: [UploadZoneComponent, AdSlotComponent, QrCodeCardComponent],
   templateUrl: './tool-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

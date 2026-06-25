@@ -231,12 +231,13 @@
             Copy Share URL
           </button>
 
-          <div class="mt-5 grid place-items-center rounded-lg bg-zinc-50 p-4 dark:bg-zinc-950">
-            <img [src]="share.qrCodeDataUrl" alt="QR code for shared PDF page" class="size-64 max-w-full rounded-md bg-white p-2" />
-          </div>
-          <button type="button" (click)="downloadQrCode()" class="mt-4 w-full rounded-lg border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
-            Download QR Code
-          </button>
+          <app-qr-code-card
+            class="mt-5 block"
+            [qrCodeDataUrl]="share.qrCodeDataUrl"
+            title="Branded QR code"
+            description="Scan to open this shared PDF link."
+            (download)="downloadQrCode()"
+          />
         </section>
       </div>
     }

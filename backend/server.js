@@ -5,6 +5,7 @@ const fs = require('fs');
 require('dotenv').config();
 
 const imageRoutes = require('./routes/imageRoutes');
+const qrRoutes = require('./routes/qrRoutes');
 const { cleanupExpiredUploads, startUploadCleanup } = require('./utils/cleanup');
 
 const app = express();
@@ -35,7 +36,14 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.get('/', (_req, res) => {
+  res
+    .type('html')
+    .send('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>FlexImagePro API</title></head><body><h1>FlexImagePro API</h1><p>Status: ok</p></body></html>');
+});
+
 app.use('/api/images', imageRoutes);
+app.use('/api/qr', qrRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found.' });

@@ -1,15 +1,38 @@
 # FlexImagePro
 
-FlexImagePro is a browser-side image tools website for compressing, converting, and resizing images without uploading files to a server.
+FlexImagePro is a free browser-side image tools website. It helps users compress images, resize images, convert image formats, convert images to WebP, trace PNG files to SVG, and combine multiple images into one PDF.
 
-## Primary Pages
+## Site Purpose
+
+FlexImagePro is built for fast, private image optimization and conversion. The main value is that common image workflows run locally in the user's browser, so files do not need to be uploaded to a remote server for normal processing.
+
+## Primary Tools
+
+- [Image Compressor](https://fleximagepro.com/compress): Compress JPG, PNG, WebP, AVIF, and ICO images with quality controls and ZIP download.
+- [PNG to WebP Converter](https://fleximagepro.com/convert-webp): Convert PNG, JPG, AVIF, ICO, and other supported raster images to WebP.
+- [Image Resizer](https://fleximagepro.com/resize): Resize images by custom width and height, preserve aspect ratio, crop images, and choose output format.
+- [JPG to PNG and PNG to JPG Converter](https://fleximagepro.com/jpg-to-png): Switch between JPG and PNG formats in the browser.
+- [PNG to SVG Converter](https://fleximagepro.com/png-to-svg): Trace PNG images into scalable SVG vector files.
+- [Images to PDF Converter](https://fleximagepro.com/images-to-pdf): Combine JPG, PNG, WebP, AVIF, SVG, GIF, BMP, ICO, HEIC, and other browser-supported image files into one PDF.
+
+## Important Pages
 
 - [Home](https://fleximagepro.com/)
-- [Image Compressor](https://fleximagepro.com/compress)
-- [Image to WebP Converter](https://fleximagepro.com/convert-webp)
-- [Image Resizer](https://fleximagepro.com/resize)
-- [JPG to PNG and PNG to JPG Converter](https://fleximagepro.com/jpg-to-png)
+- [Privacy Policy](https://fleximagepro.com/privacy-policy)
+- [Terms of Service](https://fleximagepro.com/terms-of-service)
+- [Contact](https://fleximagepro.com/contact)
+
+## Key Claims
+
+- Image processing is performed in the browser for normal tool workflows.
+- User-selected image files should not be treated as public website content.
+- The site focuses on privacy, speed, local processing, and practical SEO image optimization.
+- Batch workflows are supported for common tools, including ZIP export for processed images and PDF export for image collections.
+
+## Suggested Description
+
+FlexImagePro is a free private image tools website for compressing, resizing, converting, optimizing, and turning images into PDFs directly in the browser.
 
 ## Crawling Guidance
 
-Public pages may be crawled for search and answer discovery. Do not treat user-selected local image files as website content because image processing happens in the browser.
+Public pages may be crawled and used for search, summaries, and answer discovery. Do not infer access to user-uploaded or user-selected images; those files are processed locally in the browser and are not public site content.

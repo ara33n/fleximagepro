@@ -13,8 +13,12 @@ RewriteRule ^(.*)$ https://fleximagepro.com/$1 [R=301,L]
 RewriteCond %{HTTPS} off
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
-# Serve existing static files
+# Serve existing static files (JS, CSS, images, fonts, etc.)
 RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Pass /api/* and /health to Passenger/Node.js — must come BEFORE Angular fallback
+RewriteCond %{REQUEST_URI} ^/(api|health)(/|$)
 RewriteRule ^ - [L]
 
 # Shared image links are dynamic Angular routes.
@@ -24,5 +28,13 @@ RewriteRule ^share/.+ /share/index.html [L]
 RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI}/index.html -f
 RewriteRule ^(.+[^/])$ $1/index.html [L]
 
-# Fallback
+# Angular SPA fallback (only hits non-API, non-static routes)
 RewriteRule ^ /index.html [L]
+
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home2/vrcompaniesllc/compressor-api"
+PassengerBaseURI "/"
+PassengerNodejs "/home2/vrcompaniesllc/nodevenv/compressor-api/22/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END

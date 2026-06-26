@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const { createBrandedQrDataUrl } = require('../services/brandedQrService');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
-const publicBaseUrl = (process.env.PUBLIC_BASE_URL || 'https://backend.fleximagepro.com').replace(
+const publicBaseUrl = (process.env.PUBLIC_BASE_URL || 'https://fleximagepro.com').replace(
   /\/+$/,
   '',
 );

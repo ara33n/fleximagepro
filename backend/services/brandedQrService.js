@@ -7,7 +7,7 @@ const BRAND_TEAL = '#0f766e';
 const BRAND_TEAL_LIGHT = '#14b8a6';
 const DARK = '#18181b';
 const WHITE = '#ffffff';
-const logoPath = path.join(__dirname, '..', '..', 'public', 'assets', 'logo-96.png');
+const logoPath = process.env.LOGO_PATH || path.join(__dirname, '..', 'assets', 'logo-96.png');
 
 async function createBrandedQrDataUrl(value, options = {}) {
   if (!value || typeof value !== 'string') {

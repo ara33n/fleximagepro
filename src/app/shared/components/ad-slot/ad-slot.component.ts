@@ -24,7 +24,7 @@ declare global {
   selector: 'app-ad-slot',
   standalone: true,
   template: `
-    @if (shouldRender()) {
+    <!-- @if (shouldRender()) {
       <aside
         class="relative flex min-h-28 overflow-hidden rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
         [attr.aria-labelledby]="titleId()"
@@ -40,7 +40,7 @@ declare global {
           data-full-width-responsive="true"
         ></ins>
       </aside>
-    }
+    } -->
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -77,7 +77,10 @@ export class AdSlotComponent {
   }
 
   private slotKey(): keyof typeof environment.adsenseSlots {
-    return this.label().trim().toLowerCase().replace(/\s+/g, '-') as keyof typeof environment.adsenseSlots;
+    return this.label()
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-') as keyof typeof environment.adsenseSlots;
   }
 
   private loadAdsenseScript(): void {

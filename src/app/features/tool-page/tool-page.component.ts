@@ -82,7 +82,7 @@ export class ToolPageComponent implements OnInit {
   readonly shareBatch = signal<ImageShareResponse | null>(null);
   readonly isShareModalOpen = signal(false);
   readonly pageIsDragging = signal(false);
-  readonly openFaq = signal<number | null>(null);
+  readonly openFaq = signal<number | null>(0);
   private _dragDepth = 0;
 
   // Crop modal state

@@ -208,7 +208,7 @@
                   </div>
                   <div class="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-950">
                     <dt class="text-xs text-zinc-500">Source</dt>
-                    <dd class="mt-1 text-sm font-semibold text-zinc-950 dark:text-white">{{ sitemapSource() === 'existing' ? 'Existing sitemap' : 'Generated crawl' }}</dd>
+                    <dd class="mt-1 text-sm font-semibold text-zinc-950 dark:text-white">{{ sitemapSource() === 'combined' ? 'Sitemap + crawl' : (sitemapSource() === 'existing' ? 'Existing sitemap' : 'Generated crawl') }}</dd>
                   </div>
                 </div>
                 @if (sitemapExistingUrl()) {

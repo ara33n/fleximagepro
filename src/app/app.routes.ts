@@ -1,17 +1,5 @@
 import { Routes } from '@angular/router';
 import { ToolConfig } from './core/models/image-job.model';
-import { HomeComponent } from './features/home/home.component';
-import { NotFoundComponent } from './features/not-found/not-found.component';
-import { ToolPageComponent } from './features/tool-page/tool-page.component';
-import { PrivacyPolicyComponent } from './features/privacy-policy/privacy-policy.component';
-import { TermsOfServiceComponent } from './features/terms-of-service/terms-of-service.component';
-import { ContactComponent } from './features/contact/contact.component';
-import { SharedImagesComponent } from './features/shared-images/shared-images.component';
-import { ImagesToPdfComponent } from './features/images-to-pdf/images-to-pdf.component';
-import { ImageToolComponent } from './features/image-tool/image-tool.component';
-import { TextToolComponent } from './features/text-tool/text-tool.component';
-import { SeoToolComponent } from './features/seo-tool/seo-tool.component';
-import { UtilityToolComponent } from './features/utility-tool/utility-tool.component';
 import {
   compressFaqs,
   compressSeoContent,
@@ -26,6 +14,18 @@ import {
 } from './core/content/tool-seo-content';
 
 const ALL_RASTER_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/x-icon', 'image/vnd.microsoft.icon'];
+const loadHome = () => import('./features/home/home.component').then((m) => m.HomeComponent);
+const loadNotFound = () => import('./features/not-found/not-found.component').then((m) => m.NotFoundComponent);
+const loadToolPage = () => import('./features/tool-page/tool-page.component').then((m) => m.ToolPageComponent);
+const loadPrivacyPolicy = () => import('./features/privacy-policy/privacy-policy.component').then((m) => m.PrivacyPolicyComponent);
+const loadTermsOfService = () => import('./features/terms-of-service/terms-of-service.component').then((m) => m.TermsOfServiceComponent);
+const loadContact = () => import('./features/contact/contact.component').then((m) => m.ContactComponent);
+const loadSharedImages = () => import('./features/shared-images/shared-images.component').then((m) => m.SharedImagesComponent);
+const loadImagesToPdf = () => import('./features/images-to-pdf/images-to-pdf.component').then((m) => m.ImagesToPdfComponent);
+const loadImageTool = () => import('./features/image-tool/image-tool.component').then((m) => m.ImageToolComponent);
+const loadTextTool = () => import('./features/text-tool/text-tool.component').then((m) => m.TextToolComponent);
+const loadSeoTool = () => import('./features/seo-tool/seo-tool.component').then((m) => m.SeoToolComponent);
+const loadUtilityTool = () => import('./features/utility-tool/utility-tool.component').then((m) => m.UtilityToolComponent);
 
 const compressTool: ToolConfig = {
   id: 'compress',
@@ -131,7 +131,7 @@ const imageToolSlugs = [
 
 const imageToolRoutes: Routes = imageToolSlugs.map((slug) => ({
   path: slug,
-  component: ImageToolComponent,
+  loadComponent: loadImageTool,
   data: { slug },
 }));
 
@@ -152,7 +152,7 @@ const textToolSlugs = [
 
 const textToolRoutes: Routes = textToolSlugs.map((slug) => ({
   path: slug,
-  component: TextToolComponent,
+  loadComponent: loadTextTool,
   data: { slug },
 }));
 
@@ -174,7 +174,7 @@ const seoToolSlugs = [
 
 const seoToolRoutes: Routes = seoToolSlugs.map((slug) => ({
   path: slug,
-  component: SeoToolComponent,
+  loadComponent: loadSeoTool,
   data: { slug },
 }));
 
@@ -275,43 +275,43 @@ const dateTimeToolSlugs = [
 
 const utilityToolRoutes: Routes = [...developerToolSlugs, ...calculatorToolSlugs, ...generatorToolSlugs, ...pdfToolSlugs, ...gisToolSlugs, ...colorToolSlugs, ...dateTimeToolSlugs].map((slug) => ({
   path: slug,
-  component: UtilityToolComponent,
+  loadComponent: loadUtilityTool,
   data: { slug },
 }));
 
 export const routes: Routes = [
   {
     path: '',
-    component: HomeComponent,
+    loadComponent: loadHome,
   },
   {
     path: 'compress',
-    component: ToolPageComponent,
+    loadComponent: loadToolPage,
     data: { tool: compressTool },
   },
   {
     path: 'convert-webp',
-    component: ToolPageComponent,
+    loadComponent: loadToolPage,
     data: { tool: webpTool },
   },
   {
     path: 'resize',
-    component: ToolPageComponent,
+    loadComponent: loadToolPage,
     data: { tool: resizeTool },
   },
   {
     path: 'jpg-to-png',
-    component: ToolPageComponent,
+    loadComponent: loadToolPage,
     data: { tool: jpgPngTool },
   },
   {
     path: 'png-to-svg',
-    component: ToolPageComponent,
+    loadComponent: loadToolPage,
     data: { tool: pngToSvgTool },
   },
   {
     path: 'images-to-pdf',
-    component: ImagesToPdfComponent,
+    loadComponent: loadImagesToPdf,
   },
   ...imageToolRoutes,
   ...textToolRoutes,
@@ -319,22 +319,22 @@ export const routes: Routes = [
   ...utilityToolRoutes,
   {
     path: 'privacy-policy',
-    component: PrivacyPolicyComponent,
+    loadComponent: loadPrivacyPolicy,
   },
   {
     path: 'terms-of-service',
-    component: TermsOfServiceComponent,
+    loadComponent: loadTermsOfService,
   },
   {
     path: 'contact',
-    component: ContactComponent,
+    loadComponent: loadContact,
   },
   {
     path: 'share/:id',
-    component: SharedImagesComponent,
+    loadComponent: loadSharedImages,
   },
   {
     path: '**',
-    component: NotFoundComponent,
+    loadComponent: loadNotFound,
   },
 ];

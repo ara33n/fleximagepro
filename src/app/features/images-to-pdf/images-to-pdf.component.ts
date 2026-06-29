@@ -72,7 +72,7 @@ export class ImagesToPdfComponent {
   readonly pageIsDragging = signal(false);
   readonly seoContent = imagesToPdfSeoContent;
   readonly faqs = imagesToPdfFaqs;
-  readonly openFaq = signal<number | null>(null);
+  readonly openFaq = signal<number | null>(0);
   readonly options = signal<PdfOptions>({
     pageSize: 'a4',
     orientation: 'auto',

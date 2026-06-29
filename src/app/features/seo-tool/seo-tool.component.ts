@@ -54,7 +54,7 @@ interface HreflangEntry {
 }
 
 interface SitemapCrawlResponse {
-  source: 'existing' | 'generated';
+  source: 'existing' | 'generated' | 'combined';
   robotsFound: boolean;
   existingSitemapUrl: string | null;
   pages: string[];
@@ -191,7 +191,7 @@ export class SeoToolComponent implements OnInit {
   readonly sitemapError = signal<string | null>(null);
   readonly sitemapStatus = signal('');
   readonly sitemapPages = signal<string[]>([]);
-  readonly sitemapSource = signal<'existing' | 'generated' | null>(null);
+  readonly sitemapSource = signal<'existing' | 'generated' | 'combined' | null>(null);
   readonly sitemapRobotsFound = signal(false);
   readonly sitemapExistingUrl = signal<string | null>(null);
   readonly output = signal('');
@@ -346,8 +346,8 @@ export class SeoToolComponent implements OnInit {
       this.sitemapRobotsFound.set(result.robotsFound);
       this.sitemapExistingUrl.set(result.existingSitemapUrl);
       this.sitemapStatus.set('');
-      this.toast.success(result.source === 'existing'
-        ? `Existing sitemap found with ${result.totalPages} URL${result.totalPages === 1 ? '' : 's'}.`
+      this.toast.success(result.source === 'existing' || result.source === 'combined'
+        ? `Sitemap checked and crawl merged ${result.totalPages} URL${result.totalPages === 1 ? '' : 's'}.`
         : `Sitemap generated with ${result.totalPages} page${result.totalPages === 1 ? '' : 's'}.`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Sitemap crawl failed.';

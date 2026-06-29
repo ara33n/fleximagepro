@@ -2,12 +2,16 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { NgClass, NgStyle } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+import { ReactiveFormsModule, Validators, NonNullableFormBuilder } from '@angular/forms';
 import * as QRCode from 'qrcode';
 import { TOOL_CATEGORIES, ToolCatalogItem, findToolBySlug } from '../../core/content/tool-catalog';
 import { findCategoryForTool, generateToolSeo } from '../../core/content/generated-tool-seo';
 import { SeoService } from '../../core/services/seo.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ExportPdfService } from '../../core/services/export-pdf.service';
+import { ImageShareResponse, ImageShareService } from '../../core/services/image-share.service';
+import { QrCodeCardComponent } from '../../shared/components/qr-code-card/qr-code-card.component';
+import { UploadZoneComponent } from '../../shared/components/upload-zone/upload-zone.component';
 import { ToolSeoBlockComponent } from '../../shared/components/tool-seo-block/tool-seo-block.component';
 
 interface ResultRow { label: string; value: string; }
@@ -19,6 +23,11 @@ interface ClipPoint { x: number; y: number; color: string; }
 interface ClipPreset { name: string; kind: 'polygon' | 'circle' | 'ellipse'; points?: ClipPoint[]; value?: string; color: string; }
 type ClipDragTarget = number | 'circle-radius' | 'circle-center' | 'ellipse-radius' | 'ellipse-center';
 type DownloadTextFormat = 'pdf' | 'txt' | 'csv' | 'json' | 'html';
+interface GisPoint { lat: number; lng: number; x: number; y: number; label: string; }
+interface KmlCircleOptions { name: string; strokeColor: string; fillColor: string; opacity: number; }
+type PdfDocumentLoader = {
+  load(input: ArrayBuffer, options?: { ignoreEncryption?: boolean }): Promise<import('pdf-lib').PDFDocument>;
+};
 
 const DEV_OUTPUT_ONLY = new Set(['uuid-generator', 'random-name-generator', 'random-color-generator']);
 const CALC_OUTPUT_ONLY = new Set<string>();
@@ -38,7 +47,7 @@ const PDF_DOWNLOAD_TOOLS = new Set([
 @Component({
   selector: 'app-utility-tool',
   standalone: true,
-  imports: [NgClass, NgStyle, ToolSeoBlockComponent],
+  imports: [NgClass, NgStyle, ReactiveFormsModule, QrCodeCardComponent, UploadZoneComponent, ToolSeoBlockComponent],
   templateUrl: './utility-tool.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -47,7 +56,10 @@ export class UtilityToolComponent implements OnInit {
   private readonly seo = inject(SeoService);
   private readonly toast = inject(ToastService);
   private readonly exportPdf = inject(ExportPdfService);
+  private readonly imageShare = inject(ImageShareService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly formBuilder = inject(NonNullableFormBuilder);
+  private clipBlinkTimer: number | null = null;
 
   readonly slug = this.route.snapshot.data['slug'] as string;
   readonly category = findCategoryForTool(this.slug) ?? TOOL_CATEGORIES[0];
@@ -66,6 +78,15 @@ export class UtilityToolComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly mode = signal('length');
   readonly qrType = signal<QrType>('website');
+  readonly kmlCircleForm = this.formBuilder.group({
+    name: ['FlexImagePro Circle', [Validators.required]],
+    latitude: [31.5204, [Validators.required, Validators.min(-90), Validators.max(90)]],
+    longitude: [74.3587, [Validators.required, Validators.min(-180), Validators.max(180)]],
+    radius: [1000, [Validators.required, Validators.min(1)]],
+    strokeColor: ['#0f766e', [Validators.required]],
+    fillColor: ['#14b8a6', [Validators.required]],
+    opacity: [40, [Validators.required, Validators.min(0), Validators.max(100)]],
+  });
   readonly qrFields = signal<Record<string, string>>({
     website: 'https://fleximagepro.com',
     text: 'FlexImagePro',
@@ -98,11 +119,15 @@ export class UtilityToolComponent implements OnInit {
   readonly barcodePreview = signal('');
   readonly barcodeJpgPreview = signal('');
   readonly pdfFiles = signal<File[]>([]);
+  readonly acceptedPdfTypes = ['application/pdf', '.pdf'];
   readonly pdfPageInput = signal('1');
   readonly pdfOrderInput = signal('1,2,3');
   readonly pdfAngle = signal(90);
   readonly pdfOutputUrl = signal('');
   readonly pdfOutputName = signal('');
+  readonly isGeneratingPdfShareLink = signal(false);
+  readonly pdfShareBatch = signal<ImageShareResponse | null>(null);
+  readonly isPdfShareModalOpen = signal(false);
   readonly gisInput = signal('');
   readonly gisSecondInput = signal('');
   readonly gisOutput = signal('');
@@ -255,9 +280,19 @@ export class UtilityToolComponent implements OnInit {
   }
   updatePdfFiles(event: Event): void {
     const files = Array.from((event.target as HTMLInputElement).files || []);
-    this.pdfFiles.set(files);
+    this.setPdfFiles(files);
+  }
+  addPdfFiles(files: File[]): void {
+    this.setPdfFiles(this.pdfAcceptsMultiple() ? [...this.pdfFiles(), ...files] : files.slice(0, 1));
+  }
+  private setPdfFiles(files: File[]): void {
+    this.pdfFiles.set(this.pdfAcceptsMultiple() ? files : files.slice(0, 1));
     this.pdfOutputUrl.set('');
+    this.pdfOutputName.set('');
+    this.output.set('');
     this.rows.set([]);
+    this.pdfShareBatch.set(null);
+    this.isPdfShareModalOpen.set(false);
   }
   updatePdfPageInput(event: Event): void { this.pdfPageInput.set((event.target as HTMLInputElement).value); }
   updatePdfOrderInput(event: Event): void { this.pdfOrderInput.set((event.target as HTMLInputElement).value); }
@@ -345,6 +380,11 @@ export class UtilityToolComponent implements OnInit {
   startClipDrag(index: ClipDragTarget, event: PointerEvent): void {
     event.preventDefault();
     this.clipDragging.set(index);
+    if (typeof index === 'number') this.triggerClipBlink(`point-${index}`, this.clipPoints()[index]?.color || '#22c55e');
+    else if (index === 'circle-radius') this.triggerClipBlink('circle-radius', '#22c55e');
+    else if (index === 'circle-center') this.triggerClipBlink('circle-center', '#f97316');
+    else if (index === 'ellipse-radius') this.triggerClipBlink('ellipse-radius', '#22c55e');
+    else this.triggerClipBlink('ellipse-center', '#f97316');
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
   }
   moveClipPoint(event: PointerEvent): void {
@@ -355,7 +395,6 @@ export class UtilityToolComponent implements OnInit {
     const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
     if (typeof target === 'number' && this.clipKind() === 'polygon') {
       this.clipPoints.update((points) => points.map((point, pointIndex) => pointIndex === target ? { ...point, x, y } : point));
-      this.triggerClipBlink(`point-${target}`, this.clipPoints()[target]?.color || '#22c55e');
       return;
     }
     if (target === 'circle-center') {
@@ -363,12 +402,10 @@ export class UtilityToolComponent implements OnInit {
         const maxRadius = Math.min(x, 100 - x, y, 100 - y, circle.radius);
         return { radius: Math.max(5, maxRadius), centerX: x, centerY: y };
       });
-      this.triggerClipBlink('circle-center', '#f97316');
       return;
     }
     if (target === 'circle-radius') {
       this.clipCircle.update((circle) => ({ ...circle, radius: Math.max(5, Math.min(100 - circle.centerX, circle.centerX, circle.centerY, 100 - circle.centerY, Math.abs(x - circle.centerX))) }));
-      this.triggerClipBlink('circle-radius', '#22c55e');
       return;
     }
     if (target === 'ellipse-center') {
@@ -378,7 +415,6 @@ export class UtilityToolComponent implements OnInit {
         centerX: x,
         centerY: y,
       }));
-      this.triggerClipBlink('ellipse-center', '#f97316');
       return;
     }
     if (target === 'ellipse-radius') {
@@ -386,7 +422,6 @@ export class UtilityToolComponent implements OnInit {
         const radiusX = Math.max(5, Math.min(ellipse.centerX, 100 - ellipse.centerX, Math.abs(x - ellipse.centerX)));
         return { ...ellipse, radiusX, radiusY: Math.max(5, Math.min(ellipse.centerY, 100 - ellipse.centerY, radiusX * 0.7)) };
       });
-      this.triggerClipBlink('ellipse-radius', '#22c55e');
     }
   }
   stopClipDrag(): void { this.clipDragging.set(null); }
@@ -403,9 +438,14 @@ export class UtilityToolComponent implements OnInit {
     this.toast.success('Clip-path CSS copied.');
   }
   private triggerClipBlink(key: string, color: string): void {
+    if (this.clipBlinkTimer !== null) window.clearTimeout(this.clipBlinkTimer);
     this.clipBlinkKey.set(key);
     this.clipBlinkColor.set(color);
     this.clipBlinkNonce.update((value) => value + 1);
+    this.clipBlinkTimer = window.setTimeout(() => {
+      this.clipBlinkKey.set('');
+      this.clipBlinkTimer = null;
+    }, 650);
   }
   clipValueBlinkClass(key: string): string {
     return this.clipBlinkKey() === key ? `value-blink blink-${this.clipBlinkNonce()}` : '';
@@ -523,7 +563,7 @@ export class UtilityToolComponent implements OnInit {
     } catch (error) {
       this.output.set('');
       this.rows.set([]);
-      this.error.set(error instanceof Error ? error.message : 'Could not process this tool.');
+      this.error.set(this.friendlyToolError(error));
     }
   }
 
@@ -539,7 +579,19 @@ export class UtilityToolComponent implements OnInit {
     this.barcodeJpgPreview.set('');
     this.pdfFiles.set([]);
     this.pdfOutputUrl.set('');
+    this.pdfOutputName.set('');
+    this.pdfShareBatch.set(null);
+    this.isPdfShareModalOpen.set(false);
     this.gisOutput.set('');
+    this.kmlCircleForm.reset({
+      name: 'FlexImagePro Circle',
+      latitude: 31.5204,
+      longitude: 74.3587,
+      radius: 1000,
+      strokeColor: '#0f766e',
+      fillColor: '#14b8a6',
+      opacity: 40,
+    });
     this.error.set(null);
   }
 
@@ -607,6 +659,69 @@ export class UtilityToolComponent implements OnInit {
     } else {
       anchor.href = source;
     }
+    anchor.click();
+  }
+
+  async createPdfPreview(): Promise<void> {
+    await this.process();
+    if (this.pdfOutputUrl()) this.toast.success(this.pdfCreatesZip() ? 'ZIP output is ready.' : 'PDF preview is ready.');
+  }
+
+  async downloadPdfOutput(): Promise<void> {
+    if (!this.pdfOutputUrl()) await this.process();
+    if (!this.pdfOutputUrl()) {
+      this.toast.warning('Create the output first.');
+      return;
+    }
+    const anchor = document.createElement('a');
+    anchor.href = this.pdfOutputUrl();
+    anchor.download = this.pdfOutputName() || `${this.slug}.pdf`;
+    anchor.click();
+  }
+
+  async generatePdfShareLink(): Promise<void> {
+    if (this.isGeneratingPdfShareLink()) return;
+    if (!this.pdfCanShare()) {
+      this.toast.warning('Share links are available for PDF outputs only.');
+      return;
+    }
+    if (!this.pdfOutputUrl()) await this.process();
+    if (!this.pdfOutputUrl()) {
+      this.toast.warning('Create a PDF output first.');
+      return;
+    }
+    this.isGeneratingPdfShareLink.set(true);
+    try {
+      const response = await fetch(this.pdfOutputUrl());
+      const blob = await response.blob();
+      const share = await this.imageShare.uploadBatch([{ blob, fileName: this.pdfOutputName() || `${this.slug}.pdf` }]);
+      this.pdfShareBatch.set(share);
+      this.isPdfShareModalOpen.set(true);
+      this.toast.success('Share link is ready.');
+    } catch (error) {
+      this.toast.error(error instanceof Error ? error.message : 'Share link failed.');
+    } finally {
+      this.isGeneratingPdfShareLink.set(false);
+    }
+  }
+
+  closePdfShareModal(): void {
+    this.isPdfShareModalOpen.set(false);
+  }
+
+  async copyPdfShareUrl(): Promise<void> {
+    const shareUrl = this.pdfShareBatch()?.shareUrl;
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareUrl);
+    this.toast.success('Share URL copied.');
+  }
+
+  downloadPdfQrCode(): void {
+    const qr = this.pdfShareBatch()?.qrCodeDataUrl;
+    if (!qr) return;
+    const anchor = document.createElement('a');
+    anchor.href = qr;
+    anchor.download = `${this.slug}-share-qr.png`;
     anchor.click();
   }
 
@@ -869,10 +984,11 @@ export class UtilityToolComponent implements OnInit {
   }
 
   private async processPdf(): Promise<void> {
+    return this.withPdfWarningsSilenced(async () => {
     const files = this.pdfFiles();
     if (!files.length) throw new Error('Select PDF file first.');
     const { PDFDocument, degrees, rgb, StandardFonts } = await import('pdf-lib');
-    const source = await PDFDocument.load(await files[0].arrayBuffer());
+    const source = await this.loadPdfDocument(PDFDocument, files[0]);
     if (this.slug === 'pdf-metadata-viewer') {
       this.rows.set([
         { label: 'File name', value: files[0].name },
@@ -892,7 +1008,7 @@ export class UtilityToolComponent implements OnInit {
     if (this.slug === 'merge-pdf') {
       const merged = await PDFDocument.create();
       for (const file of files) {
-        const doc = await PDFDocument.load(await file.arrayBuffer());
+        const doc = await this.loadPdfDocument(PDFDocument, file);
         const pages = await merged.copyPages(doc, doc.getPageIndices());
         pages.forEach((page) => merged.addPage(page));
       }
@@ -958,6 +1074,7 @@ export class UtilityToolComponent implements OnInit {
     const name = this.slug === 'extract-pdf-pages' ? 'extracted-pages.pdf' : this.slug === 'delete-pdf-pages' ? 'deleted-pages.pdf' : this.slug === 'rearrange-pdf-pages' ? 'rearranged-pages.pdf' : this.slug === 'rotate-pdf' ? 'rotated.pdf' : 'numbered.pdf';
     this.setDownloadBlob(new Blob([this.blobPart(await doc.save())], { type: 'application/pdf' }), name);
     this.rows.set([{ label: 'Input pages', value: String(source.getPageCount()) }, { label: 'Output file', value: name }]);
+    });
   }
 
   private processGis(): void {
@@ -973,8 +1090,11 @@ export class UtilityToolComponent implements OnInit {
     } else if (this.slug === 'area-calculator') {
       const points = this.parsePoints(input);
       this.gisOutput.set(`Area: ${this.polygonArea(points).toFixed(3)} square km\nPoints: ${points.length}`);
-    } else if (this.slug === 'kml-circle-generator' || this.slug === 'buffer-generator') {
-      this.gisOutput.set(this.kmlCircle(this.parseLatLng(input), Number(second) || 1000));
+    } else if (this.slug === 'kml-circle-generator') {
+      this.generateKmlCircle();
+      return;
+    } else if (this.slug === 'buffer-generator') {
+      this.gisOutput.set(this.kmlCircle(this.parseLatLng(input), Number(second) || 1000, this.kmlCircleOptions()));
     } else if (this.slug === 'kml-polygon-generator') {
       this.gisOutput.set(this.kmlPolygon(this.parsePoints(input)));
     } else if (this.slug === 'geojson-to-kml') {
@@ -988,6 +1108,31 @@ export class UtilityToolComponent implements OnInit {
     }
     this.output.set(this.gisOutput());
     this.rows.set([{ label: 'Output type', value: this.slug.includes('kml') || this.slug.includes('buffer') ? 'KML' : 'Text / JSON' }]);
+  }
+
+  generateKmlCircle(): void {
+    this.error.set(null);
+    if (this.kmlCircleForm.invalid) {
+      this.kmlCircleForm.markAllAsTouched();
+      this.error.set('Enter a valid latitude, longitude, and radius.');
+      return;
+    }
+    const value = this.kmlCircleForm.getRawValue();
+    const center: [number, number] = [value.latitude, value.longitude];
+    this.gisInput.set(`${value.latitude}, ${value.longitude}`);
+    this.gisSecondInput.set(String(value.radius));
+    this.gisOutput.set(this.kmlCircle(center, value.radius, this.kmlCircleOptions()));
+    this.output.set(this.gisOutput());
+    this.rows.set([
+      { label: 'Circle name', value: value.name },
+      { label: 'Center', value: `${value.latitude}, ${value.longitude}` },
+      { label: 'Radius', value: `${value.radius} meters` },
+      { label: 'Output type', value: 'KML' },
+    ]);
+  }
+
+  clearKmlCircle(): void {
+    this.clear();
   }
 
   private processColor(): void {
@@ -1244,6 +1389,40 @@ export class UtilityToolComponent implements OnInit {
     return this.slug === 'rotate-pdf';
   }
 
+  pdfHasOptions(): boolean {
+    return this.pdfNeedsPageRange() || this.pdfNeedsOrder() || this.pdfNeedsAngle();
+  }
+
+  pdfCreatesPdf(): boolean {
+    return ['merge-pdf', 'rotate-pdf', 'extract-pdf-pages', 'rearrange-pdf-pages', 'delete-pdf-pages', 'add-page-numbers'].includes(this.slug);
+  }
+
+  pdfCreatesZip(): boolean {
+    return ['split-pdf', 'pdf-to-images'].includes(this.slug);
+  }
+
+  pdfShowsMetadata(): boolean {
+    return this.slug === 'pdf-metadata-viewer';
+  }
+
+  pdfCanShare(): boolean {
+    return this.pdfCreatesPdf();
+  }
+
+  pdfCanDownload(): boolean {
+    return this.pdfCreatesPdf() || this.pdfCreatesZip();
+  }
+
+  pdfPrimaryButtonLabel(): string {
+    if (this.pdfShowsMetadata()) return 'View Metadata';
+    if (this.pdfCreatesZip()) return 'Create ZIP';
+    return 'Create Preview';
+  }
+
+  pdfDownloadButtonLabel(): string {
+    return this.pdfCreatesZip() ? 'Download ZIP' : 'Download PDF';
+  }
+
   pdfActionLabel(): string {
     const labels: Record<string, string> = {
       'merge-pdf': 'Merge PDF',
@@ -1299,12 +1478,131 @@ export class UtilityToolComponent implements OnInit {
     return 'txt';
   }
 
+  gisMapPoints(): GisPoint[] {
+    const raw = this.gisRawPoints();
+    if (!raw.length) return [];
+    const lats = raw.map((point) => point.lat);
+    const lngs = raw.map((point) => point.lng);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+    const latRange = maxLat - minLat || 1;
+    const lngRange = maxLng - minLng || 1;
+    return raw.map((point, index) => ({
+      ...point,
+      label: point.label || String(index + 1),
+      x: 12 + ((point.lng - minLng) / lngRange) * 76,
+      y: 88 - ((point.lat - minLat) / latRange) * 76,
+    }));
+  }
+
+  gisMapPolyline(): string {
+    return this.gisMapPoints().map((point) => `${point.x},${point.y}`).join(' ');
+  }
+
+  gisMapMode(): 'circle' | 'polygon' | 'line' | 'points' {
+    if (['kml-circle-generator', 'buffer-generator'].includes(this.slug)) return 'circle';
+    if (['kml-polygon-generator', 'area-calculator', 'geojson-to-kml', 'kml-to-geojson'].includes(this.slug)) return 'polygon';
+    if (['distance-calculator', 'gpx-to-kml'].includes(this.slug)) return 'line';
+    return 'points';
+  }
+
+  gisMapCircleRadius(): number {
+    const radius = Math.max(250, Number(this.gisSecondInput() || this.second()) || 1000);
+    return Math.max(10, Math.min(34, Math.log10(radius) * 8));
+  }
+
+  kmlCirclePreviewRadius(): number {
+    const radius = Math.max(1, Number(this.kmlCircleForm.controls.radius.value) || 1000);
+    return Math.max(12, Math.min(74, Math.log10(radius + 10) * 16));
+  }
+
+  kmlCirclePreviewOpacity(): number {
+    return Math.max(0, Math.min(1, (Number(this.kmlCircleForm.controls.opacity.value) || 0) / 100));
+  }
+
+  kmlCircleCenterLabel(): string {
+    const value = this.kmlCircleForm.getRawValue();
+    return `${value.latitude.toFixed(5)}, ${value.longitude.toFixed(5)}`;
+  }
+
+  private gisRawPoints(): Array<{ lat: number; lng: number; label: string }> {
+    const input = this.gisInput() || this.input();
+    const second = this.gisSecondInput() || this.second();
+    try {
+      if (this.slug === 'distance-calculator') {
+        const [a, b] = input.split('|');
+        return [
+          this.rawPoint(this.parseLatLng(a), 'A'),
+          this.rawPoint(this.parseLatLng(b || second), 'B'),
+        ];
+      }
+      if (['kml-polygon-generator', 'area-calculator'].includes(this.slug)) {
+        return this.parsePoints(input).map((point, index) => this.rawPoint(point, String(index + 1)));
+      }
+      if (['kml-circle-generator', 'buffer-generator', 'coordinate-converter', 'latitude-longitude-finder'].includes(this.slug)) {
+        return [this.rawPoint(this.parseLatLng(input), '1')];
+      }
+      if (this.slug === 'geojson-to-kml') {
+        const geo = JSON.parse(input);
+        const coords = geo.type === 'Feature' ? geo.geometry.coordinates : geo.coordinates;
+        const ring = Array.isArray(coords?.[0]?.[0]) ? coords[0] : coords;
+        return (ring || []).map((pair: number[], index: number) => ({ lat: Number(pair[1]), lng: Number(pair[0]), label: String(index + 1) })).filter((point: { lat: number; lng: number }) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
+      }
+      if (this.slug === 'kml-to-geojson') {
+        return this.kmlCoordinatePairs(input).map((point, index) => this.rawPoint(point, String(index + 1)));
+      }
+      if (this.slug === 'gpx-to-kml') {
+        return [...input.matchAll(/<trkpt[^>]*lat="([^"]+)"[^>]*lon="([^"]+)"/g)].map((match, index) => ({ lat: Number(match[1]), lng: Number(match[2]), label: String(index + 1) }));
+      }
+    } catch {
+      return [];
+    }
+    return [];
+  }
+
+  private rawPoint(point: [number, number], label: string): { lat: number; lng: number; label: string } {
+    return { lat: point[0], lng: point[1], label };
+  }
+
   private outputBlob(text: string, format: DownloadTextFormat): Blob {
     if (format === 'pdf') return new Blob([this.blobPart(this.exportPdf.text(this.catalogItem().label, text, this.rows()))], { type: 'application/pdf' });
     if (format === 'json') return new Blob([JSON.stringify({ tool: this.catalogItem().label, output: text, rows: this.rows() }, null, 2)], { type: 'application/json;charset=utf-8' });
     if (format === 'csv') return new Blob([['field,value', ...this.rows().map((row) => `${this.csv(row.label)},${this.csv(row.value)}`), `output,${this.csv(text)}`].join('\n')], { type: 'text/csv;charset=utf-8' });
     if (format === 'html') return new Blob([`<!doctype html><html><head><meta charset="utf-8"><title>${this.escape(this.catalogItem().label)}</title></head><body><h1>${this.escape(this.catalogItem().label)}</h1><pre>${this.escape(text)}</pre></body></html>`], { type: 'text/html;charset=utf-8' });
     return new Blob([text], { type: 'text/plain;charset=utf-8' });
+  }
+  private async loadPdfDocument(loader: PdfDocumentLoader, file: File): Promise<import('pdf-lib').PDFDocument> {
+    try {
+      return await this.withPdfWarningsSilenced(async () => loader.load(await file.arrayBuffer(), { ignoreEncryption: true }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      if (/encrypted/i.test(message)) {
+        throw new Error('This encrypted PDF could not be processed. Try an unlocked copy of the PDF.');
+      }
+      throw error;
+    }
+  }
+  private async withPdfWarningsSilenced<T>(task: () => Promise<T>): Promise<T> {
+    const originalWarn = console.warn;
+    console.warn = (...args: unknown[]) => {
+      const text = args.map((arg) => String(arg)).join(' ');
+      if (/Trying to parse invalid object|Invalid object ref|Expected instance of PDFDict/i.test(text)) return;
+      originalWarn(...args);
+    };
+    try {
+      return await task();
+    } finally {
+      console.warn = originalWarn;
+    }
+  }
+  private friendlyToolError(error: unknown): string {
+    const message = error instanceof Error ? error.message : 'Could not process this tool.';
+    if (this.category.title === 'PDF Tools' && /PDFDict|invalid object|object ref|encrypted|Failed to parse|parse invalid/i.test(message)) {
+      return 'This PDF has damaged or protected internal data. Try an unlocked or freshly exported copy.';
+    }
+    return message;
   }
   private setDownloadBlob(blob: Blob, name: string): void {
     if (this.pdfOutputUrl()) URL.revokeObjectURL(this.pdfOutputUrl());
@@ -1367,7 +1665,7 @@ export class UtilityToolComponent implements OnInit {
     });
     return Math.abs(sum) / 2;
   }
-  private kmlCircle(center: [number, number], radiusMeters: number): string {
+  private kmlCircle(center: [number, number], radiusMeters: number, options: KmlCircleOptions = this.kmlCircleOptions()): string {
     const coords = Array.from({ length: 73 }, (_, index) => {
       const angle = (index / 72) * Math.PI * 2;
       const dx = radiusMeters * Math.cos(angle);
@@ -1376,14 +1674,38 @@ export class UtilityToolComponent implements OnInit {
       const lng = center[1] + (dx / (111320 * Math.cos(center[0] * Math.PI / 180)));
       return `${lng},${lat},0`;
     }).join(' ');
-    return this.kmlWrap(coords);
+    return this.kmlWrap(coords, options);
   }
   private kmlPolygon(points: Array<[number, number]>): string {
     const closed = [...points, points[0]];
-    return this.kmlWrap(closed.map(([lat, lng]) => `${lng},${lat},0`).join(' '));
+    return this.kmlWrap(closed.map(([lat, lng]) => `${lng},${lat},0`).join(' '), { name: 'FlexImagePro Polygon', strokeColor: '#0f766e', fillColor: '#14b8a6', opacity: 35 });
   }
-  private kmlWrap(coords: string): string {
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><Placemark><Polygon><outerBoundaryIs><LinearRing><coordinates>${coords}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark></Document></kml>`;
+  private kmlWrap(coords: string, options: KmlCircleOptions = { name: 'FlexImagePro Shape', strokeColor: '#0f766e', fillColor: '#14b8a6', opacity: 35 }): string {
+    const stroke = this.kmlColor(options.strokeColor, 100);
+    const fill = this.kmlColor(options.fillColor, options.opacity);
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n  <Document>\n    <Style id="fleximagepro-shape">\n      <LineStyle><color>${stroke}</color><width>3</width></LineStyle>\n      <PolyStyle><color>${fill}</color></PolyStyle>\n    </Style>\n    <Placemark>\n      <name>${this.escapeXmlText(options.name)}</name>\n      <styleUrl>#fleximagepro-shape</styleUrl>\n      <Polygon>\n        <outerBoundaryIs>\n          <LinearRing>\n            <coordinates>${coords}</coordinates>\n          </LinearRing>\n        </outerBoundaryIs>\n      </Polygon>\n    </Placemark>\n  </Document>\n</kml>`;
+  }
+  private kmlCircleOptions(): KmlCircleOptions {
+    const value = this.kmlCircleForm.getRawValue();
+    return {
+      name: value.name || 'FlexImagePro Circle',
+      strokeColor: value.strokeColor || '#0f766e',
+      fillColor: value.fillColor || '#14b8a6',
+      opacity: Number(value.opacity) || 40,
+    };
+  }
+  private kmlColor(hex: string, opacity: number): string {
+    const clean = (hex || '#14b8a6').replace('#', '').padEnd(6, '0').slice(0, 6);
+    const alpha = Math.round(Math.max(0, Math.min(100, opacity)) * 2.55).toString(16).padStart(2, '0');
+    return `${alpha}${clean.slice(4, 6)}${clean.slice(2, 4)}${clean.slice(0, 2)}`;
+  }
+  private escapeXmlText(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
   private geoJsonToKml(input: string): string {
     const geo = JSON.parse(input);
@@ -1392,9 +1714,15 @@ export class UtilityToolComponent implements OnInit {
     return this.kmlWrap(ring);
   }
   private kmlToGeoJson(input: string): unknown {
-    const coords = input.match(/<coordinates>([\s\S]*?)<\/coordinates>/)?.[1]?.trim() || '';
-    const ring = coords.split(/\s+/).filter(Boolean).map((item) => item.split(',').map(Number).slice(0, 2));
+    const ring = this.kmlCoordinatePairs(input).map(([lat, lng]) => [lng, lat]);
     return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [ring] }, properties: {} };
+  }
+  private kmlCoordinatePairs(input: string): Array<[number, number]> {
+    const coords = input.match(/<coordinates>([\s\S]*?)<\/coordinates>/)?.[1]?.trim() || '';
+    return coords.split(/\s+/).filter(Boolean).map((item) => {
+      const [lng, lat] = item.split(',').map(Number);
+      return [lat, lng] as [number, number];
+    }).filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng));
   }
   private gpxToKml(input: string): string {
     const points = [...input.matchAll(/<trkpt[^>]*lat="([^"]+)"[^>]*lon="([^"]+)"/g)].map((match) => `${match[2]},${match[1]},0`).join(' ');

@@ -37,7 +37,7 @@ interface FaqItem {
 export class HomeComponent {
   private readonly seo = inject(SeoService);
 
-  readonly openFaq = signal<number | null>(null);
+  readonly openFaq = signal<number | null>(0);
 
   toggleFaq(index: number): void {
     this.openFaq.update(current => (current === index ? null : index));

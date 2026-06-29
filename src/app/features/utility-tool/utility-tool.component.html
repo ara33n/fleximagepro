@@ -109,6 +109,14 @@
             <div class="relative flex flex-col">
               <div class="p-5">
                 <h2 class="text-xl font-semibold text-zinc-950 dark:text-white">CSS clip-path maker</h2>
+                <div class="clip-mobile-gallery mt-4 flex gap-3 overflow-x-auto pb-2 lg:hidden" aria-label="Shape gallery">
+                  @for (preset of clipPresets; track preset.name) {
+                    <button type="button" class="clip-shape-button shrink-0 rounded-lg border border-zinc-200 bg-white p-2 text-center text-[11px] font-semibold text-zinc-800 transition dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100" [class.clip-shape-active]="clipPresetName() === preset.name" (click)="applyClipPreset(preset)">
+                      <span class="mx-auto block size-10" [style.background]="preset.color" [style.clip-path]="presetClipStyle(preset)"></span>
+                      <span class="mt-2 block w-20 truncate">{{ preset.name }}</span>
+                    </button>
+                  }
+                </div>
               </div>
               <div class="relative grid flex-1 place-items-center p-6">
                 <div class="relative select-none" [style.width.px]="clipWidth()" [style.height.px]="clipHeight()" (pointermove)="moveClipPoint($event)" (pointerup)="stopClipDrag()" (pointerleave)="stopClipDrag()" (click)="addClipPoint($event)">
@@ -184,7 +192,7 @@
                 @for (row of clipPresetRows(); track $index) {
                   <div class="clip-gallery-row grid grid-cols-4 gap-3" [style.--row-index]="$index">
                     @for (preset of row; track preset.name) {
-                      <button type="button" class="rounded-lg border border-zinc-800 bg-zinc-900 p-2 text-center text-[11px] font-semibold transition hover:border-teal-500" [class.!bg-teal-900]="clipPresetName() === preset.name" [class.!border-teal-400]="clipPresetName() === preset.name" (click)="applyClipPreset(preset)">
+                      <button type="button" class="clip-shape-button rounded-lg border border-zinc-800 bg-zinc-900 p-2 text-center text-[11px] font-semibold transition hover:border-teal-500" [class.clip-shape-active]="clipPresetName() === preset.name" (click)="applyClipPreset(preset)">
                         <span class="mx-auto block size-11" [style.background]="preset.color" [style.clip-path]="presetClipStyle(preset)"></span>
                         <span class="mt-2 block leading-tight">{{ preset.name }}</span>
                       </button>
@@ -409,15 +417,51 @@
         } @else if (category.title === 'PDF Tools') {
           <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
             <div class="space-y-4">
-              <label class="block rounded-lg border-2 border-dashed border-teal-200 bg-teal-50/60 p-5 text-sm font-semibold text-zinc-800 transition hover:border-teal-500 dark:border-teal-900 dark:bg-teal-950/30 dark:text-zinc-100">
-                Select PDF file{{ pdfAcceptsMultiple() ? 's' : '' }}
-                <input name="pdf-files" type="file" accept="application/pdf,.pdf" [multiple]="pdfAcceptsMultiple()" (change)="updatePdfFiles($event)" class="mt-3 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
-              </label>
+              @if (!pdfFiles().length) {
+                <app-upload-zone
+                  [accept]="acceptedPdfTypes"
+                  [multiple]="pdfAcceptsMultiple()"
+                  inputName="pdfFiles"
+                  title="Drop PDFs here or browse"
+                  description="Upload PDF files, choose the needed options, then create the output."
+                  (filesSelected)="addPdfFiles($event)"
+                />
+              } @else {
+                <app-upload-zone
+                  [accept]="acceptedPdfTypes"
+                  [multiple]="pdfAcceptsMultiple()"
+                  [compact]="true"
+                  inputName="pdfFiles"
+                  compactLabel="Add more PDFs"
+                  title="Drop PDFs here or browse"
+                  description="Upload PDF files, choose the needed options, then create the output."
+                  (filesSelected)="addPdfFiles($event)"
+                />
+              }
 
               @if (pdfFiles().length) {
-                <div class="grid gap-2">
-                  @for (file of pdfFiles(); track file.name) {
-                    <div class="flex items-center justify-between gap-3 rounded-lg bg-zinc-50 px-3 py-2 text-sm dark:bg-zinc-950">
+                <section class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 class="text-lg font-semibold text-zinc-950 dark:text-white">PDF Queue</h2>
+                      <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{{ pdfFiles().length }} file{{ pdfFiles().length === 1 ? '' : 's' }} selected.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <button type="button" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700" (click)="createPdfPreview()">{{ pdfPrimaryButtonLabel() }}</button>
+                      @if (pdfCanDownload()) {
+                        <button type="button" class="rounded-lg bg-zinc-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-600 dark:bg-white dark:text-zinc-950 dark:hover:bg-teal-300" (click)="downloadPdfOutput()">{{ pdfDownloadButtonLabel() }}</button>
+                      }
+                      @if (pdfCanShare()) {
+                        <button type="button" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800" (click)="generatePdfShareLink()" [disabled]="isGeneratingPdfShareLink()">{{ isGeneratingPdfShareLink() ? 'Generating...' : 'Generate Share Link' }}</button>
+                      }
+                      <button type="button" class="secondary-button" (click)="clear()">Reset</button>
+                      <button type="button" class="secondary-button" (click)="clear()">Clear</button>
+                    </div>
+                  </div>
+                </section>
+                <div class="grid gap-3">
+                  @for (file of pdfFiles(); track $index) {
+                    <div class="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-950">
                       <span class="min-w-0 truncate font-semibold text-zinc-900 dark:text-white">{{ file.name }}</span>
                       <span class="shrink-0 text-zinc-500">{{ formatBytes(file.size) }}</span>
                     </div>
@@ -426,6 +470,7 @@
               }
             </div>
 
+            @if (pdfHasOptions()) {
             <aside class="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
               <h2 class="text-base font-bold text-zinc-950 dark:text-white">PDF Options</h2>
               @if (pdfNeedsPageRange()) {
@@ -450,15 +495,87 @@
                   </select>
                 </label>
               }
-              <div class="mt-5 flex flex-wrap gap-2">
-                <button type="button" class="primary-button" (click)="process()">{{ pdfActionLabel() }}</button>
-                <button type="button" class="secondary-button" (click)="clear()">Reset</button>
-                <button type="button" class="secondary-button" (click)="clear()">Clear</button>
-              </div>
             </aside>
+            }
           </div>
         } @else if (category.title === 'GIS / Map Tools') {
-          <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+          @if (slug === 'kml-circle-generator') {
+            <form [formGroup]="kmlCircleForm" class="grid gap-5 lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)]" (ngSubmit)="generateKmlCircle()">
+              <section class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                <h2 class="text-lg font-bold text-zinc-950 dark:text-white">Circle Details</h2>
+                <div class="mt-4 grid gap-4">
+                  <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                    Circle name
+                    <input id="kml-circle-name" name="kml-circle-name" formControlName="name" type="text" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                  </label>
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                      Latitude
+                      <input id="kml-circle-latitude" name="kml-circle-latitude" formControlName="latitude" type="number" step="0.000001" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                    </label>
+                    <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                      Longitude
+                      <input id="kml-circle-longitude" name="kml-circle-longitude" formControlName="longitude" type="number" step="0.000001" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                    </label>
+                  </div>
+                  <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                    Radius in meters
+                    <input id="kml-circle-radius" name="kml-circle-radius" formControlName="radius" type="number" min="1" step="1" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                  </label>
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                      Stroke color
+                      <input id="kml-circle-stroke" name="kml-circle-stroke" formControlName="strokeColor" type="color" class="mt-2 h-11 w-full rounded-lg border border-zinc-300 bg-white p-1 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950" />
+                    </label>
+                    <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                      Fill color
+                      <input id="kml-circle-fill" name="kml-circle-fill" formControlName="fillColor" type="color" class="mt-2 h-11 w-full rounded-lg border border-zinc-300 bg-white p-1 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950" />
+                    </label>
+                  </div>
+                  <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                    Fill opacity
+                    <div class="mt-2 flex items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+                      <input id="kml-circle-opacity" name="kml-circle-opacity" formControlName="opacity" type="range" min="0" max="100" class="min-w-0 flex-1 accent-teal-600 outline-none shadow-none" />
+                      <span class="w-12 text-right text-sm font-bold text-teal-700 dark:text-teal-300">{{ kmlCircleForm.controls.opacity.value }}%</span>
+                    </div>
+                  </label>
+                </div>
+                <div class="mt-5 flex flex-wrap gap-2">
+                  <button type="submit" class="primary-button">Generate Circle</button>
+                  @if (gisOutput()) {
+                    <button type="button" class="secondary-button" (click)="downloadGis()">Download KML</button>
+                  }
+                  <button type="button" class="secondary-button" (click)="clearKmlCircle()">Clear Map</button>
+                </div>
+              </section>
+
+              <section class="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                <div class="border-b border-zinc-200 p-4 dark:border-zinc-800">
+                  <h2 class="text-lg font-bold text-zinc-950 dark:text-white">Map Preview</h2>
+                  <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Center: {{ kmlCircleCenterLabel() }}</p>
+                </div>
+                <svg viewBox="0 0 420 320" class="h-[320px] w-full bg-[linear-gradient(135deg,#ecfeff,#f8fafc)] dark:bg-[linear-gradient(135deg,#042f2e,#09090b)]" role="img" aria-label="KML circle map preview">
+                  <defs>
+                    <pattern id="kml-circle-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+                      <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(15,118,110,.16)" stroke-width="1" />
+                    </pattern>
+                  </defs>
+                  <rect width="420" height="320" fill="url(#kml-circle-grid)" />
+                  <path d="M20 230 C100 190 155 245 230 206 S330 145 400 190" fill="none" stroke="rgba(15,118,110,.18)" stroke-width="18" stroke-linecap="round" />
+                  <circle cx="210" cy="160" [attr.r]="kmlCirclePreviewRadius()" [attr.fill]="kmlCircleForm.controls.fillColor.value" [attr.fill-opacity]="kmlCirclePreviewOpacity()" [attr.stroke]="kmlCircleForm.controls.strokeColor.value" stroke-width="4" />
+                  <circle cx="210" cy="160" r="7" fill="#0f766e" stroke="#ffffff" stroke-width="3" />
+                  <text x="224" y="154" class="fill-zinc-900 text-[13px] font-bold dark:fill-white">{{ kmlCircleForm.controls.name.value }}</text>
+                  <text x="224" y="172" class="fill-zinc-600 text-[11px] dark:fill-zinc-300">{{ kmlCircleForm.controls.radius.value }} m radius</text>
+                </svg>
+                @if (gisOutput()) {
+                  <div class="border-t border-zinc-200 p-4 dark:border-zinc-800">
+                    <textarea name="kml-circle-output" readonly class="min-h-40 w-full rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-xs text-zinc-900 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100">{{ gisOutput() }}</textarea>
+                  </div>
+                }
+              </section>
+            </form>
+          } @else {
+          <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
             <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
               {{ gisPrimaryLabel() }}
               <textarea name="gis-input" [value]="gisInput()" (input)="updateGisInput($event)" [placeholder]="gisPlaceholder()" class="mt-2 min-h-64 w-full rounded-lg border border-zinc-300 bg-white p-3 font-mono text-sm text-zinc-950 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"></textarea>
@@ -476,8 +593,41 @@
                 <button type="button" class="secondary-button" (click)="clear()">Reset</button>
                 <button type="button" class="secondary-button" (click)="clear()">Clear</button>
               </div>
+              <div class="mt-5 overflow-hidden rounded-lg border border-teal-100 bg-white dark:border-teal-900 dark:bg-zinc-900">
+                <svg viewBox="0 0 100 100" class="h-64 w-full bg-[linear-gradient(135deg,#ecfeff,#f8fafc)] dark:bg-[linear-gradient(135deg,#042f2e,#09090b)]" role="img" aria-label="Map preview">
+                  <defs>
+                    <pattern id="gis-grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(15,118,110,.16)" stroke-width=".45" />
+                    </pattern>
+                  </defs>
+                  <rect width="100" height="100" fill="url(#gis-grid)" />
+                  @if (gisMapMode() === 'polygon' && gisMapPoints().length > 2) {
+                    <polygon [attr.points]="gisMapPolyline()" fill="rgba(20,184,166,.24)" stroke="#0f766e" stroke-width="1.8" />
+                  }
+                  @if (gisMapMode() === 'line' && gisMapPoints().length > 1) {
+                    <polyline [attr.points]="gisMapPolyline()" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 3" />
+                  }
+                  @if (gisMapMode() === 'circle' && gisMapPoints().length) {
+                    <circle [attr.cx]="gisMapPoints()[0].x" [attr.cy]="gisMapPoints()[0].y" [attr.r]="gisMapCircleRadius()" fill="rgba(20,184,166,.18)" stroke="#0f766e" stroke-width="1.8" />
+                  }
+                  @for (point of gisMapPoints(); track point.label) {
+                    <g>
+                      <circle [attr.cx]="point.x" [attr.cy]="point.y" r="3.4" fill="#0f766e" stroke="#ffffff" stroke-width="1.4" />
+                      <text [attr.x]="point.x + 4" [attr.y]="point.y - 4" fill="#0f172a" font-size="4" font-weight="700">{{ point.label }}</text>
+                    </g>
+                  }
+                </svg>
+                <div class="border-t border-zinc-200 p-3 text-xs leading-5 text-zinc-600 dark:border-zinc-800 dark:text-zinc-300">
+                  @if (gisMapPoints().length) {
+                    {{ gisMapPoints().length }} point{{ gisMapPoints().length === 1 ? '' : 's' }} detected from your input.
+                  } @else {
+                    Add coordinates to see markers on the map preview.
+                  }
+                </div>
+              </div>
             </aside>
           </div>
+          }
         } @else if (usesFields()) {
           <div class="grid gap-4 sm:grid-cols-3">
             <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
@@ -547,13 +697,10 @@
               @if (showPdfDownload()) {
                 <button type="button" class="secondary-button" (click)="downloadOutput('pdf')">Download PDF</button>
               }
-              @if (category.title === 'PDF Tools' && pdfOutputUrl()) {
-                <a class="secondary-button" [href]="pdfOutputUrl()" [download]="pdfOutputName()">Download {{ pdfOutputName() }}</a>
-              }
               @if (category.title === 'GIS / Map Tools' && output()) {
                 <button type="button" class="secondary-button" (click)="downloadGis()">Download {{ gisDownloadExtension().toUpperCase() }}</button>
               }
-              @if (slug !== 'qr-code-generator' && slug !== 'barcode-generator') {
+              @if (slug !== 'qr-code-generator' && slug !== 'barcode-generator' && category.title !== 'PDF Tools') {
                 <button type="button" class="secondary-button" (click)="downloadOutput('txt')">TXT</button>
                 <button type="button" class="secondary-button" (click)="downloadOutput('csv')">CSV</button>
                 <button type="button" class="secondary-button" (click)="downloadOutput('json')">JSON</button>
@@ -616,6 +763,38 @@
     </div>
 
   </section>
+
+  @if (isPdfShareModalOpen()) {
+    @if (pdfShareBatch(); as share) {
+      <div class="fixed inset-0 z-50 grid place-items-center bg-zinc-950/70 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="utility-pdf-share-title" (click)="closePdfShareModal()">
+        <section class="w-full max-w-md rounded-lg bg-white p-5 shadow-xl dark:bg-zinc-900" (click)="$event.stopPropagation()">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="utility-pdf-share-title" class="text-lg font-semibold text-zinc-950 dark:text-white">Share PDF</h2>
+              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">This PDF link expires after 24 hours.</p>
+            </div>
+            <button type="button" (click)="closePdfShareModal()" class="secondary-button">Close</button>
+          </div>
+
+          <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200" for="utility-pdf-share-url">
+            Share URL
+            <input id="utility-pdf-share-url" name="utilityPdfShareUrl" type="text" [value]="share.shareUrl" readonly class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+          </label>
+          <button type="button" (click)="copyPdfShareUrl()" class="mt-4 w-full rounded-lg bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-700">
+            Copy Share URL
+          </button>
+
+          <app-qr-code-card
+            class="mt-5 block"
+            [qrCodeDataUrl]="share.qrCodeDataUrl"
+            title="Branded QR code"
+            description="Scan to open this shared PDF link."
+            (download)="downloadPdfQrCode()"
+          />
+        </section>
+      </div>
+    }
+  }
 
   <app-tool-seo-block [item]="catalogItem()" [category]="category" />
 </article>

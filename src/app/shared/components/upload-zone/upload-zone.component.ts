@@ -14,6 +14,7 @@ const MIME_LABELS: Record<string, string> = {
   'image/gif': 'GIF',
   'image/bmp': 'BMP',
   'image/*': 'Images',
+  'application/pdf': 'PDF',
 };
 
 const EXT_TO_MIME: Record<string, string> = {
@@ -21,6 +22,7 @@ const EXT_TO_MIME: Record<string, string> = {
   webp: 'image/webp', avif: 'image/avif', ico: 'image/x-icon',
   svg: 'image/svg+xml', gif: 'image/gif', bmp: 'image/bmp',
   heic: 'image/heic', heif: 'image/heif',
+  pdf: 'application/pdf',
 };
 
 // iOS Safari canvas pixel budget — stay under this to avoid silent toBlob failures
@@ -38,12 +40,17 @@ export class UploadZoneComponent {
 
   readonly accept = input<string[]>([]);
   readonly compact = input(false);
+  readonly multiple = input(true);
+  readonly inputName = input('images');
+  readonly compactLabel = input('Add more images');
+  readonly title = input('Drop images here or browse');
+  readonly description = input('Upload up to 10 images. Files are processed locally in this browser and never leave your device.');
   readonly filesSelected = output<File[]>();
   readonly isDragging = signal(false);
 
   // image/* lets iOS show the full Photos library without OS-level format restrictions.
   // All filtering and HEIC→PNG conversion is done in JavaScript.
-  readonly acceptValue = computed(() => 'image/*');
+  readonly acceptValue = computed(() => this.accept().some((type) => type === 'image/*' || type.startsWith('image/')) ? 'image/*' : this.accept().join(','));
 
   onDragOver(event: DragEvent): void {
     event.preventDefault();
@@ -90,7 +97,7 @@ export class UploadZoneComponent {
       if (HEIC_TYPES.has(mime)) { toConvert.push(file); continue; }
 
       // Directly accepted — add without any async work
-      if (this.accepts(mime)) { ready.push(file); continue; }
+      if (this.accepts(mime) || this.acceptsExtension(file)) { ready.push(file); continue; }
 
       // iOS sometimes delivers HEIC photos as JPEG for PNG-only tools (e.g. PNG→SVG).
       // Route to async conversion so those users can still upload camera photos.
@@ -213,6 +220,11 @@ export class UploadZoneComponent {
 
   private accepts(mime: string): boolean {
     return this.accept().includes(mime) || (mime.startsWith('image/') && this.accept().includes('image/*'));
+  }
+
+  private acceptsExtension(file: File): boolean {
+    const ext = `.${file.name.split('.').pop()?.toLowerCase() ?? ''}`;
+    return this.accept().includes(ext);
   }
 
   private acceptLabel(): string {

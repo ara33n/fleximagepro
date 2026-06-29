@@ -1,25 +1,36 @@
 const DEFAULT_LIMIT = 500;
 const REQUEST_TIMEOUT_MS = 10000;
+const fs = require('node:fs');
+const path = require('node:path');
 
 async function generateSitemapForSite(inputUrl, options = {}) {
   const startUrl = normalizeStartUrl(inputUrl);
   const limit = clampLimit(options.limit);
   const robots = await fetchRobots(startUrl);
   const discoveredSitemap = await findExistingSitemap(startUrl, robots);
+  const crawledPages = await crawlInternalLinks(startUrl, limit);
+  const knownPages = getKnownFlexImageProUrls(startUrl);
 
   if (discoveredSitemap) {
+    const pages = unique([
+      ...discoveredSitemap.urls,
+      ...crawledPages,
+      ...knownPages,
+    ]).filter((url) => isSameOriginPage(url, startUrl)).slice(0, limit).sort((a, b) => a.localeCompare(b));
     return {
-      source: 'existing',
+      source: crawledPages.length ? 'combined' : 'existing',
       robotsFound: robots.found,
       existingSitemapUrl: discoveredSitemap.url,
-      pages: discoveredSitemap.urls,
-      totalPages: discoveredSitemap.urls.length,
-      sitemapXml: discoveredSitemap.xml,
+      pages,
+      totalPages: pages.length,
+      sitemapXml: buildSitemapXml(pages),
+      sitemapPages: discoveredSitemap.urls.length,
+      crawledPages: crawledPages.length,
       limit,
     };
   }
 
-  const pages = await crawlInternalLinks(startUrl, limit);
+  const pages = unique([...crawledPages, ...knownPages]).filter((url) => isSameOriginPage(url, startUrl)).slice(0, limit).sort((a, b) => a.localeCompare(b));
   return {
     source: 'generated',
     robotsFound: robots.found,
@@ -72,10 +83,17 @@ async function fetchRobots(startUrl) {
 }
 
 async function findExistingSitemap(startUrl, robots) {
+  const origin = new URL(startUrl).origin;
   const candidates = [
-    ...robots.sitemapUrls,
+    ...robots.sitemapUrls.map((url) => new URL(url, startUrl).href),
     new URL('/sitemap.xml', startUrl).href,
-  ];
+  ].filter((url) => {
+    try {
+      return new URL(url).origin === origin;
+    } catch {
+      return false;
+    }
+  });
   for (const candidate of unique(candidates)) {
     try {
       const response = await fetchWithTimeout(candidate);
@@ -156,6 +174,15 @@ function resolveInternalUrl(href, baseUrl, origin) {
   return normalizeUrl(url);
 }
 
+function isSameOriginPage(value, startUrl) {
+  try {
+    const url = new URL(value);
+    return url.origin === new URL(startUrl).origin && !/\.(?:jpg|jpeg|png|gif|webp|avif|svg|pdf|zip|mp4|mp3|css|js|ico|xml)$/i.test(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
 function normalizeUrl(value) {
   const url = value instanceof URL ? value : new URL(value);
   url.hash = '';
@@ -167,17 +194,50 @@ function normalizeUrl(value) {
 
 function buildSitemapXml(urls) {
   const today = new Date().toISOString().slice(0, 10);
+  const origin = urls.length ? new URL(urls[0]).origin : '';
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    ...urls.map((url) => [
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
+    ...urls.map((url) => {
+      const isHome = origin && normalizeUrl(url) === `${origin}/`;
+      return [
       '  <url>',
       `    <loc>${escapeXml(url)}</loc>`,
       `    <lastmod>${today}</lastmod>`,
+      ...(isHome ? [
+        '    <image:image>',
+        `      <image:loc>${escapeXml(new URL('/assets/banner.webp', origin).href)}</image:loc>`,
+        '      <image:title>FlexImagePro Home Page</image:title>',
+        '    </image:image>',
+      ] : []),
       '  </url>',
-    ].join('\n')),
+    ].join('\n');
+    }),
     '</urlset>',
   ].join('\n');
+}
+
+function getKnownFlexImageProUrls(startUrl) {
+  const host = new URL(startUrl).hostname.toLowerCase();
+  if (!/(^|\.)fleximagepro\./.test(host)) return [];
+  const routes = new Set(['/']);
+  for (const filePath of [
+    path.resolve(__dirname, '../../src/app/core/content/tool-catalog.ts'),
+    path.resolve(__dirname, '../../src/app/app.routes.ts'),
+  ]) {
+    try {
+      const source = fs.readFileSync(filePath, 'utf8');
+      for (const match of source.matchAll(/['"`]\/([a-z0-9][a-z0-9-]*)['"`]/gi)) {
+        routes.add(`/${match[1]}`);
+      }
+    } catch {
+      continue;
+    }
+  }
+  for (const route of ['/compress', '/convert-webp', '/resize', '/jpg-to-png', '/png-to-svg', '/images-to-pdf', '/privacy-policy', '/terms-of-service', '/contact']) {
+    routes.add(route);
+  }
+  return [...routes].map((route) => normalizeUrl(new URL(route, startUrl)));
 }
 
 function extractLocUrls(xml) {

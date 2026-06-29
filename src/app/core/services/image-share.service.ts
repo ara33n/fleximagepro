@@ -1,5 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
+import { PageLoaderService } from './page-loader.service';
 
 export interface ImageShareResponse {
   id: string;
@@ -32,6 +33,7 @@ export interface ImageShareBatch {
 
 @Injectable({ providedIn: 'root' })
 export class ImageShareService {
+  private readonly loader = inject(PageLoaderService);
   private readonly apiBaseUrl = environment.apiBaseUrl.replace(/\/+$/, '');
   private readonly allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'application/pdf']);
 
@@ -54,10 +56,10 @@ export class ImageShareService {
       formData.append('images', image.blob, image.fileName);
     }
 
-    const response = await fetch(`${this.apiBaseUrl}/api/images/batch`, {
+    const response = await this.loader.track(fetch(`${this.apiBaseUrl}/api/images/batch`, {
       method: 'POST',
       body: formData,
-    });
+    }));
 
     if (!response.ok) {
       throw new Error(await this.errorMessage(response));
@@ -75,7 +77,7 @@ export class ImageShareService {
       throw new Error('Sharing is not configured.');
     }
 
-    const response = await fetch(`${this.apiBaseUrl}/api/images/batch/${encodeURIComponent(id)}`);
+    const response = await this.loader.track(fetch(`${this.apiBaseUrl}/api/images/batch/${encodeURIComponent(id)}`));
     if (!response.ok) {
       throw new Error(await this.errorMessage(response));
     }

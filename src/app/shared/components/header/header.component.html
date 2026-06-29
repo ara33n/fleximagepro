@@ -3,7 +3,7 @@
 >
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <!-- Main bar -->
-    <div class="flex h-14 items-center justify-between gap-4">
+    <div class="flex h-14 items-center justify-between gap-3">
       <!-- Logo -->
       <a
         routerLink="/"
@@ -14,31 +14,267 @@
         <img src="/assets/logo-96.png" width="36" height="36" alt="FlexImagePro logo" />
 
         <!-- Dark Mode Logo -->
-        <img src="/assets/dark.png" class="hidden h-10 w-56 sm:dark:block" alt="FlexImagePro" />
+        <img
+          src="/assets/dark.png"
+          class="hidden h-10 w-44 sm:dark:block 2xl:w-56"
+          alt="FlexImagePro"
+        />
 
         <!-- Light Mode Logo -->
         <img
           src="/assets/light.png"
-          class="hidden h-10 w-56 sm:block dark:hidden"
+          class="hidden h-10 w-44 sm:block 2xl:w-56 dark:hidden"
           alt="FlexImagePro"
         />
       </a>
 
       <!-- Desktop nav -->
-      <nav class="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
+      <nav
+        class="hidden min-w-0 flex-1 items-center justify-center gap-1 xl:flex"
+        aria-label="Primary navigation"
+      >
         @for (link of links; track trackByPath($index, link)) {
           <a
             [routerLink]="link.path"
             routerLinkActive="bg-teal-50 text-teal-800 dark:bg-teal-950 dark:text-teal-200"
-            class="focus-ring rounded-lg px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-white"
+            [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+            class="focus-ring whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-white"
           >
             {{ link.label }}
           </a>
         }
+
+        @for (category of primaryCategories; track trackByCategory($index, category)) {
+          <div
+            class="relative"
+            (mouseenter)="openDesktopCategory(category.title)"
+            (mouseleave)="closeDesktopCategory()"
+          >
+            <button
+              type="button"
+              class="focus-ring inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-white 2xl:gap-2 2xl:px-3"
+              [class.bg-teal-50]="
+                activeDesktopCategory() === category.title || isCategoryActive(category)
+              "
+              [class.text-teal-800]="
+                activeDesktopCategory() === category.title || isCategoryActive(category)
+              "
+              [class.dark:bg-teal-950]="
+                activeDesktopCategory() === category.title || isCategoryActive(category)
+              "
+              [class.dark:text-teal-200]="
+                activeDesktopCategory() === category.title || isCategoryActive(category)
+              "
+              [attr.aria-expanded]="activeDesktopCategory() === category.title"
+              aria-haspopup="true"
+              (focus)="openDesktopCategory(category.title)"
+              (click)="toggleDesktopCategory($event, category.title)"
+            >
+              <i
+                class="bi {{ category.icon }} text-teal-700 dark:text-teal-300"
+                aria-hidden="true"
+              ></i>
+              {{ category.title }}
+              <i
+                class="bi bi-chevron-down text-xs transition-transform"
+                [class.rotate-180]="activeDesktopCategory() === category.title"
+                aria-hidden="true"
+              ></i>
+            </button>
+
+            @if (activeDesktopCategory() === category.title) {
+              <div
+                class="absolute left-0 top-full z-50 max-h-[calc(100vh-5rem)] w-[min(90vw,540px)] overflow-y-auto rounded-lg border border-zinc-200 bg-white p-4 shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
+                (click)="$event.stopPropagation()"
+              >
+                <div class="mb-3 border-b border-zinc-200 pb-3 dark:border-zinc-800">
+                  <p
+                    class="flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-zinc-950 dark:text-white"
+                  >
+                    <i
+                      class="bi {{ category.icon }} text-teal-700 dark:text-teal-300"
+                      aria-hidden="true"
+                    ></i>
+                    {{ category.title }}
+                  </p>
+                </div>
+                <div class="grid gap-1 sm:grid-cols-2">
+                  @for (tool of category.tools; track trackByTool($index, tool)) {
+                    @if (tool.live) {
+                      <a
+                        [routerLink]="tool.route"
+                        routerLinkActive="bg-teal-50 text-teal-900 dark:bg-teal-950 dark:text-teal-100"
+                        class="focus-ring flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-teal-50 hover:text-teal-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-teal-200"
+                        [class.bg-teal-50]="isToolActive(tool)"
+                        [class.text-teal-900]="isToolActive(tool)"
+                        [class.dark:bg-teal-950]="isToolActive(tool)"
+                        [class.dark:text-teal-100]="isToolActive(tool)"
+                        (click)="closeDesktopCategory()"
+                      >
+                        <span class="whitespace-nowrap">{{ tool.label }}</span>
+                        <span
+                          class="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200"
+                        >
+                          Live
+                        </span>
+                      </a>
+                    } @else {
+                      <button
+                        type="button"
+                        class="flex cursor-default items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm font-medium text-zinc-500 dark:text-zinc-500"
+                      >
+                        <span class="whitespace-nowrap">{{ tool.label }}</span>
+                      </button>
+                    }
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <div
+          class="relative"
+          (mouseenter)="openDesktopCategory('More Tools')"
+          (mouseleave)="closeDesktopCategory()"
+        >
+          <button
+            type="button"
+            class="focus-ring inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-white 2xl:gap-2 2xl:px-3"
+            [class.bg-teal-50]="activeDesktopCategory() === 'More Tools' || isMoreToolsActive()"
+            [class.text-teal-800]="activeDesktopCategory() === 'More Tools' || isMoreToolsActive()"
+            [class.dark:bg-teal-950]="
+              activeDesktopCategory() === 'More Tools' || isMoreToolsActive()
+            "
+            [class.dark:text-teal-200]="
+              activeDesktopCategory() === 'More Tools' || isMoreToolsActive()
+            "
+            [attr.aria-expanded]="activeDesktopCategory() === 'More Tools'"
+            aria-haspopup="true"
+            (focus)="openDesktopCategory('More Tools')"
+            (click)="toggleDesktopCategory($event, 'More Tools')"
+          >
+            More Tools
+            <i
+              class="bi bi-chevron-down text-xs transition-transform"
+              [class.rotate-180]="activeDesktopCategory() === 'More Tools'"
+              aria-hidden="true"
+            ></i>
+          </button>
+
+          @if (activeDesktopCategory() === 'More Tools') {
+            <div
+              class="absolute right-0 top-full z-50 max-h-[calc(100vh-5rem)] w-[min(92vw,760px)] overflow-y-auto rounded-lg border border-zinc-200 bg-white p-3 shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
+              (click)="$event.stopPropagation()"
+            >
+              <div class="grid gap-3 md:grid-cols-[230px_minmax(0,1fr)]">
+                <div class="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900">
+                  @for (category of moreCategories; track trackByCategory($index, category)) {
+                    <button
+                      type="button"
+                      class="focus-ring flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm font-semibold text-zinc-700 transition hover:bg-white hover:text-teal-800 dark:text-zinc-200 dark:hover:bg-zinc-950 dark:hover:text-teal-200"
+                      [class.bg-white]="
+                        activeMoreCategory() === category.title || isCategoryActive(category)
+                      "
+                      [class.text-teal-800]="
+                        activeMoreCategory() === category.title || isCategoryActive(category)
+                      "
+                      [class.shadow-sm]="
+                        activeMoreCategory() === category.title || isCategoryActive(category)
+                      "
+                      [class.dark:bg-zinc-950]="
+                        activeMoreCategory() === category.title || isCategoryActive(category)
+                      "
+                      [class.dark:text-teal-200]="
+                        activeMoreCategory() === category.title || isCategoryActive(category)
+                      "
+                      (mouseenter)="openMoreCategory(category.title)"
+                      (focus)="openMoreCategory(category.title)"
+                      (click)="openMoreCategory(category.title)"
+                    >
+                      <span class="flex min-w-0 items-center gap-2">
+                        <i
+                          class="bi {{ category.icon }} shrink-0 text-teal-700 dark:text-teal-300"
+                          aria-hidden="true"
+                        ></i>
+                        <span class="truncate">{{ category.title }}</span>
+                      </span>
+                      <i
+                        class="bi bi-chevron-right shrink-0 text-xs text-zinc-400"
+                        aria-hidden="true"
+                      ></i>
+                    </button>
+                  }
+                </div>
+
+                @if (activeMoreToolsCategory(); as category) {
+                  <section class="min-w-0">
+                    <div
+                      class="mb-3 flex items-center gap-2 border-b border-zinc-200 pb-3 dark:border-zinc-800"
+                    >
+                      <i
+                        class="bi {{ category.icon }} text-teal-700 dark:text-teal-300"
+                        aria-hidden="true"
+                      ></i>
+                      <div class="min-w-0">
+                        <h2 class="truncate text-sm font-bold text-zinc-950 dark:text-white">
+                          {{ category.title }}
+                        </h2>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                          Select a tool from this category
+                        </p>
+                      </div>
+                    </div>
+                    <div class="grid gap-1 sm:grid-cols-2">
+                      @for (tool of category.tools; track trackByTool($index, tool)) {
+                        @if (tool.live) {
+                          <a
+                            [routerLink]="tool.route"
+                            routerLinkActive="bg-teal-50 text-teal-900 dark:bg-teal-950 dark:text-teal-100"
+                            class="focus-ring flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-teal-50 hover:text-teal-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-teal-200"
+                            [class.bg-teal-50]="isToolActive(tool)"
+                            [class.text-teal-900]="isToolActive(tool)"
+                            [class.dark:bg-teal-950]="isToolActive(tool)"
+                            [class.dark:text-teal-100]="isToolActive(tool)"
+                            (click)="closeDesktopCategory()"
+                          >
+                            <span class="truncate">{{ tool.label }}</span>
+                            <span
+                              class="shrink-0 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200"
+                            >
+                              Live
+                            </span>
+                          </a>
+                        } @else {
+                          <button
+                            type="button"
+                            class="flex cursor-default items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm font-medium text-zinc-500 dark:text-zinc-500"
+                          >
+                            <span class="truncate">{{ tool.label }}</span>
+                          </button>
+                        }
+                      }
+                    </div>
+                  </section>
+                }
+              </div>
+            </div>
+          }
+        </div>
       </nav>
 
       <!-- Right side actions -->
       <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="focus-ring flex size-9 shrink-0 items-center justify-center rounded-lg border border-zinc-300 bg-white text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+          aria-label="Search tools"
+          [attr.aria-expanded]="searchOpen()"
+          (click)="openSearch()"
+        >
+          <i class="bi bi-search" aria-hidden="true"></i>
+        </button>
+
         <!-- Dark mode toggle -->
         <button
           type="button"
@@ -65,7 +301,7 @@
         <!-- Hamburger (mobile only) -->
         <button
           type="button"
-          class="focus-ring flex size-9 shrink-0 items-center justify-center rounded-lg border border-zinc-300 bg-white text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 lg:hidden"
+          class="focus-ring flex size-9 shrink-0 items-center justify-center rounded-lg border border-zinc-300 bg-white text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 xl:hidden"
           (click)="toggleMenu()"
           [attr.aria-label]="menuOpen() ? 'Close menu' : 'Open menu'"
           [attr.aria-expanded]="menuOpen()"
@@ -97,27 +333,180 @@
       </div>
     </div>
 
-    <!-- Mobile menu -->
-    @if (menuOpen()) {
-      <nav
-        class="border-t border-zinc-200 pb-3 pt-2 dark:border-zinc-700 lg:hidden"
-        aria-label="Mobile navigation"
-      >
-        <ul class="flex flex-col gap-1">
-          @for (link of links; track trackByPath($index, link)) {
-            <li>
-              <a
-                [routerLink]="link.path"
-                routerLinkActive="bg-teal-50 text-teal-800 dark:bg-teal-950 dark:text-teal-200"
-                class="focus-ring flex rounded-lg px-3 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-white"
-                (click)="menuOpen.set(false)"
-              >
-                {{ link.label }}
-              </a>
-            </li>
+    @if (searchOpen()) {
+      <div class="fixed inset-x-0 top-0 z-[70] border-b border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950">
+        <div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+          <div class="flex items-center gap-3">
+            <label class="sr-only" for="header-tool-search">Search tools</label>
+            <div class="flex h-11 min-w-0 flex-1 items-center gap-3 rounded-lg border border-zinc-300 bg-zinc-50 px-3 text-sm text-zinc-700 transition focus-within:border-teal-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+              <i class="bi bi-search shrink-0 text-zinc-400" aria-hidden="true"></i>
+              <input
+                #toolSearchInput
+                id="header-tool-search"
+                type="search"
+                class="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-400"
+                placeholder="Search tools"
+                [value]="searchQuery()"
+                (input)="onSearchInput($event)"
+                (focus)="onSearchFocus()"
+                (keydown)="onSearchKeydown($event)"
+                autocomplete="off"
+              />
+            </div>
+            <button
+              type="button"
+              class="focus-ring flex size-10 shrink-0 items-center justify-center rounded-lg border border-zinc-300 text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
+              aria-label="Close search"
+              (click)="closeSearch()"
+            >
+              <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+          </div>
+
+          @if (searchQuery().trim()) {
+            <div class="mt-3 max-h-[min(500px,calc(100vh-5rem))] overflow-y-auto rounded-lg border border-zinc-200 bg-white p-2 shadow-xl dark:border-zinc-800 dark:bg-zinc-950" role="listbox">
+              @if (searchResults().length) {
+                @for (result of searchResults(); track result.item.slug) {
+                  <button
+                    #searchResultButton
+                    type="button"
+                    class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition"
+                    [class.bg-teal-50]="isSearchResultActive($index)"
+                    [class.text-teal-900]="isSearchResultActive($index)"
+                    [class.dark:bg-teal-950]="isSearchResultActive($index)"
+                    [class.dark:text-teal-100]="isSearchResultActive($index)"
+                    (mouseenter)="activeSearchIndex.set($index)"
+                    (click)="chooseSearchResult(result)"
+                    role="option"
+                    [attr.aria-selected]="isSearchResultActive($index)"
+                  >
+                    <i class="bi {{ result.category.icon }} shrink-0 text-teal-700 dark:text-teal-300" aria-hidden="true"></i>
+                    <span class="min-w-0 flex-1">
+                      <span class="block truncate text-sm font-semibold text-zinc-900 dark:text-white">{{ result.item.label }}</span>
+                      <span class="block truncate text-xs text-zinc-500 dark:text-zinc-400">{{ result.category.title }}</span>
+                    </span>
+                  </button>
+                }
+              } @else {
+                <div class="px-3 py-4 text-sm text-zinc-500 dark:text-zinc-400">No tools found</div>
+              }
+            </div>
           }
-        </ul>
-      </nav>
+        </div>
+      </div>
+    }
+
+    @if (menuOpen()) {
+      <div class="fixed inset-0 z-50 xl:hidden" aria-hidden="false">
+        <button
+          type="button"
+          class="mobile-menu-backdrop absolute inset-0 bg-zinc-950/45"
+          aria-label="Close menu"
+          (click)="menuOpen.set(false)"
+        ></button>
+
+        <aside
+          class="mobile-menu-panel absolute right-0 top-0 flex h-full w-[min(88vw,390px)] flex-col border-l border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950"
+          aria-label="Mobile navigation"
+        >
+          <div
+            class="flex h-14 items-center justify-between border-b border-zinc-200 px-4 dark:border-zinc-800"
+          >
+            <span class="text-sm font-bold text-zinc-950 dark:text-white">FlexImagePro Tools</span>
+            <button
+              type="button"
+              class="focus-ring flex size-9 items-center justify-center rounded-lg border border-zinc-300 text-zinc-800 dark:border-zinc-700 dark:text-zinc-100"
+              aria-label="Close menu"
+              (click)="menuOpen.set(false)"
+            >
+              <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+          </div>
+
+          <nav class="flex-1 overflow-y-auto px-4 py-4" aria-label="Mobile navigation">
+            <ul class="mb-4 flex flex-col gap-1">
+              @for (link of links; track trackByPath($index, link)) {
+                <li>
+                  <a
+                    [routerLink]="link.path"
+                    routerLinkActive="bg-teal-50 text-teal-800 dark:bg-teal-950 dark:text-teal-200"
+                    [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+                    class="focus-ring flex rounded-lg px-3 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-white"
+                    (click)="menuOpen.set(false)"
+                  >
+                    {{ link.label }}
+                  </a>
+                </li>
+              }
+            </ul>
+
+            <div class="space-y-2">
+              @for (category of categories; track trackByCategory($index, category)) {
+                <section
+                  class="rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <button
+                    type="button"
+                    class="focus-ring flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-zinc-800 dark:text-zinc-100"
+                    [class.bg-teal-50]="isCategoryActive(category)"
+                    [class.text-teal-800]="isCategoryActive(category)"
+                    [class.dark:bg-teal-950]="isCategoryActive(category)"
+                    [class.dark:text-teal-100]="isCategoryActive(category)"
+                    [attr.aria-expanded]="openMobileCategory() === category.title"
+                    (click)="toggleMobileCategory(category.title)"
+                  >
+                    <span class="flex items-center gap-2">
+                      <i
+                        class="bi {{ category.icon }} text-teal-700 dark:text-teal-300"
+                        aria-hidden="true"
+                      ></i>
+                      {{ category.title }}
+                    </span>
+                    <i
+                      class="bi bi-chevron-down text-xs transition-transform"
+                      [class.rotate-180]="openMobileCategory() === category.title"
+                      aria-hidden="true"
+                    ></i>
+                  </button>
+
+                  @if (openMobileCategory() === category.title) {
+                    <div class="grid gap-1 border-t border-zinc-100 p-2 dark:border-zinc-800">
+                      @for (tool of category.tools; track trackByTool($index, tool)) {
+                        @if (tool.live) {
+                          <a
+                            [routerLink]="tool.route"
+                            routerLinkActive="bg-teal-50 text-teal-900 dark:bg-teal-950 dark:text-teal-100"
+                            class="focus-ring flex items-center justify-between gap-2 rounded-md px-2 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                            [class.bg-teal-50]="isToolActive(tool)"
+                            [class.text-teal-900]="isToolActive(tool)"
+                            [class.dark:bg-teal-950]="isToolActive(tool)"
+                            [class.dark:text-teal-100]="isToolActive(tool)"
+                            (click)="menuOpen.set(false)"
+                          >
+                            <span>{{ tool.label }}</span>
+                            <span
+                              class="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200"
+                            >
+                              Live
+                            </span>
+                          </a>
+                        } @else {
+                          <button
+                            type="button"
+                            class="flex cursor-default items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-sm font-medium text-zinc-500 dark:text-zinc-500"
+                          >
+                            <span>{{ tool.label }}</span>
+                          </button>
+                        }
+                      }
+                    </div>
+                  }
+                </section>
+              }
+            </div>
+          </nav>
+        </aside>
+      </div>
     }
   </div>
 </header>

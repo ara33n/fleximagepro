@@ -1,0 +1,10 @@
+@if (loader.isLoading()) {
+  <div class="fixed inset-0 z-[100] grid place-items-center bg-zinc-950/85 px-4 backdrop-blur-sm" role="status" aria-live="polite" aria-label="Loading">
+    <div class="flex flex-col items-center gap-5">
+      <div class="relative h-[18px] w-40 overflow-hidden rounded-xl border border-teal-400/25 bg-white/[0.04]">
+        <div class="pong-loader-ball absolute left-0 top-0 size-[18px] rounded-full bg-gradient-to-br from-teal-400 to-amber-400 shadow-[0_0_14px_rgba(20,184,166,0.6)]"></div>
+      </div>
+      <span class="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-400">loading...</span>
+    </div>
+  </div>
+}

@@ -1,0 +1,422 @@
+<article class="bg-zinc-50 dark:bg-zinc-950">
+  <section class="bg-white dark:bg-zinc-950">
+    <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <p class="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">SEO Tools</p>
+      <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-4xl">
+        {{ catalogItem().label }}
+      </h1>
+      <p class="mt-4 max-w-3xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
+        {{ catalogItem().description }}
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto grid max-w-7xl gap-8 px-4 pb-14 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,460px)] lg:px-8">
+    <div class="space-y-6">
+      <section class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <div class="grid gap-4 sm:grid-cols-2">
+          @if (kind === 'robots-txt-generator') {
+            <div class="sm:col-span-2">
+              <h2 class="text-lg font-semibold text-zinc-950 dark:text-white">Default - All Robots are</h2>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  class="rounded-lg border px-4 py-2 text-sm font-semibold transition"
+                  [class.border-teal-500]="defaultRobotAction() === 'allowed'"
+                  [class.bg-teal-50]="defaultRobotAction() === 'allowed'"
+                  [class.text-teal-800]="defaultRobotAction() === 'allowed'"
+                  [class.dark:bg-teal-950]="defaultRobotAction() === 'allowed'"
+                  [class.dark:text-teal-100]="defaultRobotAction() === 'allowed'"
+                  [class.border-zinc-300]="defaultRobotAction() !== 'allowed'"
+                  [class.text-zinc-700]="defaultRobotAction() !== 'allowed'"
+                  [class.dark:border-zinc-700]="defaultRobotAction() !== 'allowed'"
+                  [class.dark:text-zinc-200]="defaultRobotAction() !== 'allowed'"
+                  (click)="setDefaultRobotAction('allowed')"
+                >
+                  Allowed
+                </button>
+                <button
+                  type="button"
+                  class="rounded-lg border px-4 py-2 text-sm font-semibold transition"
+                  [class.border-red-500]="defaultRobotAction() === 'blocked'"
+                  [class.bg-red-50]="defaultRobotAction() === 'blocked'"
+                  [class.text-red-800]="defaultRobotAction() === 'blocked'"
+                  [class.dark:bg-red-950]="defaultRobotAction() === 'blocked'"
+                  [class.dark:text-red-100]="defaultRobotAction() === 'blocked'"
+                  [class.border-zinc-300]="defaultRobotAction() !== 'blocked'"
+                  [class.text-zinc-700]="defaultRobotAction() !== 'blocked'"
+                  [class.dark:border-zinc-700]="defaultRobotAction() !== 'blocked'"
+                  [class.dark:text-zinc-200]="defaultRobotAction() !== 'blocked'"
+                  (click)="setDefaultRobotAction('blocked')"
+                >
+                  Blocked
+                </button>
+              </div>
+            </div>
+
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Crawl-Delay
+              <div class="mt-2 flex items-center gap-2">
+                <input type="number" min="0" [value]="crawlDelay()" (input)="updateCrawlDelay($event)" class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                <span class="shrink-0 text-sm text-zinc-500 dark:text-zinc-400">seconds</span>
+              </div>
+            </label>
+
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Sitemap
+              <input type="url" [value]="sitemapUrl()" (input)="updateSitemapUrl($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+
+            <div class="sm:col-span-2">
+              <h2 class="text-lg font-semibold text-zinc-950 dark:text-white">Search Robots</h2>
+              <div class="mt-3 grid gap-2 md:grid-cols-2">
+                @for (robot of robotRules(); track robot.userAgent) {
+                  <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
+                    <div class="flex items-center justify-between gap-3">
+                      <div>
+                        <p class="text-sm font-semibold text-zinc-950 dark:text-white">{{ robot.label }}</p>
+                        <p class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{{ robot.userAgent }}</p>
+                      </div>
+                      <span class="rounded px-2 py-1 text-xs font-bold uppercase"
+                        [class.bg-emerald-100]="robot.action === 'allowed'"
+                        [class.text-emerald-700]="robot.action === 'allowed'"
+                        [class.bg-red-100]="robot.action === 'blocked'"
+                        [class.text-red-700]="robot.action === 'blocked'"
+                        [class.bg-zinc-200]="robot.action === 'default'"
+                        [class.text-zinc-600]="robot.action === 'default'"
+                        [class.dark:bg-emerald-500/20]="robot.action === 'allowed'"
+                        [class.dark:text-emerald-200]="robot.action === 'allowed'"
+                        [class.dark:bg-red-500/20]="robot.action === 'blocked'"
+                        [class.dark:text-red-200]="robot.action === 'blocked'"
+                        [class.dark:bg-zinc-800]="robot.action === 'default'"
+                        [class.dark:text-zinc-300]="robot.action === 'default'"
+                      >
+                        {{ robot.action }}
+                      </span>
+                    </div>
+                    <div class="mt-3 grid grid-cols-3 gap-1">
+                      <button type="button" class="rounded-md border px-2 py-1.5 text-xs font-semibold"
+                        [class.border-teal-500]="robot.action === 'allowed'"
+                        [class.bg-teal-50]="robot.action === 'allowed'"
+                        [class.text-teal-800]="robot.action === 'allowed'"
+                        [class.border-zinc-300]="robot.action !== 'allowed'"
+                        [class.dark:border-zinc-700]="robot.action !== 'allowed'"
+                        (click)="setRobotAction(robot.userAgent, 'allowed')">Allowed</button>
+                      <button type="button" class="rounded-md border px-2 py-1.5 text-xs font-semibold"
+                        [class.border-zinc-500]="robot.action === 'default'"
+                        [class.bg-white]="robot.action === 'default'"
+                        [class.text-zinc-900]="robot.action === 'default'"
+                        [class.dark:bg-zinc-900]="robot.action === 'default'"
+                        [class.dark:text-white]="robot.action === 'default'"
+                        [class.border-zinc-300]="robot.action !== 'default'"
+                        [class.dark:border-zinc-700]="robot.action !== 'default'"
+                        (click)="setRobotAction(robot.userAgent, 'default')">Default</button>
+                      <button type="button" class="rounded-md border px-2 py-1.5 text-xs font-semibold"
+                        [class.border-red-500]="robot.action === 'blocked'"
+                        [class.bg-red-50]="robot.action === 'blocked'"
+                        [class.text-red-800]="robot.action === 'blocked'"
+                        [class.border-zinc-300]="robot.action !== 'blocked'"
+                        [class.dark:border-zinc-700]="robot.action !== 'blocked'"
+                        (click)="setRobotAction(robot.userAgent, 'blocked')">Blocked</button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200 sm:col-span-2">
+              Restricted Directories
+              <span class="mt-1 block text-xs font-normal text-zinc-500 dark:text-zinc-400">The path is relative to root and should contain a trailing slash.</span>
+              <textarea [value]="restrictedDirectories()" (input)="updateRestrictedDirectories($event)" class="mt-2 min-h-28 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950"></textarea>
+            </label>
+          }
+
+          @if (kind === 'meta-tag-generator' || kind === 'open-graph-generator' || kind === 'twitter-card-generator' || kind === 'json-ld-generator') {
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Page title
+              <input type="text" [value]="fields().title" (input)="updateField('title', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+          }
+
+          @if (kind === 'meta-tag-generator' || kind === 'open-graph-generator' || kind === 'twitter-card-generator' || kind === 'product-schema-generator' || kind === 'article-schema-generator' || kind === 'json-ld-generator') {
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200 sm:col-span-2">
+              Description
+              <textarea [value]="fields().description" (input)="updateField('description', $event)" class="mt-2 min-h-24 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"></textarea>
+            </label>
+          }
+
+          @if (kind === 'organization-schema-generator') {
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Site URL
+              <input type="url" [value]="fields().siteUrl" (input)="updateField('siteUrl', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+          }
+
+          @if (kind === 'meta-tag-generator' || kind === 'canonical-tag-generator' || kind === 'open-graph-generator' || kind === 'product-schema-generator' || kind === 'article-schema-generator' || kind === 'json-ld-generator') {
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Canonical URL
+              <input type="url" [value]="fields().canonicalUrl" (input)="updateField('canonicalUrl', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+          }
+
+          @if (kind === 'open-graph-generator' || kind === 'twitter-card-generator' || kind === 'product-schema-generator' || kind === 'article-schema-generator' || kind === 'json-ld-generator') {
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Image URL
+              <input type="url" [value]="fields().imageUrl" (input)="updateField('imageUrl', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+          }
+
+          @if (kind === 'meta-tag-generator' || kind === 'article-schema-generator') {
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Author
+              <input type="text" [value]="fields().author" (input)="updateField('author', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+          }
+
+          @if (kind === 'meta-tag-generator') {
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Language
+              <input type="text" [value]="fields().language" (input)="updateField('language', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+          }
+
+          @if (kind === 'sitemap-generator') {
+            <div class="sm:col-span-2">
+              <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                Website URL
+                <input
+                  type="url"
+                  [value]="sitemapWebsiteUrl()"
+                  (input)="updateSitemapWebsiteUrl($event)"
+                  placeholder="https://example.com"
+                  class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"
+                />
+              </label>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button type="button" class="primary-button" (click)="crawlSitemap()" [disabled]="sitemapIsLoading()">
+                  {{ sitemapIsLoading() ? 'Crawling...' : 'Generate Sitemap' }}
+                </button>
+              </div>
+              @if (sitemapPages().length) {
+                <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div class="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-950">
+                    <dt class="text-xs text-zinc-500">Total pages</dt>
+                    <dd class="mt-1 text-lg font-bold text-zinc-950 dark:text-white">{{ sitemapPages().length }}</dd>
+                  </div>
+                  <div class="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-950">
+                    <dt class="text-xs text-zinc-500">robots.txt</dt>
+                    <dd class="mt-1 text-sm font-semibold text-zinc-950 dark:text-white">{{ sitemapRobotsFound() ? 'Found' : 'Not found' }}</dd>
+                  </div>
+                  <div class="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-950">
+                    <dt class="text-xs text-zinc-500">Source</dt>
+                    <dd class="mt-1 text-sm font-semibold text-zinc-950 dark:text-white">{{ sitemapSource() === 'existing' ? 'Existing sitemap' : 'Generated crawl' }}</dd>
+                  </div>
+                </div>
+                @if (sitemapExistingUrl()) {
+                  <p class="mt-3 break-words text-sm text-zinc-500 dark:text-zinc-400">Existing sitemap: {{ sitemapExistingUrl() }}</p>
+                }
+              }
+            </div>
+          }
+
+          @if (kind === 'twitter-card-generator') {
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Twitter/X handle
+              <input type="text" [value]="fields().twitterHandle" (input)="updateField('twitterHandle', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+          }
+
+          @if (kind === 'faq-schema-generator') {
+            <div class="sm:col-span-2">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  Question
+                  <input type="text" [value]="faqQuestion()" (input)="updateFaqQuestion($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                </label>
+                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  Answer
+                  <textarea [value]="faqAnswer()" (input)="updateFaqAnswer($event)" class="mt-2 min-h-24 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"></textarea>
+                </label>
+              </div>
+              <button type="button" class="primary-button mt-4" (click)="addFaq()">Add FAQ</button>
+
+              @if (faqEntries().length) {
+                <div class="mt-5 space-y-3">
+                  @for (faq of faqEntries(); track faq.id) {
+                    <article class="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                          <h2 class="break-words text-sm font-semibold text-zinc-950 dark:text-white">{{ faq.question }}</h2>
+                          <p class="mt-1 break-words text-sm leading-6 text-zinc-600 dark:text-zinc-300">{{ faq.answer }}</p>
+                        </div>
+                        <button type="button" class="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950" (click)="removeFaq(faq.id)">
+                          Remove
+                        </button>
+                      </div>
+                    </article>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          @if (kind === 'breadcrumb-schema-generator') {
+            <div class="sm:col-span-2">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  Breadcrumb label
+                  <input type="text" [value]="breadcrumbName()" (input)="updateBreadcrumbName($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                </label>
+                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  Breadcrumb URL
+                  <input type="url" [value]="breadcrumbUrl()" (input)="updateBreadcrumbUrl($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                </label>
+              </div>
+              <button type="button" class="primary-button mt-4" (click)="addBreadcrumb()">Add Breadcrumb</button>
+
+              @if (breadcrumbEntries().length) {
+                <div class="mt-5 space-y-3">
+                  @for (breadcrumb of breadcrumbEntries(); track breadcrumb.id) {
+                    <article class="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                          <h2 class="break-words text-sm font-semibold text-zinc-950 dark:text-white">{{ $index + 1 }}. {{ breadcrumb.name }}</h2>
+                          <p class="mt-1 break-words text-sm leading-6 text-zinc-600 dark:text-zinc-300">{{ breadcrumb.url }}</p>
+                        </div>
+                        <button type="button" class="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950" (click)="removeBreadcrumb(breadcrumb.id)">
+                          Remove
+                        </button>
+                      </div>
+                    </article>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          @if (kind === 'organization-schema-generator' || kind === 'open-graph-generator' || kind === 'product-schema-generator' || kind === 'article-schema-generator') {
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Organization / Brand
+              <input type="text" [value]="fields().organizationName" (input)="updateField('organizationName', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+          }
+
+          @if (kind === 'organization-schema-generator' || kind === 'article-schema-generator') {
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Logo URL
+              <input type="url" [value]="fields().logoUrl" (input)="updateField('logoUrl', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+          }
+
+          @if (kind === 'product-schema-generator') {
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Product name
+              <input type="text" [value]="fields().productName" (input)="updateField('productName', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Price
+              <input type="text" [value]="fields().price" (input)="updateField('price', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Currency
+              <input type="text" [value]="fields().currency" (input)="updateField('currency', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Availability URL
+              <input type="text" [value]="fields().availability" (input)="updateField('availability', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+          }
+
+          @if (kind === 'article-schema-generator') {
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Headline
+              <input type="text" [value]="fields().articleHeadline" (input)="updateField('articleHeadline', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Published date
+              <input type="date" [value]="fields().publishedDate" (input)="updateField('publishedDate', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+          }
+
+          @if (kind === 'json-ld-generator') {
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+              Schema type
+              <select [value]="fields().jsonLdType" (change)="updateField('jsonLdType', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+                <option value="WebPage">WebPage</option>
+                <option value="WebSite">WebSite</option>
+                <option value="LocalBusiness">LocalBusiness</option>
+                <option value="SoftwareApplication">SoftwareApplication</option>
+                <option value="Service">Service</option>
+              </select>
+            </label>
+          }
+
+          @if (kind === 'hreflang-generator') {
+            <div class="sm:col-span-2">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  Language code
+                  <input type="text" [value]="hreflangLanguage()" (input)="updateHreflangLanguage($event)" placeholder="en, es, x-default" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                </label>
+                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  Page URL
+                  <input type="url" [value]="hreflangUrl()" (input)="updateHreflangUrl($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                </label>
+              </div>
+              <button type="button" class="primary-button mt-4" (click)="addHreflang()">Add Hreflang</button>
+
+              @if (hreflangEntries().length) {
+                <div class="mt-5 space-y-3">
+                  @for (entry of hreflangEntries(); track entry.id) {
+                    <article class="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                          <h2 class="break-words text-sm font-semibold text-zinc-950 dark:text-white">{{ entry.language }}</h2>
+                          <p class="mt-1 break-words text-sm leading-6 text-zinc-600 dark:text-zinc-300">{{ entry.url }}</p>
+                        </div>
+                        <button type="button" class="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950" (click)="removeHreflang(entry.id)">
+                          Remove
+                        </button>
+                      </div>
+                    </article>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="mt-5 flex flex-wrap gap-2">
+          @if (kind !== 'sitemap-generator') {
+            <button type="button" class="primary-button" (click)="generate()">Generate</button>
+          }
+          <button type="button" class="secondary-button" (click)="clear()">Reset</button>
+        </div>
+      </section>
+
+    </div>
+
+    <aside class="space-y-5 lg:sticky lg:top-20 lg:self-start">
+      <section class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-zinc-950 dark:text-white">Output</h2>
+            <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{{ outputType() }}</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="secondary-button" (click)="copyOutput()">Copy</button>
+            <button type="button" class="secondary-button" (click)="downloadOutput()">Download</button>
+          </div>
+        </div>
+
+        <textarea
+          class="mt-4 min-h-[520px] w-full rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-sm text-zinc-950 outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          readonly
+          [value]="output()"
+        ></textarea>
+      </section>
+    </aside>
+  </section>
+
+  <app-tool-seo-block [item]="catalogItem()" [category]="category" />
+</article>

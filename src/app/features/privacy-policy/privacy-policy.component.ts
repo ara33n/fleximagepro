@@ -14,7 +14,7 @@ export class PrivacyPolicyComponent {
   constructor() {
     this.seo.update(
       'Privacy Policy | FlexImagePro',
-      'Learn how FlexImagePro protects your privacy. All image processing happens locally in your browser.',
+      'Learn how FlexImagePro handles privacy for image, PDF, text, and utility tools.',
     );
   }
 }

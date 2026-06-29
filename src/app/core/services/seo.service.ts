@@ -10,6 +10,7 @@ export class SeoService {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
   private readonly faqSchemaId = 'faq-schema';
+  private readonly breadcrumbSchemaId = 'breadcrumb-schema';
 
   update(title: string, description: string, keywords?: string): void {
     this.title.setTitle(title);
@@ -26,6 +27,7 @@ export class SeoService {
     this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
     this.updateCanonicalUrl();
     this.updateFaqSchema();
+    this.updateBreadcrumbSchema();
   }
 
   updateFaqSchema(faqs: ToolFaq[] = []): void {
@@ -51,6 +53,35 @@ export class SeoService {
 
     const script = existing || this.document.createElement('script');
     script.id = this.faqSchemaId;
+    script.setAttribute('type', 'application/ld+json');
+    script.textContent = JSON.stringify(schema);
+
+    if (!existing) {
+      this.document.head.appendChild(script);
+    }
+  }
+
+  updateBreadcrumbSchema(items: { name: string; item: string }[] = []): void {
+    const existing = this.document.getElementById(this.breadcrumbSchemaId);
+
+    if (!items.length) {
+      existing?.remove();
+      return;
+    }
+
+    const schema = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: items.map((entry, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: entry.name,
+        item: entry.item,
+      })),
+    };
+
+    const script = existing || this.document.createElement('script');
+    script.id = this.breadcrumbSchemaId;
     script.setAttribute('type', 'application/ld+json');
     script.textContent = JSON.stringify(schema);
 

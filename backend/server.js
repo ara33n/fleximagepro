@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const imageRoutes = require('./routes/imageRoutes');
 const qrRoutes = require('./routes/qrRoutes');
+const seoRoutes = require('./routes/seoRoutes');
 const { cleanupExpiredUploads, startUploadCleanup } = require('./utils/cleanup');
 
 const app = express();
@@ -16,7 +17,7 @@ const uploadsDir = path.join(__dirname, 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
 
 app.set('trust proxy', 1);
-app.use(express.json({ limit: '32kb' }));
+app.use(express.json({ limit: '64kb' }));
 app.use(cors({
   origin(origin, callback) {
     if (!origin || origin === frontendOrigin) {
@@ -44,6 +45,7 @@ app.get('/', (_req, res) => {
 
 app.use('/api/images', imageRoutes);
 app.use('/api/qr', qrRoutes);
+app.use('/api/seo', seoRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found.' });

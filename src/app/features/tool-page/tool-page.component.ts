@@ -13,6 +13,7 @@ import { ZipService } from '../../core/services/zip.service';
 import { AdSlotComponent } from '../../shared/components/ad-slot/ad-slot.component';
 import { QrCodeCardComponent } from '../../shared/components/qr-code-card/qr-code-card.component';
 import { UploadZoneComponent } from '../../shared/components/upload-zone/upload-zone.component';
+import { environment } from '../../../environments/environment';
 
 interface ToolOptions {
   quality: number;
@@ -121,6 +122,11 @@ export class ToolPageComponent implements OnInit {
   ngOnInit(): void {
     this.seo.update(this.tool().titleTag, this.tool().metaDescription, this.tool().keywords);
     this.seo.updateFaqSchema(this.tool().faqs);
+    this.seo.updateBreadcrumbSchema([
+      { name: 'Home', item: environment.siteUrl },
+      { name: 'Image Tools', item: environment.siteUrl },
+      { name: this.tool().title, item: `${environment.siteUrl}${this.doc.location.pathname}` },
+    ]);
     const pending = this.pendingFiles.take();
     if (pending.length) {
       void this.addFiles(pending);
@@ -320,6 +326,7 @@ export class ToolPageComponent implements OnInit {
 
       this.shareBatch.set(share);
       this.isShareModalOpen.set(true);
+      this.toast.success('Share link is ready.');
       await Promise.all(jobsToShare.map((job) => (
         this.updateJob(job.id, {
           shareStatus: 'ready',

@@ -5,6 +5,7 @@ import { ImageShareBatch, ImageShareService, SharedImage } from '../../core/serv
 import { SeoService } from '../../core/services/seo.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ZipService } from '../../core/services/zip.service';
+import { PageLoaderService } from '../../core/services/page-loader.service';
 
 @Component({
   selector: 'app-shared-images',
@@ -20,6 +21,7 @@ export class SharedImagesComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly zip = inject(ZipService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly loader = inject(PageLoaderService);
 
   readonly share = signal<ImageShareBatch | null>(null);
   readonly isLoading = signal(true);
@@ -45,7 +47,7 @@ export class SharedImagesComponent implements OnInit {
     this.isZipping.set(true);
     try {
       const names = new Map<string, number>();
-      const entries = await Promise.all(share.images.map(async (image) => {
+      const entries = await this.loader.track(Promise.all(share.images.map(async (image) => {
         const response = await fetch(image.downloadUrl);
         if (!response.ok) {
           throw new Error('One or more files could not be downloaded.');
@@ -54,7 +56,7 @@ export class SharedImagesComponent implements OnInit {
           name: this.uniqueName(image.fileName, names),
           blob: await response.blob(),
         };
-      }));
+      })));
       const archive = await this.zip.create(entries);
       const url = URL.createObjectURL(archive);
       this.clickDownload(url, `fleximagepro-share-${share.id}.zip`);
@@ -119,7 +121,9 @@ export class SharedImagesComponent implements OnInit {
     try {
       this.share.set(await this.imageShare.getBatch(id));
     } catch (error) {
-      this.errorMessage.set(error instanceof Error ? error.message : 'Share link could not be loaded.');
+      const message = error instanceof Error ? error.message : 'Share link could not be loaded.';
+      this.errorMessage.set(message);
+      this.toast.error(message);
     } finally {
       this.isLoading.set(false);
     }

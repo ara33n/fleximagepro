@@ -52,7 +52,7 @@ export class HomeComponent {
     },
     {
       title: 'Image to WebP',
-      description: 'Export lightweight WebP images from common image formats without a server round-trip.',
+      description: 'Export lightweight WebP images from common image formats.',
       path: '/convert-webp',
       badge: 'Convert',
     },
@@ -95,9 +95,9 @@ export class HomeComponent {
         'Yes, FlexImagePro is completely free to use. All image tools — including the compressor, WebP converter, image resizer, and JPG/PNG converter — are available at no cost with no sign-up required.',
     },
     {
-      question: 'Are my images uploaded to a server?',
+      question: 'Which tools are available?',
       answer:
-        'No. FlexImagePro processes every image directly in your browser using the HTML5 Canvas API. Your files never leave your device and are never transmitted to any server.',
+        'FlexImagePro includes image compression, resizing, format conversion, image effects, PDF tools, text tools, and more utilities for everyday work.',
     },
     {
       question: 'Which image formats are supported?',
@@ -125,16 +125,16 @@ export class HomeComponent {
         'Yes. FlexImagePro is fully responsive and works on smartphones, tablets, and desktop browsers. The Canvas API is supported on all modern mobile browsers including Safari on iOS and Chrome on Android.',
     },
     {
-      question: 'Is image processing private and secure?',
+      question: 'Can I download processed files?',
       answer:
-        'Completely. Because all processing happens locally in your browser, no image data is ever sent to a server or third party. FlexImagePro does not store, analyse, or have access to any of your images.',
+        'Yes. You can download single processed files, bulk ZIP files where supported, or generated text and PDF outputs from their tool pages.',
     },
   ];
 
   constructor() {
     this.seo.update(
       'FlexImagePro - Compress, Convert and Resize Images',
-      'Free browser-side image tools for compression, WebP conversion, resizing, and JPG/PNG conversion. No uploads or backend required.',
+      'Free image tools for compression, WebP conversion, resizing, JPG/PNG conversion, and everyday utility workflows.',
     );
     this.seo.updateFaqSchema(this.faqs);
   }

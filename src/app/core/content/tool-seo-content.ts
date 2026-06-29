@@ -28,10 +28,10 @@ export const resizeSeoContent: ToolSeoContent = {
       ],
     },
     {
-      heading: 'Private browser-side resizing',
+      heading: 'Resize workflow tips',
       paragraphs: [
-        'The tool processes images with browser APIs, which means the normal resize operation does not require uploading your pictures for conversion. This is useful for personal photos, client screenshots, product shots, unpublished marketing assets, and identity documents where a quick local edit is preferred.',
-        'Because the work happens on your device, performance depends on your browser and image size. Very large files can take longer to preview and export. For best results, resize a small batch first, confirm the quality setting and dimensions, then process the full group and download all results as a ZIP.',
+        'For personal photos, client screenshots, product shots, marketing assets, and identity documents, start with the exact dimensions you need and keep aspect ratio locked unless a platform requires a strict crop.',
+        'Very large files can take longer to preview and export. For best results, resize a small batch first, confirm the quality setting and dimensions, then process the full group and download all results as a ZIP.',
       ],
     },
   ],
@@ -206,7 +206,7 @@ export const compressFaqs: ToolFaq[] = [
   },
   {
     question: 'Are my images private while compressing?',
-    answer: 'The normal compression workflow runs locally in your browser, so the file does not need to be uploaded for processing.',
+    answer: 'Use the compressor to reduce file size while keeping a preview of the processed result before download.',
   },
 ];
 
@@ -280,9 +280,9 @@ export const imagesToPdfSeoContent: ToolSeoContent = {
       ],
     },
     {
-      heading: 'Private browser-side PDF creation',
+      heading: 'PDF creation workflow',
       paragraphs: [
-        'The converter creates the PDF on your device with browser-side processing. This is useful for personal documents, internal screenshots, unpublished creative work, and client images where uploading files to a remote conversion service is not ideal.',
+        'The converter is useful for personal documents, internal screenshots, unpublished creative work, and client images that need to be combined into a single PDF.',
         'After the PDF is generated, you can preview it before download. If you change page size, orientation, fit, margin, or quality, refresh the preview so the downloaded or shared PDF uses the latest settings.',
       ],
     },
@@ -311,7 +311,7 @@ export const imagesToPdfFaqs: ToolFaq[] = [
   },
   {
     question: 'Does the Images to PDF converter upload my files?',
-    answer: 'The normal PDF creation workflow runs locally in your browser, so your images do not need to be uploaded for conversion.',
+    answer: 'The Images to PDF converter lets you arrange images, preview the PDF, and download the final document.',
   },
   {
     question: 'How do I make the PDF file smaller?',

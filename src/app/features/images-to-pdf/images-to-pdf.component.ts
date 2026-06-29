@@ -9,6 +9,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { AdSlotComponent } from '../../shared/components/ad-slot/ad-slot.component';
 import { QrCodeCardComponent } from '../../shared/components/qr-code-card/qr-code-card.component';
 import { UploadZoneComponent } from '../../shared/components/upload-zone/upload-zone.component';
+import { environment } from '../../../environments/environment';
 
 interface PdfImageJob {
   id: string;
@@ -93,6 +94,11 @@ export class ImagesToPdfComponent {
       'images to PDF, image to PDF converter, JPG to PDF, PNG to PDF, WebP to PDF, convert images to PDF online',
     );
     this.seo.updateFaqSchema(this.faqs);
+    this.seo.updateBreadcrumbSchema([
+      { name: 'Home', item: environment.siteUrl },
+      { name: 'PDF Tools', item: environment.siteUrl },
+      { name: 'Images to PDF', item: `${environment.siteUrl}/images-to-pdf` },
+    ]);
     this.destroyRef.onDestroy(() => {
       this.revokeUrls(this.jobs());
       this.revokePdfUrl();
@@ -222,6 +228,7 @@ export class ImagesToPdfComponent {
       const share = await this.imageShare.uploadBatch([{ blob, fileName: 'fleximagepro-images.pdf' }]);
       this.shareBatch.set(share);
       this.isShareModalOpen.set(true);
+      this.toast.success('Share link is ready.');
     } catch (error) {
       this.toast.error(error instanceof Error ? error.message : 'PDF sharing failed.');
     } finally {

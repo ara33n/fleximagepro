@@ -11,6 +11,7 @@ import { ImagesToPdfComponent } from './features/images-to-pdf/images-to-pdf.com
 import { ImageToolComponent } from './features/image-tool/image-tool.component';
 import { TextToolComponent } from './features/text-tool/text-tool.component';
 import { SeoToolComponent } from './features/seo-tool/seo-tool.component';
+import { UtilityToolComponent } from './features/utility-tool/utility-tool.component';
 import {
   compressFaqs,
   compressSeoContent,
@@ -177,6 +178,107 @@ const seoToolRoutes: Routes = seoToolSlugs.map((slug) => ({
   data: { slug },
 }));
 
+const developerToolSlugs = [
+  'json-formatter',
+  'json-validator',
+  'xml-formatter',
+  'xml-validator',
+  'html-formatter',
+  'css-formatter',
+  'javascript-formatter',
+  'html-minifier',
+  'css-minifier',
+  'javascript-minifier',
+  'sql-formatter',
+  'url-encode',
+  'url-decode',
+  'base64-encode',
+  'base64-decode',
+  'jwt-decoder',
+  'uuid-generator',
+  'md5-generator',
+  'sha1-generator',
+  'sha256-generator',
+  'sha512-generator',
+];
+
+const calculatorToolSlugs = [
+  'age-calculator',
+  'bmi-calculator',
+  'percentage-calculator',
+  'discount-calculator',
+  'gst-calculator',
+  'vat-calculator',
+  'emi-calculator',
+  'unit-converter',
+  'scientific-calculator',
+  'binary-calculator',
+];
+
+const generatorToolSlugs = [
+  'qr-code-generator',
+  'barcode-generator',
+  'password-generator',
+  'lorem-ipsum-generator',
+  'random-number-generator',
+  'random-name-generator',
+  'random-color-generator',
+  'css-gradient-generator',
+  'css-box-shadow-generator',
+  'css-border-radius-generator',
+  'css-clip-path-generator',
+];
+
+const pdfToolSlugs = [
+  'merge-pdf',
+  'split-pdf',
+  'rotate-pdf',
+  'extract-pdf-pages',
+  'rearrange-pdf-pages',
+  'delete-pdf-pages',
+  'add-page-numbers',
+  'pdf-to-images',
+  'pdf-metadata-viewer',
+];
+
+const gisToolSlugs = [
+  'kml-circle-generator',
+  'kml-polygon-generator',
+  'geojson-to-kml',
+  'kml-to-geojson',
+  'gpx-to-kml',
+  'coordinate-converter',
+  'latitude-longitude-finder',
+  'distance-calculator',
+  'area-calculator',
+  'buffer-generator',
+];
+
+const colorToolSlugs = [
+  'hex-to-rgb',
+  'rgb-to-hex',
+  'hex-to-hsl',
+  'hsl-to-hex',
+  'color-palette-generator',
+  'gradient-generator',
+  'contrast-checker',
+  'color-picker',
+];
+
+const dateTimeToolSlugs = [
+  'timestamp-converter',
+  'unix-timestamp-converter',
+  'time-zone-converter',
+  'date-difference-calculator',
+  'countdown-timer',
+];
+
+const utilityToolRoutes: Routes = [...developerToolSlugs, ...calculatorToolSlugs, ...generatorToolSlugs, ...pdfToolSlugs, ...gisToolSlugs, ...colorToolSlugs, ...dateTimeToolSlugs].map((slug) => ({
+  path: slug,
+  component: UtilityToolComponent,
+  data: { slug },
+}));
+
 export const routes: Routes = [
   {
     path: '',
@@ -214,6 +316,7 @@ export const routes: Routes = [
   ...imageToolRoutes,
   ...textToolRoutes,
   ...seoToolRoutes,
+  ...utilityToolRoutes,
   {
     path: 'privacy-policy',
     component: PrivacyPolicyComponent,

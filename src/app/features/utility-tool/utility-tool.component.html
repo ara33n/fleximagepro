@@ -1,0 +1,621 @@
+<article class="bg-zinc-50 dark:bg-zinc-950">
+  <section class="bg-white dark:bg-zinc-950">
+    <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <p class="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">{{ category.title }}</p>
+      <h1 class="mt-3 text-3xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-4xl">{{ catalogItem().label }}</h1>
+      <p class="mt-4 max-w-3xl text-base leading-7 text-zinc-600 dark:text-zinc-300">{{ heroDescription() }}</p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
+    <div class="space-y-6">
+      @if (slug === 'css-gradient-generator') {
+        <section class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 class="text-xl font-bold text-zinc-950 dark:text-white">CSS Gradient Generator</h2>
+          <div class="mt-5 grid gap-6 lg:grid-cols-[360px_1fr]">
+            <div class="space-y-4">
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Angle<input name="gradient-angle" type="text" [value]="gradientAngle()" (input)="updateGradientAngle($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+              @for (color of gradientColors(); track $index) {
+                <div class="grid grid-cols-[1fr_auto] gap-2">
+                  <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Color {{ $index + 1 }}<input [name]="'gradient-color-' + $index" type="color" [value]="color" (input)="updateGradientColor($index, $event)" class="mt-2 h-10 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                  @if (gradientColors().length > 2) {
+                    <button type="button" class="secondary-button mt-7" (click)="removeGradientColor($index)">-</button>
+                  }
+                </div>
+              }
+              <button type="button" class="primary-button" (click)="addGradientColor()">Add color +</button>
+              <div class="rounded-lg bg-zinc-950 p-4 text-zinc-100"><pre class="whitespace-pre-wrap font-mono text-sm">{{ gradientCssBlock() }}</pre></div>
+            </div>
+            <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950">
+              <div class="h-80 rounded-lg shadow-lg" [style.background]="gradientCssBlock().replace('background: ', '').replace(';', '')"></div>
+            </div>
+          </div>
+        </section>
+      } @else if (slug === 'css-border-radius-generator') {
+        <section class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 class="text-xl font-bold text-teal-700 dark:text-teal-300">Online Border Radius Generator</h2>
+          <div class="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px_minmax(0,1fr)]">
+            @for (corner of [
+              { key: 'topLeft', label: 'Top Left' },
+              { key: 'topRight', label: 'Top Right' },
+              { key: 'bottomLeft', label: 'Bottom Left' },
+              { key: 'bottomRight', label: 'Bottom Right' }
+            ]; track corner.key) {
+              <div class="rounded-2xl border border-teal-100 bg-teal-50 p-4 dark:border-teal-900 dark:bg-teal-950/40">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm font-bold text-zinc-900 dark:text-white">{{ corner.label }}</span>
+                  <label class="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+                    <input [name]="'radius-enabled-' + corner.key" type="checkbox" [checked]="$any(radiusCorners())[$any(corner.key)].enabled" (change)="updateRadiusCorner($any(corner.key), 'enabled', $event)" />
+                    On
+                  </label>
+                </div>
+                @if (corner.key === 'topLeft') {
+                  <label class="mt-3 flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200"><input name="radius-all-same" type="checkbox" [checked]="radiusAllSame()" (change)="updateRadiusAllSame($event)" /> All the same</label>
+                }
+                <div class="mt-3 grid grid-cols-[1fr_80px] items-center gap-3">
+                  <input [name]="'radius-range-' + corner.key" type="range" min="0" max="160" [value]="$any(radiusCorners())[$any(corner.key)].value" (input)="updateRadiusCorner($any(corner.key), 'value', $event)" class="shadow-range w-full" [style.background]="radiusRangeFill($any(corner.key))" />
+                  <input [name]="'radius-number-' + corner.key" type="number" min="0" max="160" [value]="$any(radiusCorners())[$any(corner.key)].value" (input)="updateRadiusCorner($any(corner.key), 'value', $event)" class="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
+                </div>
+              </div>
+            }
+            <div class="lg:col-start-2 lg:row-span-2 lg:row-start-1">
+              <div class="grid min-h-96 place-items-center rounded-lg border-2 border-dashed border-teal-600 bg-zinc-50 p-5 dark:bg-zinc-950" [ngStyle]="radiusPreviewStyle()">
+                <textarea name="radius-output" readonly [value]="radiusCssBlock()" class="min-h-32 w-full rounded-lg border border-zinc-300 bg-white p-3 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900"></textarea>
+                <button type="button" class="primary-button mt-3" (click)="copyRadiusCss()">Click to copy</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 grid gap-5 lg:grid-cols-2">
+            <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+              <h3 class="font-bold text-zinc-950 dark:text-white">Border Controls</h3>
+              <label class="mt-4 block text-sm font-semibold">Width <span class="ml-2 rounded bg-teal-700 px-2 py-1 text-white">{{ borderWidth() }}</span><input name="border-width-range" type="range" min="0" max="40" [value]="borderWidth()" (input)="updateBorderWidth($event)" class="shadow-range mt-3 w-full" [style.background]="percentFill(borderWidth(), 0, 40)" /></label>
+              <input name="border-width-number" type="number" min="0" max="40" [value]="borderWidth()" (input)="updateBorderWidth($event)" class="mt-2 w-24 rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <div class="mt-4 flex flex-wrap gap-2">
+                @for (style of ['solid','dotted','dashed','double','groove','ridge','inset','outset','hidden','none']; track style) {
+                  <button type="button" class="rounded-lg border px-3 py-2 text-sm font-semibold" [style.border-style]="style" [class.bg-teal-50]="borderStyle() === style" [class.border-teal-700]="borderStyle() === style" (click)="updateBorderStyle(style)">{{ style }}</button>
+                }
+              </div>
+              <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <label class="block text-sm font-semibold">Color<input name="border-color" type="color" [value]="borderColor()" (input)="updateBorderColor($event)" class="mt-2 h-10 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1" /></label>
+                <label class="block text-sm font-semibold">Opacity <span class="rounded bg-teal-700 px-2 py-1 text-white">{{ borderOpacity() }}</span><input name="border-opacity" type="range" min="0" max="100" [value]="borderOpacity()" (input)="updateBorderOpacity($event)" class="shadow-range mt-3 w-full" [style.background]="percentFill(borderOpacity(), 0, 100)" /></label>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-2">
+                @for (position of ['all','top','right','bottom','left']; track position) {
+                  <button type="button" class="secondary-button" [class.!border-teal-700]="borderPosition() === position" [class.!bg-teal-50]="borderPosition() === position" (click)="updateBorderPosition($any(position))">{{ position }}</button>
+                }
+              </div>
+            </div>
+            <div class="rounded-lg bg-zinc-950 p-4 text-zinc-100">
+              <label class="flex items-center gap-2 text-sm font-semibold"><input name="border-one-line" type="checkbox" [checked]="borderOneLine()" (change)="updateBorderOneLine($event)" /> One line</label>
+              <textarea name="border-css-output" readonly [value]="borderCssOutput()" class="mt-3 min-h-36 w-full rounded-lg border border-zinc-800 bg-zinc-900 p-3 font-mono text-sm text-zinc-100"></textarea>
+              <button type="button" class="mt-3 rounded-lg bg-teal-700 px-4 py-2 text-sm font-bold text-white" (click)="applyBorderCss()">Use This ↓</button>
+            </div>
+          </div>
+
+          <section class="mt-6 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+            <h3 class="font-bold text-zinc-950 dark:text-white">Code Editor</h3>
+            <div class="mt-4 grid gap-4 lg:grid-cols-3">
+              <label class="block text-sm font-semibold">HTML<textarea name="border-html-editor" [value]="borderHtml()" (input)="updateBorderHtml($event)" class="mt-2 min-h-56 w-full rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950"></textarea></label>
+              <label class="block text-sm font-semibold">CSS<textarea name="border-css-editor" [value]="borderCss()" (input)="updateBorderCss($event)" class="mt-2 min-h-56 w-full rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950"></textarea></label>
+              <div class="block text-sm font-semibold">WYSIWYG<iframe title="Border radius editor preview" [srcdoc]="radiusEditorDoc()" class="mt-2 min-h-56 w-full rounded-lg border border-zinc-300 bg-white dark:border-zinc-700"></iframe></div>
+            </div>
+            <button type="button" class="primary-button mt-4" (click)="applyBorderCss()">Apply CSS</button>
+          </section>
+        </section>
+      } @else if (slug === 'css-clip-path-generator') {
+        <section class="clip-maker-shell overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950">
+          <div class="grid h-full lg:grid-cols-[minmax(0,1fr)_390px]">
+            <div class="relative flex flex-col">
+              <div class="p-5">
+                <h2 class="text-xl font-semibold text-zinc-950 dark:text-white">CSS clip-path maker</h2>
+              </div>
+              <div class="relative grid flex-1 place-items-center p-6">
+                <div class="relative select-none" [style.width.px]="clipWidth()" [style.height.px]="clipHeight()" (pointermove)="moveClipPoint($event)" (pointerup)="stopClipDrag()" (pointerleave)="stopClipDrag()" (click)="addClipPoint($event)">
+                  @if (clipShowOutside()) {
+                    <div class="absolute inset-0 opacity-25" [ngStyle]="clipOutsideStyle()"></div>
+                  }
+                  <div class="absolute inset-0 shadow-2xl" [ngStyle]="clipPreviewStyle()"></div>
+                  @if (clipKind() === 'polygon') {
+                    @for (point of clipPoints(); track $index) {
+                      <button
+                        type="button"
+                        class="absolute size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-lg"
+                        [style.left.%]="point.x"
+                        [style.top.%]="point.y"
+                        [style.background]="point.color"
+                        (pointerdown)="startClipDrag($index, $event)"
+                        aria-label="Drag clip point"
+                      ></button>
+                    }
+                  } @else if (clipKind() === 'circle') {
+                    <button
+                      type="button"
+                      class="absolute size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-green-500 shadow-lg"
+                      [style.left.%]="circleRadiusHandleLeft()"
+                      [style.top.%]="clipCircle().centerY"
+                      (pointerdown)="startClipDrag('circle-radius', $event)"
+                      aria-label="Drag circle radius"
+                    ></button>
+                    <button
+                      type="button"
+                      class="absolute size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-orange-500 shadow-lg"
+                      [style.left.%]="clipCircle().centerX"
+                      [style.top.%]="clipCircle().centerY"
+                      (pointerdown)="startClipDrag('circle-center', $event)"
+                      aria-label="Drag circle center"
+                    ></button>
+                  } @else if (clipKind() === 'ellipse') {
+                    <button
+                      type="button"
+                      class="absolute size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-green-500 shadow-lg"
+                      [style.left.%]="ellipseRadiusHandleLeft()"
+                      [style.top.%]="clipEllipse().centerY"
+                      (pointerdown)="startClipDrag('ellipse-radius', $event)"
+                      aria-label="Drag ellipse radius"
+                    ></button>
+                    <button
+                      type="button"
+                      class="absolute size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-orange-500 shadow-lg"
+                      [style.left.%]="clipEllipse().centerX"
+                      [style.top.%]="clipEllipse().centerY"
+                      (pointerdown)="startClipDrag('ellipse-center', $event)"
+                      aria-label="Drag ellipse center"
+                    ></button>
+                  }
+                </div>
+              </div>
+              <button type="button" class="bg-zinc-950 p-4 text-left font-mono text-sm text-zinc-100" (click)="copyClipCss()">
+                <span class="text-pink-400">clip-path</span><span class="text-zinc-400">: </span>
+                @if (clipKind() === 'circle') {
+                  <span class="text-yellow-300">circle</span><span class="text-zinc-400">(</span><span [attr.data-blink]="clipValueBlinkKey('circle-radius')" class="text-cyan-300" [ngClass]="clipValueBlinkClass('circle-radius')" [ngStyle]="clipValueBlinkStyle('circle-radius')">{{ clipCircle().radius.toFixed(1) }}%</span><span class="text-zinc-400"> at </span><span [attr.data-blink]="clipValueBlinkKey('circle-center-x')" class="text-cyan-300" [ngClass]="clipValueBlinkClass('circle-center')" [ngStyle]="clipValueBlinkStyle('circle-center')">{{ clipCircle().centerX.toFixed(0) }}%</span><span class="text-zinc-400"> </span><span [attr.data-blink]="clipValueBlinkKey('circle-center-y')" class="text-cyan-300" [ngClass]="clipValueBlinkClass('circle-center')" [ngStyle]="clipValueBlinkStyle('circle-center')">{{ clipCircle().centerY.toFixed(0) }}%</span><span class="text-zinc-400">)</span>
+                } @else if (clipKind() === 'ellipse') {
+                  <span class="text-yellow-300">ellipse</span><span class="text-zinc-400">(</span><span [attr.data-blink]="clipValueBlinkKey('ellipse-radius-x')" class="text-cyan-300" [ngClass]="clipValueBlinkClass('ellipse-radius')" [ngStyle]="clipValueBlinkStyle('ellipse-radius')">{{ clipEllipse().radiusX.toFixed(1) }}%</span><span class="text-zinc-400"> </span><span [attr.data-blink]="clipValueBlinkKey('ellipse-radius-y')" class="text-cyan-300" [ngClass]="clipValueBlinkClass('ellipse-radius')" [ngStyle]="clipValueBlinkStyle('ellipse-radius')">{{ clipEllipse().radiusY.toFixed(1) }}%</span><span class="text-zinc-400"> at </span><span [attr.data-blink]="clipValueBlinkKey('ellipse-center-x')" class="text-cyan-300" [ngClass]="clipValueBlinkClass('ellipse-center')" [ngStyle]="clipValueBlinkStyle('ellipse-center')">{{ clipEllipse().centerX.toFixed(0) }}%</span><span class="text-zinc-400"> </span><span [attr.data-blink]="clipValueBlinkKey('ellipse-center-y')" class="text-cyan-300" [ngClass]="clipValueBlinkClass('ellipse-center')" [ngStyle]="clipValueBlinkStyle('ellipse-center')">{{ clipEllipse().centerY.toFixed(0) }}%</span><span class="text-zinc-400">)</span>
+                } @else {
+                  <span class="text-yellow-300">polygon</span><span class="text-zinc-400">(</span>@for (point of clipPoints(); track $index) {<span [attr.data-blink]="clipValueBlinkKey(clipPointBlinkKey($index))" class="text-cyan-300" [ngClass]="clipValueBlinkClass(clipPointBlinkKey($index))" [ngStyle]="clipValueBlinkStyle(clipPointBlinkKey($index))">{{ point.x.toFixed(0) }}% {{ point.y.toFixed(0) }}%</span>@if (!$last) {<span class="text-zinc-400">, </span>}}<span class="text-zinc-400">)</span>
+                }
+                <span class="text-zinc-400">;</span>
+              </button>
+            </div>
+
+            <aside class="clip-side-panel border-l border-zinc-900 bg-zinc-950 p-5 text-zinc-100">
+              <h3 class="text-sm font-bold uppercase tracking-wide text-zinc-400">Shape Gallery</h3>
+              <div class="clip-gallery-fold mt-4 space-y-3">
+                @for (row of clipPresetRows(); track $index) {
+                  <div class="clip-gallery-row grid grid-cols-4 gap-3" [style.--row-index]="$index">
+                    @for (preset of row; track preset.name) {
+                      <button type="button" class="rounded-lg border border-zinc-800 bg-zinc-900 p-2 text-center text-[11px] font-semibold transition hover:border-teal-500" [class.!bg-teal-900]="clipPresetName() === preset.name" [class.!border-teal-400]="clipPresetName() === preset.name" (click)="applyClipPreset(preset)">
+                        <span class="mx-auto block size-11" [style.background]="preset.color" [style.clip-path]="presetClipStyle(preset)"></span>
+                        <span class="mt-2 block leading-tight">{{ preset.name }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="mt-6 border-t border-zinc-800 pt-5">
+                <h3 class="text-sm font-bold uppercase tracking-wide text-zinc-400">Demo Size</h3>
+                <div class="mt-3 grid grid-cols-2 gap-3">
+                  <label class="text-sm">Width<input name="clip-width" type="number" [value]="clipWidth()" (input)="updateClipSize('width', $event)" class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100" /></label>
+                  <label class="text-sm">Height<input name="clip-height" type="number" [value]="clipHeight()" (input)="updateClipSize('height', $event)" class="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100" /></label>
+                </div>
+              </div>
+
+              <div class="mt-6 border-t border-zinc-800 pt-5">
+                <h3 class="text-sm font-bold uppercase tracking-wide text-zinc-400">Demo Background</h3>
+                <div class="mt-3 grid grid-cols-4 gap-2">
+                  @for (bg of ['linear-gradient(135deg,#0f766e,#14b8a6)','linear-gradient(135deg,#0369a1,#38bdf8)','linear-gradient(135deg,#7c2d12,#fb923c)','linear-gradient(135deg,#581c87,#e879f9)']; track bg) {
+                    <button type="button" class="h-12 rounded-lg border border-zinc-700" [style.background]="bg" (click)="setClipBackground(bg)" aria-label="Set background"></button>
+                  }
+                </div>
+                <input name="clip-custom-url" type="url" [value]="clipCustomUrl()" (input)="updateClipCustomUrl($event)" placeholder="Custom image URL" class="mt-3 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100" />
+              </div>
+
+              <label class="mt-6 flex items-center justify-between gap-3 border-t border-zinc-800 pt-5 text-sm font-semibold">
+                Show outside clip-path
+                <input name="clip-show-outside" type="checkbox" [checked]="clipShowOutside()" (change)="updateClipShowOutside($event)" class="size-5" />
+              </label>
+              <button type="button" class="mt-5 w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-teal-600" (click)="copyClipCss()">Copy CSS</button>
+            </aside>
+          </div>
+        </section>
+      } @else if (slug === 'css-box-shadow-generator') {
+        <section class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <div>
+            <h2 class="text-xl font-bold text-zinc-950 dark:text-white">Box Shadow CSS Generator</h2>
+            <p class="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-300">Adjust layers, preview the shadow live, pick a preset, then apply the generated CSS to the editor preview.</p>
+          </div>
+
+          <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+            <div class="space-y-5">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  Active layer
+                  <select name="shadow-active-layer" [value]="activeShadowLayer()" (change)="updateActiveShadowLayer($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+                    @for (layer of shadowLayers(); track $index) {
+                      <option [value]="$index">Layer {{ $index + 1 }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="flex items-end gap-3 text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  <input name="shadow-inset" type="checkbox" [checked]="shadowLayers()[activeShadowLayer()].inset" (change)="updateShadowLayer('inset', $event)" class="size-5 rounded border-zinc-300" />
+                  Inset
+                </label>
+              </div>
+
+              @for (control of [
+                { key: 'x', label: 'Shift Right (offset-x)', min: -80, max: 80 },
+                { key: 'y', label: 'Shift Down (offset-y)', min: -80, max: 80 },
+                { key: 'spread', label: 'Spread', min: -50, max: 80 },
+                { key: 'blur', label: 'Blur', min: 0, max: 120 },
+                { key: 'opacity', label: 'Opacity', min: 0, max: 100 }
+              ]; track control.key) {
+                <div class="grid gap-3 sm:grid-cols-[1fr_90px] sm:items-center">
+                  <label class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                    {{ control.label }}
+                    <input [name]="'shadow-' + control.key + '-range'" type="range" [min]="control.min" [max]="control.max" [value]="$any(shadowLayers()[activeShadowLayer()])[control.key]" (input)="updateShadowLayer($any(control.key), $event)" [style.background]="shadowRangeFill($any(control.key), control.min, control.max)" class="shadow-range mt-2 w-full" />
+                  </label>
+                  <input [name]="'shadow-' + control.key + '-number'" type="number" [min]="control.min" [max]="control.max" [value]="$any(shadowLayers()[activeShadowLayer()])[control.key]" (input)="updateShadowLayer($any(control.key), $event)" class="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
+                </div>
+              }
+
+              <div class="grid gap-4 sm:grid-cols-[160px_1fr]">
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  Shadow color
+                  <input name="shadow-color-picker" type="color" [value]="shadowLayers()[activeShadowLayer()].color" (input)="updateShadowLayer('color', $event)" class="mt-2 h-10 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 dark:border-zinc-700 dark:bg-zinc-950" />
+                </label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  Generated shadow value
+                  <input name="shadow-value" type="text" readonly [value]="shadowValue()" class="mt-2 w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950" />
+                </label>
+              </div>
+
+              <div class="flex flex-wrap gap-2">
+                <button type="button" class="primary-button" (click)="addShadowLayer()">Add new +</button>
+                @if (shadowLayers().length > 1) {
+                  <button type="button" class="secondary-button" (click)="removeShadowLayer()">Remove layer -</button>
+                }
+                <button type="button" class="secondary-button" (click)="copyShadowCss()">Copy CSS</button>
+              </div>
+
+              <div class="rounded-lg bg-zinc-950 p-4 text-zinc-100">
+                <pre class="whitespace-pre-wrap font-mono text-sm">{{ shadowCssBlock() }}</pre>
+                <button type="button" class="mt-4 rounded-lg bg-teal-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-teal-800" (click)="applyShadowCss()">Use This -></button>
+              </div>
+            </div>
+
+            <aside class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800" [style.background]="shadowBackgroundColor()">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Object color<input name="shadow-object-color" type="color" [value]="shadowObjectColor()" (input)="updateShadowObjectColor($event)" class="mt-2 h-10 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Background color<input name="shadow-background-color" type="color" [value]="shadowBackgroundColor()" (input)="updateShadowBackgroundColor($event)" class="mt-2 h-10 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1" /></label>
+              </div>
+              <div class="mt-10 grid min-h-80 place-items-center">
+                <div class="grid h-40 w-56 place-items-center rounded-lg text-center text-lg font-bold text-white transition" [ngStyle]="shadowPreviewStyle()">Preview</div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 class="text-lg font-bold text-zinc-950 dark:text-white">Effect Gallery</h2>
+          <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            @for (preset of ['Hover','Sides','Button','Mirrors','In&Out','Gradient','Pile','Checker','Borders','Rainbow','Candy','Flames','Candle','Well','Pyramid','Target']; track preset) {
+              <button type="button" class="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-left text-sm font-bold text-zinc-800 transition hover:border-teal-700 hover:text-teal-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100" (click)="applyShadowPreset(preset)">
+                <span class="block h-14 rounded bg-teal-700" [style.box-shadow]="preset === 'Rainbow' ? '8px 8px 0 #ef4444, 16px 16px 0 #f59e0b, 24px 24px 0 #10b981' : preset === 'Borders' ? '0 0 0 6px #0f766e' : '0 14px 28px rgba(15,118,110,.35)'"></span>
+                <span class="mt-3 block">{{ preset }}</span>
+              </button>
+            }
+          </div>
+        </section>
+
+        <section class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 class="text-lg font-bold text-zinc-950 dark:text-white">Code Editor</h2>
+          <div class="mt-4 grid gap-4 lg:grid-cols-3">
+            <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+              HTML
+              <textarea name="shadow-html-editor" [value]="shadowHtml()" (input)="updateShadowHtml($event)" class="mt-2 min-h-64 w-full rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-sm text-zinc-950 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"></textarea>
+            </label>
+            <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+              CSS
+              <textarea name="shadow-css-editor" [value]="shadowCss()" (input)="updateShadowCss($event)" class="mt-2 min-h-64 w-full rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-sm text-zinc-950 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"></textarea>
+            </label>
+            <div class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+              WYSIWYG
+              <iframe title="Box shadow editor preview" [srcdoc]="shadowEditorDoc()" class="mt-2 min-h-64 w-full rounded-lg border border-zinc-300 bg-white dark:border-zinc-700"></iframe>
+            </div>
+          </div>
+          <button type="button" class="primary-button mt-4" (click)="applyShadowCss()">Apply CSS</button>
+        </section>
+      } @else {
+      <section class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        @if (slug === 'qr-code-generator') {
+          <div class="grid gap-5">
+            <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+              QR Type
+              <select name="qr-type" [value]="qrType()" (change)="updateQrType($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+                <option value="website">Website</option>
+                <option value="business-card">Digital Business Card</option>
+                <option value="text">Text</option>
+                <option value="wifi">WiFi</option>
+                <option value="pdf">PDF</option>
+                <option value="app-store">App Store</option>
+              </select>
+            </label>
+
+            @if (qrType() === 'website') {
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                Website URL
+                <input name="qr-website" type="url" [value]="qrFields()['website']" (input)="updateQrField('website', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              </label>
+            } @else if (qrType() === 'business-card') {
+              <div class="rounded-lg border border-teal-100 bg-teal-50 p-4 text-sm font-bold uppercase tracking-wide text-teal-800 dark:border-teal-900 dark:bg-teal-950 dark:text-teal-200">
+                Digital Business Card Information
+              </div>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Full name<input name="qr-full-name" type="text" [value]="qrFields()['fullName']" (input)="updateQrField('fullName', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Phone<input name="qr-phone" type="tel" [value]="qrFields()['phone']" (input)="updateQrField('phone', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Email<input name="qr-email" type="email" [value]="qrFields()['email']" (input)="updateQrField('email', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Company<input name="qr-company" type="text" [value]="qrFields()['company']" (input)="updateQrField('company', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Work title<input name="qr-title" type="text" [value]="qrFields()['title']" (input)="updateQrField('title', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Work phone<input name="qr-work-phone" type="tel" [value]="qrFields()['workPhone']" (input)="updateQrField('workPhone', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Fax<input name="qr-fax" type="tel" [value]="qrFields()['fax']" (input)="updateQrField('fax', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Street<input name="qr-street" type="text" [value]="qrFields()['street']" (input)="updateQrField('street', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">City<input name="qr-city" type="text" [value]="qrFields()['city']" (input)="updateQrField('city', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">State<input name="qr-state" type="text" [value]="qrFields()['state']" (input)="updateQrField('state', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Country<input name="qr-country" type="text" [value]="qrFields()['country']" (input)="updateQrField('country', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Zip<input name="qr-zip" type="text" [value]="qrFields()['zip']" (input)="updateQrField('zip', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100 sm:col-span-2">Website<input name="qr-card-website" type="url" [value]="qrFields()['website']" (input)="updateQrField('website', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+              </div>
+            } @else if (qrType() === 'text') {
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                Text
+                <textarea name="qr-text" [value]="qrFields()['text']" (input)="updateQrField('text', $event)" class="mt-2 min-h-32 w-full rounded-lg border border-zinc-300 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-950"></textarea>
+              </label>
+            } @else if (qrType() === 'wifi') {
+              <div class="grid gap-4 sm:grid-cols-3">
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Network name<input name="qr-ssid" type="text" [value]="qrFields()['ssid']" (input)="updateQrField('ssid', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Password<input name="qr-password" type="text" [value]="qrFields()['password']" (input)="updateQrField('password', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  Security
+                  <select name="qr-security" [value]="qrFields()['security']" (change)="updateQrField('security', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+                    <option value="WPA">WPA/WPA2</option>
+                    <option value="WEP">WEP</option>
+                    <option value="nopass">No password</option>
+                  </select>
+                </label>
+              </div>
+            } @else if (qrType() === 'pdf') {
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                PDF URL
+                <input name="qr-pdf" type="url" [value]="qrFields()['pdf']" (input)="updateQrField('pdf', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              </label>
+            } @else if (qrType() === 'app-store') {
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                App Store / Play Store URL
+                <input name="qr-app" type="url" [value]="qrFields()['app']" (input)="updateQrField('app', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              </label>
+            }
+
+            <div class="grid gap-4 sm:grid-cols-6">
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Frame<select name="qr-frame" [value]="qrFields()['frame']" (change)="updateQrField('frame', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"><option value="none">None</option><option value="rounded">Rounded border</option><option value="scan-me">Scan me</option><option value="phone">Phone card</option><option value="ticket">Ticket</option><option value="badge">Badge</option><option value="corner">Corner marks</option><option value="shadow">Soft shadow</option></select></label>
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Logo text<input name="qr-logo" type="text" maxlength="4" [value]="qrFields()['logo']" (input)="updateQrField('logo', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Logo style<select name="qr-logo-style" [value]="qrFields()['logoStyle']" (change)="updateQrField('logoStyle', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"><option value="corner-break">Corner break</option><option value="double-corner">Double corner</option><option value="bracket">Bracket</option><option value="dashed">Dashed</option><option value="circle">Circle</option><option value="minimal">Minimal</option></select></label>
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">QR color<input name="qr-foreground-picker" type="color" [value]="qrFields()['foreground']" (input)="updateQrField('foreground', $event)" class="mt-2 h-10 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">QR color code<input name="qr-foreground" type="text" [value]="qrFields()['foreground']" (input)="updateQrField('foreground', $event)" placeholder="#111827" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Background<input name="qr-background-picker" type="color" [value]="qrFields()['background']" (input)="updateQrField('background', $event)" class="mt-2 h-10 w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">Background code<input name="qr-background" type="text" [value]="qrFields()['background']" (input)="updateQrField('background', $event)" placeholder="#ffffff" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" /></label>
+            </div>
+          </div>
+        } @else if (category.title === 'PDF Tools') {
+          <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div class="space-y-4">
+              <label class="block rounded-lg border-2 border-dashed border-teal-200 bg-teal-50/60 p-5 text-sm font-semibold text-zinc-800 transition hover:border-teal-500 dark:border-teal-900 dark:bg-teal-950/30 dark:text-zinc-100">
+                Select PDF file{{ pdfAcceptsMultiple() ? 's' : '' }}
+                <input name="pdf-files" type="file" accept="application/pdf,.pdf" [multiple]="pdfAcceptsMultiple()" (change)="updatePdfFiles($event)" class="mt-3 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
+              </label>
+
+              @if (pdfFiles().length) {
+                <div class="grid gap-2">
+                  @for (file of pdfFiles(); track file.name) {
+                    <div class="flex items-center justify-between gap-3 rounded-lg bg-zinc-50 px-3 py-2 text-sm dark:bg-zinc-950">
+                      <span class="min-w-0 truncate font-semibold text-zinc-900 dark:text-white">{{ file.name }}</span>
+                      <span class="shrink-0 text-zinc-500">{{ formatBytes(file.size) }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <aside class="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+              <h2 class="text-base font-bold text-zinc-950 dark:text-white">PDF Options</h2>
+              @if (pdfNeedsPageRange()) {
+                <label class="mt-4 block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  Pages
+                  <input name="pdf-page-range" type="text" [value]="pdfPageInput()" (input)="updatePdfPageInput($event)" placeholder="1,3-5" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                </label>
+              }
+              @if (pdfNeedsOrder()) {
+                <label class="mt-4 block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  New page order
+                  <input name="pdf-page-order" type="text" [value]="pdfOrderInput()" (input)="updatePdfOrderInput($event)" placeholder="3,1,2" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                </label>
+              }
+              @if (pdfNeedsAngle()) {
+                <label class="mt-4 block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  Rotation
+                  <select name="pdf-rotation" [value]="pdfAngle()" (change)="updatePdfAngle($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+                    <option value="90">90 degrees</option>
+                    <option value="180">180 degrees</option>
+                    <option value="270">270 degrees</option>
+                  </select>
+                </label>
+              }
+              <div class="mt-5 flex flex-wrap gap-2">
+                <button type="button" class="primary-button" (click)="process()">{{ pdfActionLabel() }}</button>
+                <button type="button" class="secondary-button" (click)="clear()">Reset</button>
+                <button type="button" class="secondary-button" (click)="clear()">Clear</button>
+              </div>
+            </aside>
+          </div>
+        } @else if (category.title === 'GIS / Map Tools') {
+          <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+              {{ gisPrimaryLabel() }}
+              <textarea name="gis-input" [value]="gisInput()" (input)="updateGisInput($event)" [placeholder]="gisPlaceholder()" class="mt-2 min-h-64 w-full rounded-lg border border-zinc-300 bg-white p-3 font-mono text-sm text-zinc-950 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"></textarea>
+            </label>
+            <aside class="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+              <h2 class="text-base font-bold text-zinc-950 dark:text-white">Map Options</h2>
+              @if (gisShowSecond()) {
+                <label class="mt-4 block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  {{ gisSecondaryLabel() }}
+                  <input name="gis-second" type="text" [value]="gisSecondInput()" (input)="updateGisSecondInput($event)" [placeholder]="slug === 'distance-calculator' ? '31.5304, 74.3687' : '1000'" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                </label>
+              }
+              <div class="mt-5 flex flex-wrap gap-2">
+                <button type="button" class="primary-button" (click)="process()">Generate</button>
+                <button type="button" class="secondary-button" (click)="clear()">Reset</button>
+                <button type="button" class="secondary-button" (click)="clear()">Clear</button>
+              </div>
+            </aside>
+          </div>
+        } @else if (usesFields()) {
+          <div class="grid gap-4 sm:grid-cols-3">
+            <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+              {{ primaryLabel() }}
+              <input name="utility-input" [type]="inputType()" [value]="input()" (input)="updateInput($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            </label>
+            @if (showSecondField()) {
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                {{ secondLabel() }}
+                @if (slug === 'unit-converter') {
+                  <select name="utility-second-mode" [value]="second() || 'm-ft'" (change)="updateSecond($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+                    <option value="m-ft">Meters to feet</option>
+                    <option value="ft-m">Feet to meters</option>
+                    <option value="kg-lb">KG to LB</option>
+                    <option value="lb-kg">LB to KG</option>
+                    <option value="c-f">Celsius to Fahrenheit</option>
+                    <option value="f-c">Fahrenheit to Celsius</option>
+                  </select>
+                } @else {
+                  <input name="utility-second" [type]="slug === 'gradient-generator' || slug === 'css-gradient-generator' || slug === 'contrast-checker' ? 'color' : 'text'" [value]="second()" (input)="updateSecond($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                }
+              </label>
+            }
+            @if (showThirdField()) {
+              <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                {{ thirdLabel() }}
+                <input name="utility-third" type="text" [value]="third()" (input)="updateThird($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              </label>
+            }
+          </div>
+        } @else if (hasInput()) {
+          <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+            Input
+            <textarea name="utility-input-textarea" class="mt-3 min-h-64 w-full rounded-lg border border-zinc-300 bg-white p-3 font-mono text-sm text-zinc-950 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" [value]="input()" (input)="updateInput($event)"></textarea>
+          </label>
+        }
+
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button type="button" class="primary-button" (click)="process()">{{ slug === 'uuid-generator' ? 'Generate Again' : (slug === 'qr-code-generator' ? 'Generate QR Code' : (slug === 'barcode-generator' ? 'Generate Barcode' : 'Process')) }}</button>
+          <button type="button" class="secondary-button" (click)="clear()">Reset</button>
+          <button type="button" class="secondary-button" (click)="clear()">Clear</button>
+        </div>
+      </section>
+
+      @if (error()) {
+        <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">{{ error() }}</div>
+      }
+
+      @if (rows().length || output()) {
+        <section class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 class="text-lg font-semibold text-zinc-950 dark:text-white">Result</h2>
+              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Copy the result or use the download buttons to save this output.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="secondary-button" (click)="copyOutput()">Copy</button>
+              @if (slug === 'qr-code-generator') {
+                <button type="button" class="secondary-button" (click)="downloadQr('jpg')">Download JPG</button>
+                <button type="button" class="secondary-button" (click)="downloadQr('svg')">Download SVG</button>
+              }
+              @if (slug === 'barcode-generator') {
+                <button type="button" class="secondary-button" (click)="downloadBarcode('jpg')">Download JPG</button>
+                <button type="button" class="secondary-button" (click)="downloadBarcode('png')">Download PNG</button>
+                <button type="button" class="secondary-button" (click)="downloadBarcode('svg')">Download SVG</button>
+              }
+              @if (showPdfDownload()) {
+                <button type="button" class="secondary-button" (click)="downloadOutput('pdf')">Download PDF</button>
+              }
+              @if (category.title === 'PDF Tools' && pdfOutputUrl()) {
+                <a class="secondary-button" [href]="pdfOutputUrl()" [download]="pdfOutputName()">Download {{ pdfOutputName() }}</a>
+              }
+              @if (category.title === 'GIS / Map Tools' && output()) {
+                <button type="button" class="secondary-button" (click)="downloadGis()">Download {{ gisDownloadExtension().toUpperCase() }}</button>
+              }
+              @if (slug !== 'qr-code-generator' && slug !== 'barcode-generator') {
+                <button type="button" class="secondary-button" (click)="downloadOutput('txt')">TXT</button>
+                <button type="button" class="secondary-button" (click)="downloadOutput('csv')">CSV</button>
+                <button type="button" class="secondary-button" (click)="downloadOutput('json')">JSON</button>
+                <button type="button" class="secondary-button" (click)="downloadOutput('html')">HTML</button>
+              }
+            </div>
+          </div>
+
+          @if (slug === 'qr-code-generator' && qrPreview()) {
+            <div class="mt-5 flex justify-center">
+              <div class="relative bg-white p-5 shadow-sm dark:border-zinc-700" [ngClass]="qrFrameClass()" [ngStyle]="qrFrameStyle()">
+                @if (qrFields()['frame'] === 'scan-me' || qrFields()['frame'] === 'badge') {
+                  <div class="mb-3 text-center text-lg font-black tracking-wide" [style.color]="qrFields()['foreground']">SCAN ME</div>
+                }
+                <img [src]="qrPreview()" alt="Generated QR code preview" class="size-64 rounded-lg bg-white object-contain sm:size-80" />
+                @if (qrFields()['frame'] === 'ticket') {
+                  <div class="mt-3 text-center text-xs font-bold uppercase tracking-[0.2em]" [style.color]="qrFields()['foreground']">Admit to link</div>
+                }
+                @if (qrFields()['logo']) {
+                  <div class="absolute left-1/2 top-1/2 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center text-lg font-black shadow-sm" [ngClass]="logoBorderClass()" [ngStyle]="logoBorderStyle()">
+                    {{ qrFields()['logo'] }}
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (slug === 'barcode-generator' && barcodePreview()) {
+            <div class="mt-5 flex justify-center">
+              <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-700">
+                <img [src]="barcodePreview()" alt="Generated barcode preview" class="max-h-56 w-full max-w-3xl object-contain" />
+              </div>
+            </div>
+          }
+
+          @if (rows().length) {
+            <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+              @for (row of rows(); track row.label) {
+                <div class="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-950" [ngStyle]="rowCardStyle(row.value)">
+                  <dt class="text-zinc-500" [ngStyle]="rowLabelStyle(row.value)">{{ row.label }}</dt>
+                  <dd class="mt-1 break-words font-semibold text-zinc-950 dark:text-white" [style.color]="rowTextColor(row.value)">{{ row.value }}</dd>
+                </div>
+              }
+            </dl>
+          }
+          @if (hasVisualPreview()) {
+            <div class="mt-5 rounded-lg border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950">
+              <h3 class="text-sm font-bold text-zinc-900 dark:text-white">Live Preview</h3>
+              <div class="mt-4 grid min-h-64 place-items-center rounded-lg bg-white p-6 dark:bg-zinc-900">
+                <div class="h-44 w-full max-w-md shadow-lg" [ngStyle]="visualPreviewStyle()"></div>
+              </div>
+            </div>
+          }
+          @if (output() && showOutputText()) {
+            <textarea name="utility-output" class="mt-4 min-h-72 w-full rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-sm text-zinc-950 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100" readonly [value]="output()"></textarea>
+          }
+        </section>
+      }
+      }
+    </div>
+
+  </section>
+
+  <app-tool-seo-block [item]="catalogItem()" [category]="category" />
+</article>

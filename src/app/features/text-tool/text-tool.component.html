@@ -6,7 +6,7 @@
         {{ catalogItem().label }}
       </h1>
       <p class="mt-4 max-w-3xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
-        {{ catalogItem().description }}
+        {{ catalogItem().description }} Add your text, run the tool, compare the result, and save the output in practical formats when the page result needs to be reused.
       </p>
     </div>
   </section>
@@ -17,7 +17,7 @@
         <section class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
           <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
             {{ inputLabel() }}
-            <textarea
+            <textarea name="features-text-tool-text-tool-textarea-1"
               class="mt-3 min-h-64 w-full rounded-lg border border-zinc-300 bg-white p-3 font-mono text-sm text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
               [value]="input()"
               (input)="updateInput($event)"
@@ -28,7 +28,7 @@
           @if (needsCompareInput()) {
             <label class="mt-5 block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
               Second text
-              <textarea
+              <textarea name="features-text-tool-text-tool-textarea-2"
                 class="mt-3 min-h-64 w-full rounded-lg border border-zinc-300 bg-white p-3 font-mono text-sm text-zinc-950 outline-none focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                 [value]="compareInput()"
                 (input)="updateCompareInput($event)"
@@ -40,6 +40,7 @@
           <div class="mt-4 flex flex-wrap gap-2">
             <button type="button" class="primary-button" (click)="process()">Process</button>
             <button type="button" class="secondary-button" (click)="loadSample()">Sample</button>
+            <button type="button" class="secondary-button" (click)="clear()">Reset</button>
             <button type="button" class="secondary-button" (click)="clear()">Clear</button>
           </div>
         </section>
@@ -68,11 +69,14 @@
           <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 class="text-lg font-semibold text-zinc-950 dark:text-white">{{ outputTitle() }}</h2>
-              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">All done. Copy or download the result.</p>
+              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">All done. Copy the result or use the download buttons to save this output.</p>
             </div>
             <div class="flex flex-wrap gap-2">
               <button type="button" class="secondary-button" (click)="copyOutput()">Copy</button>
-              <button type="button" class="secondary-button" (click)="downloadOutput()">Download TXT</button>
+              <button type="button" class="secondary-button" (click)="downloadOutput('txt')">TXT</button>
+              <button type="button" class="secondary-button" (click)="downloadOutput('csv')">CSV</button>
+              <button type="button" class="secondary-button" (click)="downloadOutput('json')">JSON</button>
+              <button type="button" class="secondary-button" (click)="downloadOutput('html')">HTML</button>
             </div>
           </div>
 
@@ -88,7 +92,7 @@
           }
 
           @if (hasOutputText()) {
-            <textarea
+            <textarea name="features-text-tool-text-tool-textarea-3"
               class="mt-4 min-h-72 w-full rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-sm text-zinc-950 outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
               readonly
               [value]="output()"
@@ -106,11 +110,11 @@
         @if (kind === 'text-repeater') {
           <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
             Repeat count
-            <input type="number" min="1" max="1000" [value]="repeatCount()" (input)="updateNumber(repeatCount, $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            <input name="features-text-tool-text-tool-input-4" type="number" min="1" max="1000" [value]="repeatCount()" (input)="updateNumber(repeatCount, $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
           </label>
           <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
             Separator
-            <select [value]="repeatSeparator()" (change)="repeatSeparator.set($any($event.target).value)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+            <select name="features-text-tool-text-tool-select-5" [value]="repeatSeparator()" (change)="repeatSeparator.set($any($event.target).value)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
               <option value="newline">New line</option>
               <option value="space">Space</option>
               <option value="comma">Comma</option>
@@ -121,11 +125,11 @@
         @if (kind === 'random-text-generator') {
           <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
             Count
-            <input type="number" min="1" max="1000" [value]="randomCount()" (input)="updateNumber(randomCount, $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+            <input name="features-text-tool-text-tool-input-6" type="number" min="1" max="1000" [value]="randomCount()" (input)="updateNumber(randomCount, $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
           </label>
           <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
             Type
-            <select [value]="randomMode()" (change)="randomMode.set($any($event.target).value)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+            <select name="features-text-tool-text-tool-select-7" [value]="randomMode()" (change)="randomMode.set($any($event.target).value)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
               <option value="words">Words</option>
               <option value="sentences">Sentences</option>
               <option value="paragraphs">Paragraphs</option>
@@ -136,7 +140,7 @@
         @if (kind === 'sort-lines') {
           <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
             Direction
-            <select [value]="sortDirection()" (change)="sortDirection.set($any($event.target).value)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+            <select name="features-text-tool-text-tool-select-8" [value]="sortDirection()" (change)="sortDirection.set($any($event.target).value)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
               <option value="asc">A to Z</option>
               <option value="desc">Z to A</option>
             </select>
@@ -146,7 +150,7 @@
         @if (kind === 'reverse-text') {
           <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
             Reverse by
-            <select [value]="reverseMode()" (change)="reverseMode.set($any($event.target).value)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+            <select name="features-text-tool-text-tool-select-9" [value]="reverseMode()" (change)="reverseMode.set($any($event.target).value)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
               <option value="characters">Characters</option>
               <option value="words">Words</option>
               <option value="lines">Lines</option>
@@ -157,7 +161,7 @@
         @if (kind === 'case-converter') {
           <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
             Case
-            <select [value]="caseMode()" (change)="caseMode.set($any($event.target).value)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+            <select name="features-text-tool-text-tool-select-10" [value]="caseMode()" (change)="caseMode.set($any($event.target).value)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
               <option value="sentence">Sentence case</option>
               <option value="upper">UPPERCASE</option>
               <option value="lower">lowercase</option>
@@ -171,7 +175,7 @@
         @if (kind === 'slug-generator') {
           <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
             Separator
-            <select [value]="slugSeparator()" (change)="slugSeparator.set($any($event.target).value)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+            <select name="features-text-tool-text-tool-select-11" [value]="slugSeparator()" (change)="slugSeparator.set($any($event.target).value)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
               <option value="-">Hyphen</option>
               <option value="_">Underscore</option>
             </select>

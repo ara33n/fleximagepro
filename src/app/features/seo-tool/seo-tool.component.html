@@ -6,7 +6,7 @@
         {{ catalogItem().label }}
       </h1>
       <p class="mt-4 max-w-3xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
-        {{ catalogItem().description }}
+        {{ catalogItem().description }} Fill the focused fields, generate clean SEO output, preview it on the right side, and download the final code or file when you need it.
       </p>
     </div>
   </section>
@@ -57,14 +57,14 @@
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Crawl-Delay
               <div class="mt-2 flex items-center gap-2">
-                <input type="number" min="0" [value]="crawlDelay()" (input)="updateCrawlDelay($event)" class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                <input name="features-seo-tool-seo-tool-input-1" type="number" min="0" [value]="crawlDelay()" (input)="updateCrawlDelay($event)" class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
                 <span class="shrink-0 text-sm text-zinc-500 dark:text-zinc-400">seconds</span>
               </div>
             </label>
 
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Sitemap
-              <input type="url" [value]="sitemapUrl()" (input)="updateSitemapUrl($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-2" type="url" [value]="sitemapUrl()" (input)="updateSitemapUrl($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
 
             <div class="sm:col-span-2">
@@ -127,56 +127,56 @@
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200 sm:col-span-2">
               Restricted Directories
               <span class="mt-1 block text-xs font-normal text-zinc-500 dark:text-zinc-400">The path is relative to root and should contain a trailing slash.</span>
-              <textarea [value]="restrictedDirectories()" (input)="updateRestrictedDirectories($event)" class="mt-2 min-h-28 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950"></textarea>
+              <textarea name="features-seo-tool-seo-tool-textarea-3" [value]="restrictedDirectories()" (input)="updateRestrictedDirectories($event)" class="mt-2 min-h-28 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950"></textarea>
             </label>
           }
 
           @if (kind === 'meta-tag-generator' || kind === 'open-graph-generator' || kind === 'twitter-card-generator' || kind === 'json-ld-generator') {
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Page title
-              <input type="text" [value]="fields().title" (input)="updateField('title', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-4" type="text" [value]="fields().title" (input)="updateField('title', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
           }
 
           @if (kind === 'meta-tag-generator' || kind === 'open-graph-generator' || kind === 'twitter-card-generator' || kind === 'product-schema-generator' || kind === 'article-schema-generator' || kind === 'json-ld-generator') {
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200 sm:col-span-2">
               Description
-              <textarea [value]="fields().description" (input)="updateField('description', $event)" class="mt-2 min-h-24 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"></textarea>
+              <textarea name="features-seo-tool-seo-tool-textarea-5" [value]="fields().description" (input)="updateField('description', $event)" class="mt-2 min-h-24 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"></textarea>
             </label>
           }
 
           @if (kind === 'organization-schema-generator') {
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Site URL
-              <input type="url" [value]="fields().siteUrl" (input)="updateField('siteUrl', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-6" type="url" [value]="fields().siteUrl" (input)="updateField('siteUrl', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
           }
 
           @if (kind === 'meta-tag-generator' || kind === 'canonical-tag-generator' || kind === 'open-graph-generator' || kind === 'product-schema-generator' || kind === 'article-schema-generator' || kind === 'json-ld-generator') {
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Canonical URL
-              <input type="url" [value]="fields().canonicalUrl" (input)="updateField('canonicalUrl', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-7" type="url" [value]="fields().canonicalUrl" (input)="updateField('canonicalUrl', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
           }
 
           @if (kind === 'open-graph-generator' || kind === 'twitter-card-generator' || kind === 'product-schema-generator' || kind === 'article-schema-generator' || kind === 'json-ld-generator') {
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Image URL
-              <input type="url" [value]="fields().imageUrl" (input)="updateField('imageUrl', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-8" type="url" [value]="fields().imageUrl" (input)="updateField('imageUrl', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
           }
 
           @if (kind === 'meta-tag-generator' || kind === 'article-schema-generator') {
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Author
-              <input type="text" [value]="fields().author" (input)="updateField('author', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-9" type="text" [value]="fields().author" (input)="updateField('author', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
           }
 
           @if (kind === 'meta-tag-generator') {
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Language
-              <input type="text" [value]="fields().language" (input)="updateField('language', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-10" type="text" [value]="fields().language" (input)="updateField('language', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
           }
 
@@ -184,13 +184,12 @@
             <div class="sm:col-span-2">
               <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                 Website URL
-                <input
+                <input name="features-seo-tool-seo-tool-input-11"
                   type="url"
                   [value]="sitemapWebsiteUrl()"
                   (input)="updateSitemapWebsiteUrl($event)"
                   placeholder="https://example.com"
-                  class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"
-                />
+                  class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
               </label>
               <div class="mt-4 flex flex-wrap gap-2">
                 <button type="button" class="primary-button" (click)="crawlSitemap()" [disabled]="sitemapIsLoading()">
@@ -222,7 +221,7 @@
           @if (kind === 'twitter-card-generator') {
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Twitter/X handle
-              <input type="text" [value]="fields().twitterHandle" (input)="updateField('twitterHandle', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-12" type="text" [value]="fields().twitterHandle" (input)="updateField('twitterHandle', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
           }
 
@@ -231,11 +230,11 @@
               <div class="grid gap-4 sm:grid-cols-2">
                 <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                   Question
-                  <input type="text" [value]="faqQuestion()" (input)="updateFaqQuestion($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                  <input name="features-seo-tool-seo-tool-input-13" type="text" [value]="faqQuestion()" (input)="updateFaqQuestion($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
                 </label>
                 <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                   Answer
-                  <textarea [value]="faqAnswer()" (input)="updateFaqAnswer($event)" class="mt-2 min-h-24 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"></textarea>
+                  <textarea name="features-seo-tool-seo-tool-textarea-14" [value]="faqAnswer()" (input)="updateFaqAnswer($event)" class="mt-2 min-h-24 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950"></textarea>
                 </label>
               </div>
               <button type="button" class="primary-button mt-4" (click)="addFaq()">Add FAQ</button>
@@ -265,11 +264,11 @@
               <div class="grid gap-4 sm:grid-cols-2">
                 <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                   Breadcrumb label
-                  <input type="text" [value]="breadcrumbName()" (input)="updateBreadcrumbName($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                  <input name="features-seo-tool-seo-tool-input-15" type="text" [value]="breadcrumbName()" (input)="updateBreadcrumbName($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
                 </label>
                 <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                   Breadcrumb URL
-                  <input type="url" [value]="breadcrumbUrl()" (input)="updateBreadcrumbUrl($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                  <input name="features-seo-tool-seo-tool-input-16" type="url" [value]="breadcrumbUrl()" (input)="updateBreadcrumbUrl($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
                 </label>
               </div>
               <button type="button" class="primary-button mt-4" (click)="addBreadcrumb()">Add Breadcrumb</button>
@@ -297,51 +296,51 @@
           @if (kind === 'organization-schema-generator' || kind === 'open-graph-generator' || kind === 'product-schema-generator' || kind === 'article-schema-generator') {
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Organization / Brand
-              <input type="text" [value]="fields().organizationName" (input)="updateField('organizationName', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-17" type="text" [value]="fields().organizationName" (input)="updateField('organizationName', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
           }
 
           @if (kind === 'organization-schema-generator' || kind === 'article-schema-generator') {
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Logo URL
-              <input type="url" [value]="fields().logoUrl" (input)="updateField('logoUrl', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-18" type="url" [value]="fields().logoUrl" (input)="updateField('logoUrl', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
           }
 
           @if (kind === 'product-schema-generator') {
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Product name
-              <input type="text" [value]="fields().productName" (input)="updateField('productName', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-19" type="text" [value]="fields().productName" (input)="updateField('productName', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Price
-              <input type="text" [value]="fields().price" (input)="updateField('price', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-20" type="text" [value]="fields().price" (input)="updateField('price', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Currency
-              <input type="text" [value]="fields().currency" (input)="updateField('currency', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-21" type="text" [value]="fields().currency" (input)="updateField('currency', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Availability URL
-              <input type="text" [value]="fields().availability" (input)="updateField('availability', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-22" type="text" [value]="fields().availability" (input)="updateField('availability', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
           }
 
           @if (kind === 'article-schema-generator') {
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Headline
-              <input type="text" [value]="fields().articleHeadline" (input)="updateField('articleHeadline', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-23" type="text" [value]="fields().articleHeadline" (input)="updateField('articleHeadline', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Published date
-              <input type="date" [value]="fields().publishedDate" (input)="updateField('publishedDate', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+              <input name="features-seo-tool-seo-tool-input-24" type="date" [value]="fields().publishedDate" (input)="updateField('publishedDate', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
             </label>
           }
 
           @if (kind === 'json-ld-generator') {
             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               Schema type
-              <select [value]="fields().jsonLdType" (change)="updateField('jsonLdType', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+              <select name="features-seo-tool-seo-tool-select-25" [value]="fields().jsonLdType" (change)="updateField('jsonLdType', $event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
                 <option value="WebPage">WebPage</option>
                 <option value="WebSite">WebSite</option>
                 <option value="LocalBusiness">LocalBusiness</option>
@@ -356,11 +355,11 @@
               <div class="grid gap-4 sm:grid-cols-2">
                 <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                   Language code
-                  <input type="text" [value]="hreflangLanguage()" (input)="updateHreflangLanguage($event)" placeholder="en, es, x-default" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                  <input name="features-seo-tool-seo-tool-input-26" type="text" [value]="hreflangLanguage()" (input)="updateHreflangLanguage($event)" placeholder="en, es, x-default" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
                 </label>
                 <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                   Page URL
-                  <input type="url" [value]="hreflangUrl()" (input)="updateHreflangUrl($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                  <input name="features-seo-tool-seo-tool-input-27" type="url" [value]="hreflangUrl()" (input)="updateHreflangUrl($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
                 </label>
               </div>
               <button type="button" class="primary-button mt-4" (click)="addHreflang()">Add Hreflang</button>
@@ -391,6 +390,7 @@
             <button type="button" class="primary-button" (click)="generate()">Generate</button>
           }
           <button type="button" class="secondary-button" (click)="clear()">Reset</button>
+          <button type="button" class="secondary-button" (click)="clear()">Clear</button>
         </div>
       </section>
 
@@ -401,15 +401,19 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="text-lg font-semibold text-zinc-950 dark:text-white">Output</h2>
-            <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{{ outputType() }}</p>
+            <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{{ outputType() }} Use the download buttons to save this generated SEO output.</p>
           </div>
           <div class="flex flex-wrap gap-2">
             <button type="button" class="secondary-button" (click)="copyOutput()">Copy</button>
-            <button type="button" class="secondary-button" (click)="downloadOutput()">Download</button>
+            <button type="button" class="secondary-button" (click)="downloadOutput('pdf')">Download PDF</button>
+            <button type="button" class="secondary-button" (click)="downloadOutput('txt')">TXT</button>
+            <button type="button" class="secondary-button" (click)="downloadOutput('csv')">CSV</button>
+            <button type="button" class="secondary-button" (click)="downloadOutput('json')">JSON</button>
+            <button type="button" class="secondary-button" (click)="downloadOutput('html')">HTML</button>
           </div>
         </div>
 
-        <textarea
+        <textarea name="features-seo-tool-seo-tool-textarea-28"
           class="mt-4 min-h-[520px] w-full rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-sm text-zinc-950 outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
           readonly
           [value]="output()"

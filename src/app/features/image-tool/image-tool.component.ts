@@ -6,6 +6,7 @@ import { ImageShareResponse, ImageShareService } from '../../core/services/image
 import { SeoService } from '../../core/services/seo.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ZipService } from '../../core/services/zip.service';
+import { ExportPdfService } from '../../core/services/export-pdf.service';
 import { QrCodeCardComponent } from '../../shared/components/qr-code-card/qr-code-card.component';
 import { ToolSeoBlockComponent } from '../../shared/components/tool-seo-block/tool-seo-block.component';
 import { UploadZoneComponent } from '../../shared/components/upload-zone/upload-zone.component';
@@ -92,6 +93,7 @@ export class ImageToolComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly zip = inject(ZipService);
   private readonly imageShare = inject(ImageShareService);
+  private readonly exportPdf = inject(ExportPdfService);
   private readonly destroyRef = inject(DestroyRef);
 
   @ViewChild('pickerCanvas') pickerCanvas?: ElementRef<HTMLCanvasElement>;
@@ -319,6 +321,19 @@ export class ImageToolComponent implements OnInit {
     }
   }
 
+  downloadRows(format: 'txt' | 'csv' | 'json' | 'html' | 'pdf'): void {
+    const rows = this.rows();
+    if (!rows.length) {
+      this.toast.warning('No data is ready to download.');
+      return;
+    }
+    const name = `${this.slug}-data.${format}`;
+    const blob = this.dataBlob(rows, format, this.catalogItem().label);
+    const url = URL.createObjectURL(blob);
+    this.clickDownload(url, name);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   async generateShareLinks(): Promise<void> {
     const completed = this.completedJobs();
     if (!completed.length || this.isGeneratingShareLinks()) return;
@@ -506,15 +521,39 @@ export class ImageToolComponent implements OnInit {
   }
 
   private async metadataRows(file: File): Promise<MetadataRow[]> {
+    const bytes = new Uint8Array(await file.arrayBuffer());
     const dimensions = await this.getDimensions(file);
-    return [
-      { label: 'File name', value: file.name },
-      { label: 'File type', value: file.type || 'Unknown' },
-      { label: 'File size', value: this.formatBytes(file.size) },
-      { label: 'Width', value: `${dimensions.width} px` },
-      { label: 'Height', value: `${dimensions.height} px` },
-      { label: 'Last modified', value: new Date(file.lastModified).toLocaleString() },
+    const dpi = this.readDpi(bytes, file.type, dimensions);
+    const rows: MetadataRow[] = [
+      { label: 'checksum_sha256', value: await this.sha256(bytes) },
+      { label: 'checksum_crc32', value: this.crc32(bytes).toString(16).padStart(8, '0') },
+      { label: 'file_name', value: file.name },
+      { label: 'file_size', value: this.formatBytes(file.size) },
+      { label: 'file_size_bytes', value: file.size.toLocaleString() },
+      { label: 'file_type', value: this.fileTypeName(file, bytes) },
+      { label: 'file_type_extension', value: this.fileExtension(file.name, file.type) },
+      { label: 'mime_type', value: file.type || 'Unknown' },
+      { label: 'image_width', value: String(dimensions.width) },
+      { label: 'image_height', value: String(dimensions.height) },
+      { label: 'image_size', value: `${dimensions.width}x${dimensions.height}` },
+      { label: 'megapixels', value: ((dimensions.width * dimensions.height) / 1_000_000).toFixed(2).replace(/\.?0+$/, '') },
+      { label: 'aspect_ratio', value: this.aspectRatio(dimensions.width, dimensions.height) },
+      { label: 'last_modified', value: new Date(file.lastModified).toISOString() },
+      { label: 'category', value: 'image' },
+      { label: 'raw_header', value: this.hex(bytes.slice(0, 160)) },
     ];
+    if (dpi) {
+      rows.push(
+        { label: 'pixels_per_unit_x', value: String(Math.round(dpi.x / 0.0254)) },
+        { label: 'pixels_per_unit_y', value: String(Math.round(dpi.y / 0.0254)) },
+        { label: 'detected_dpi', value: `${dpi.x} x ${dpi.y}` },
+        { label: 'print_size_inches', value: `${(dimensions.width / dpi.x).toFixed(2)} x ${(dimensions.height / dpi.y).toFixed(2)}` },
+      );
+    }
+    if (this.isPng(bytes)) rows.push(...this.pngMetadataRows(bytes));
+    if (this.isJpeg(bytes)) rows.push(...this.jpegMetadataRows(bytes));
+    if (this.isWebp(bytes)) rows.push(...this.webpMetadataRows(bytes));
+    return rows;
   }
 
   private async inspectSize(file: File): Promise<void> {
@@ -821,6 +860,153 @@ export class ImageToolComponent implements OnInit {
     return null;
   }
 
+  private pngMetadataRows(bytes: Uint8Array): MetadataRow[] {
+    const rows: MetadataRow[] = [];
+    const colorTypes: Record<number, string> = {
+      0: 'Grayscale',
+      2: 'RGB',
+      3: 'Palette',
+      4: 'Grayscale with Alpha',
+      6: 'RGB with Alpha',
+    };
+    const compressionTypes: Record<number, string> = { 0: 'Deflate/Inflate' };
+    const filterTypes: Record<number, string> = { 0: 'Adaptive' };
+    const interlaceTypes: Record<number, string> = { 0: 'Noninterlaced', 1: 'Adam7 Interlace' };
+    if (bytes.length >= 33) {
+      rows.push(
+        { label: 'bit_depth', value: String(bytes[24]) },
+        { label: 'color_type', value: colorTypes[bytes[25]] ?? `Unknown (${bytes[25]})` },
+        { label: 'compression', value: compressionTypes[bytes[26]] ?? `Unknown (${bytes[26]})` },
+        { label: 'filter', value: filterTypes[bytes[27]] ?? `Unknown (${bytes[27]})` },
+        { label: 'interlace', value: interlaceTypes[bytes[28]] ?? `Unknown (${bytes[28]})` },
+      );
+    }
+
+    const chunks: string[] = [];
+    for (let offset = 8; offset + 12 <= bytes.length;) {
+      const length = this.readUint32(bytes, offset);
+      const type = this.ascii(bytes, offset + 4, 4);
+      const dataOffset = offset + 8;
+      const end = dataOffset + length;
+      if (end + 4 > bytes.length) break;
+      chunks.push(`${type}(${length})`);
+      if (type === 'pHYs' && length >= 9) {
+        const xppm = this.readUint32(bytes, dataOffset);
+        const yppm = this.readUint32(bytes, dataOffset + 4);
+        const unit = bytes[dataOffset + 8];
+        rows.push(
+          { label: 'pixels_per_unit_x', value: String(xppm) },
+          { label: 'pixels_per_unit_y', value: String(yppm) },
+          { label: 'pixel_units', value: unit === 1 ? 'meters' : 'Unknown' },
+        );
+      }
+      if (type === 'iCCP' && length > 3) {
+        const nameEnd = bytes.indexOf(0, dataOffset);
+        if (nameEnd > dataOffset && nameEnd < end) {
+          rows.push(
+            { label: 'profile_name', value: this.text(bytes.slice(dataOffset, nameEnd)) },
+            { label: 'profile_compression', value: bytes[nameEnd + 1] === 0 ? 'Deflate/Inflate' : `Unknown (${bytes[nameEnd + 1]})` },
+            { label: 'profile_description', value: this.text(bytes.slice(dataOffset, nameEnd)) },
+          );
+        }
+      }
+      if ((type === 'tEXt' || type === 'iTXt') && length > 3) {
+        const value = this.text(bytes.slice(dataOffset, Math.min(end, dataOffset + 180))).replace(/\0/g, ' | ');
+        if (value.trim()) rows.push({ label: type.toLowerCase(), value });
+      }
+      if (type === 'tIME' && length >= 7) {
+        const year = (bytes[dataOffset] << 8) | bytes[dataOffset + 1];
+        rows.push({ label: 'modify_date', value: `${year}:${String(bytes[dataOffset + 2]).padStart(2, '0')}:${String(bytes[dataOffset + 3]).padStart(2, '0')} ${String(bytes[dataOffset + 4]).padStart(2, '0')}:${String(bytes[dataOffset + 5]).padStart(2, '0')}:${String(bytes[dataOffset + 6]).padStart(2, '0')}` });
+      }
+      offset = end + 4;
+      if (type === 'IEND') break;
+    }
+    rows.push({ label: 'png_chunks', value: chunks.join(', ') || 'Unavailable' });
+    return rows;
+  }
+
+  private jpegMetadataRows(bytes: Uint8Array): MetadataRow[] {
+    const rows: MetadataRow[] = [];
+    const markers: string[] = [];
+    for (let offset = 2; offset + 4 < bytes.length;) {
+      if (bytes[offset] !== 0xff) break;
+      const marker = bytes[offset + 1];
+      if (marker === 0xda || marker === 0xd9) break;
+      const length = (bytes[offset + 2] << 8) | bytes[offset + 3];
+      if (length < 2 || offset + 2 + length > bytes.length) break;
+      const label = `0x${marker.toString(16).padStart(2, '0').toUpperCase()}`;
+      markers.push(`${label}(${length})`);
+      if (marker === 0xe0 && this.ascii(bytes, offset + 4, 5) === 'JFIF\0') {
+        rows.push(
+          { label: 'jfif_version', value: `${bytes[offset + 9]}.${bytes[offset + 10]}` },
+          { label: 'density_unit', value: bytes[offset + 11] === 1 ? 'DPI' : bytes[offset + 11] === 2 ? 'DPCM' : 'None' },
+          { label: 'x_density', value: String((bytes[offset + 12] << 8) | bytes[offset + 13]) },
+          { label: 'y_density', value: String((bytes[offset + 14] << 8) | bytes[offset + 15]) },
+        );
+      }
+      if (marker === 0xe1 && this.ascii(bytes, offset + 4, 6) === 'Exif\0\0') {
+        rows.push({ label: 'exif', value: 'Present' });
+      }
+      if (marker === 0xe2 && this.ascii(bytes, offset + 4, 11).startsWith('ICC_PROFILE')) {
+        rows.push({ label: 'icc_profile', value: 'Present' });
+      }
+      offset += 2 + length;
+    }
+    rows.push({ label: 'jpeg_markers', value: markers.join(', ') || 'Unavailable' });
+    return rows;
+  }
+
+  private webpMetadataRows(bytes: Uint8Array): MetadataRow[] {
+    const rows: MetadataRow[] = [
+      { label: 'riff_type', value: this.ascii(bytes, 8, 4) },
+    ];
+    const chunks: string[] = [];
+    for (let offset = 12; offset + 8 <= bytes.length;) {
+      const type = this.ascii(bytes, offset, 4);
+      const length = this.readUint32Le(bytes, offset + 4);
+      chunks.push(`${type}(${length})`);
+      if (type === 'VP8X' && length >= 10) {
+        const flags = bytes[offset + 8];
+        rows.push(
+          { label: 'has_icc_profile', value: String(Boolean(flags & 0x20)) },
+          { label: 'has_alpha', value: String(Boolean(flags & 0x10)) },
+          { label: 'has_exif', value: String(Boolean(flags & 0x08)) },
+          { label: 'has_xmp', value: String(Boolean(flags & 0x04)) },
+        );
+      }
+      offset += 8 + length + (length % 2);
+    }
+    rows.push({ label: 'webp_chunks', value: chunks.join(', ') || 'Unavailable' });
+    return rows;
+  }
+
+  private dataBlob(rows: MetadataRow[], format: 'txt' | 'csv' | 'json' | 'html' | 'pdf', title: string): Blob {
+    if (format === 'json') {
+      const data = Object.fromEntries(rows.map((row) => [row.label, row.value]));
+      return new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+    }
+    if (format === 'csv') {
+      const csv = ['field,value', ...rows.map((row) => `${this.csv(row.label)},${this.csv(row.value)}`)].join('\n');
+      return new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    }
+    if (format === 'html') {
+      return new Blob([this.dataHtml(rows, title)], { type: 'text/html;charset=utf-8' });
+    }
+    if (format === 'pdf') {
+      return new Blob([this.toBlobPart(this.exportPdf.rows(title, rows))], { type: 'application/pdf' });
+    }
+    return new Blob([rows.map((row) => `${row.label}: ${row.value}`).join('\n')], { type: 'text/plain;charset=utf-8' });
+  }
+
+  private dataHtml(rows: MetadataRow[], title: string): string {
+    const body = rows.map((row) => `<tr><th>${this.escapeHtml(row.label)}</th><td>${this.escapeHtml(row.value)}</td></tr>`).join('');
+    return `<!doctype html><html><head><meta charset="utf-8"><title>${this.escapeHtml(title)}</title><style>body{font-family:Arial,sans-serif;margin:32px;color:#111827}table{border-collapse:collapse;width:100%}th,td{border:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}th{width:260px;background:#f9fafb}</style></head><body><h1>${this.escapeHtml(title)}</h1><table>${body}</table></body></html>`;
+  }
+
+  private csv(value: string): string {
+    return `"${String(value).replace(/"/g, '""')}"`;
+  }
+
   private readExifDpi(bytes: Uint8Array, start: number, length: number): { x: number; y: number } | null {
     if (start + length > bytes.length || length < 14) return null;
     const view = new DataView(bytes.buffer, bytes.byteOffset + start, length);
@@ -905,8 +1091,64 @@ export class ImageToolComponent implements OnInit {
     return this.concatBytes(bytes.slice(0, 2), jfif, bytes.slice(2));
   }
 
+  private async sha256(bytes: Uint8Array): Promise<string> {
+    const hash = await crypto.subtle.digest('SHA-256', this.toBlobPart(bytes));
+    return this.hex(new Uint8Array(hash)).replace(/\s/g, '').toLowerCase();
+  }
+
+  private fileTypeName(file: File, bytes: Uint8Array): string {
+    if (this.isPng(bytes)) return 'PNG';
+    if (this.isJpeg(bytes)) return 'JPEG';
+    if (this.isWebp(bytes)) return 'WEBP';
+    if (file.type.includes('/')) return file.type.split('/')[1].toUpperCase();
+    return 'Unknown';
+  }
+
+  private fileExtension(name: string, type: string): string {
+    const extension = name.split('.').pop();
+    if (extension && extension !== name) return extension.toLowerCase();
+    return type.split('/').pop()?.toLowerCase() || 'unknown';
+  }
+
+  private isPng(bytes: Uint8Array): boolean {
+    return bytes.length > 8 && bytes[0] === 0x89 && this.ascii(bytes, 1, 3) === 'PNG';
+  }
+
+  private isJpeg(bytes: Uint8Array): boolean {
+    return bytes.length > 2 && bytes[0] === 0xff && bytes[1] === 0xd8;
+  }
+
+  private isWebp(bytes: Uint8Array): boolean {
+    return bytes.length > 12 && this.ascii(bytes, 0, 4) === 'RIFF' && this.ascii(bytes, 8, 4) === 'WEBP';
+  }
+
   private readUint32(bytes: Uint8Array, offset: number): number {
     return ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0;
+  }
+
+  private readUint32Le(bytes: Uint8Array, offset: number): number {
+    return ((bytes[offset]) | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0;
+  }
+
+  private ascii(bytes: Uint8Array, offset: number, length: number): string {
+    return String.fromCharCode(...bytes.slice(offset, offset + length));
+  }
+
+  private text(bytes: Uint8Array): string {
+    return new TextDecoder('latin1').decode(bytes).replace(/[^\x09\x0a\x0d\x20-\x7e]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  private hex(bytes: Uint8Array): string {
+    return Array.from(bytes).map((byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+  }
+
+  private escapeHtml(value: string): string {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   private concatBytes(...parts: Uint8Array[]): Uint8Array {

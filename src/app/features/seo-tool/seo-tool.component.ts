@@ -7,6 +7,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { environment } from '../../../environments/environment';
 import { ToolSeoBlockComponent } from '../../shared/components/tool-seo-block/tool-seo-block.component';
 import { PageLoaderService } from '../../core/services/page-loader.service';
+import { ExportPdfService } from '../../core/services/export-pdf.service';
 
 type SeoToolKind =
   | 'meta-tag-generator'
@@ -144,6 +145,7 @@ export class SeoToolComponent implements OnInit {
   private readonly seo = inject(SeoService);
   private readonly toast = inject(ToastService);
   private readonly loader = inject(PageLoaderService);
+  private readonly exportPdf = inject(ExportPdfService);
 
   readonly slug = this.route.snapshot.data['slug'] as SeoToolKind;
   readonly kind = this.slug;
@@ -455,13 +457,13 @@ export class SeoToolComponent implements OnInit {
     }
   }
 
-  downloadOutput(): void {
+  downloadOutput(format: 'txt' | 'csv' | 'json' | 'html' | 'pdf' = this.downloadExtension() as 'txt' | 'csv' | 'json' | 'html' | 'pdf'): void {
     if (!this.output()) return;
-    const blob = new Blob([this.output()], { type: this.downloadMime() });
+    const blob = this.outputBlob(format);
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `${this.slug}.${this.downloadExtension()}`;
+    anchor.download = `${this.slug}.${format}`;
     anchor.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
@@ -680,5 +682,29 @@ export class SeoToolComponent implements OnInit {
     if (this.kind === 'robots-txt-generator') return 'text/plain;charset=utf-8';
     if (this.kind === 'sitemap-generator') return 'application/xml;charset=utf-8';
     return 'text/html;charset=utf-8';
+  }
+
+  private outputBlob(format: 'txt' | 'csv' | 'json' | 'html' | 'pdf'): Blob {
+    const output = this.output();
+    if (format === 'json') {
+      return new Blob([JSON.stringify({ tool: this.catalogItem().label, output, rows: this.rows() }, null, 2)], { type: 'application/json;charset=utf-8' });
+    }
+    if (format === 'csv') {
+      return new Blob([['field,value', ...this.rows().map((row) => `${this.csv(row.label)},${this.csv(row.value)}`), `output,${this.csv(output)}`].join('\n')], { type: 'text/csv;charset=utf-8' });
+    }
+    if (format === 'html') {
+      const content = this.outputType() === 'HTML' ? output : `<pre>${this.escapeHtml(output)}</pre>`;
+      return new Blob([`<!doctype html><html><head><meta charset="utf-8"><title>${this.escapeHtml(this.catalogItem().label)}</title></head><body><h1>${this.escapeHtml(this.catalogItem().label)}</h1>${content}</body></html>`], { type: 'text/html;charset=utf-8' });
+    }
+    if (format === 'pdf') return new Blob([this.blobPart(this.exportPdf.text(this.catalogItem().label, output, this.rows()))], { type: 'application/pdf' });
+    return new Blob([output], { type: 'text/plain;charset=utf-8' });
+  }
+
+  private csv(value: string): string {
+    return `"${String(value).replace(/"/g, '""')}"`;
+  }
+
+  private blobPart(bytes: Uint8Array): ArrayBuffer {
+    return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
   }
 }

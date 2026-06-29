@@ -29,7 +29,7 @@
           },
           "configurations": {
             "production": {
-              "allowedCommonJsDependencies": ["imagetracerjs"],
+              "allowedCommonJsDependencies": ["imagetracerjs", "qrcode", "jsbarcode", "jszip", "pdf-lib", "pako", "lie", "readable-stream", "setimmediate"],
               "serviceWorker": "ngsw-config.json",
               "budgets": [
                 {

@@ -4,6 +4,7 @@ import { TOOL_CATEGORIES, findToolBySlug, ToolCatalogItem } from '../../core/con
 import { findCategoryForTool, generateToolSeo } from '../../core/content/generated-tool-seo';
 import { SeoService } from '../../core/services/seo.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ExportPdfService } from '../../core/services/export-pdf.service';
 import { ToolSeoBlockComponent } from '../../shared/components/tool-seo-block/tool-seo-block.component';
 
 type TextToolKind =
@@ -42,6 +43,7 @@ export class TextToolComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly seo = inject(SeoService);
   private readonly toast = inject(ToastService);
+  private readonly exportPdf = inject(ExportPdfService);
 
   readonly slug = this.route.snapshot.data['slug'] as TextToolKind;
   readonly kind = this.slug;
@@ -194,16 +196,36 @@ export class TextToolComponent implements OnInit {
     }
   }
 
-  downloadOutput(): void {
+  downloadOutput(format: 'txt' | 'csv' | 'json' | 'html' | 'pdf' = 'txt'): void {
     const text = this.output() || this.rows().map((row) => `${row.label}: ${row.value}`).join('\n');
     if (!text) return;
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const blob = this.outputBlob(text, format);
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `${this.slug}.txt`;
+    anchor.download = `${this.slug}.${format}`;
     anchor.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  private outputBlob(text: string, format: 'txt' | 'csv' | 'json' | 'html' | 'pdf'): Blob {
+    if (format === 'json') return new Blob([JSON.stringify({ tool: this.catalogItem().label, output: text, rows: this.rows() }, null, 2)], { type: 'application/json;charset=utf-8' });
+    if (format === 'csv') return new Blob([['field,value', ...this.rows().map((row) => `${this.csv(row.label)},${this.csv(row.value)}`), `output,${this.csv(text)}`].join('\n')], { type: 'text/csv;charset=utf-8' });
+    if (format === 'html') return new Blob([`<!doctype html><html><head><meta charset="utf-8"><title>${this.escapeHtml(this.catalogItem().label)}</title></head><body><h1>${this.escapeHtml(this.catalogItem().label)}</h1><pre>${this.escapeHtml(text)}</pre></body></html>`], { type: 'text/html;charset=utf-8' });
+    if (format === 'pdf') return new Blob([this.blobPart(this.exportPdf.text(this.catalogItem().label, text, this.rows()))], { type: 'application/pdf' });
+    return new Blob([text], { type: 'text/plain;charset=utf-8' });
+  }
+
+  private csv(value: string): string {
+    return `"${String(value).replace(/"/g, '""')}"`;
+  }
+
+  private escapeHtml(value: string): string {
+    return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  private blobPart(bytes: Uint8Array): ArrayBuffer {
+    return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
   }
 
   private countWords(text: string): void {

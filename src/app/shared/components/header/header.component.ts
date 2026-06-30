@@ -161,6 +161,7 @@ export class HeaderComponent {
 
   readonly links = [
     { label: 'Home', path: '/' },
+    { label: 'Blog', path: '/blog' },
   ];
 
   @ViewChild('toolSearchInput') private readonly toolSearchInput?: ElementRef<HTMLInputElement>;

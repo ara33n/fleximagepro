@@ -12,9 +12,12 @@ import {
   webpFaqs,
   webpSeoContent,
 } from './core/content/tool-seo-content';
+import { BLOG_ROUTE_SLUGS } from './core/content/blog-routes';
 
 const ALL_RASTER_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/x-icon', 'image/vnd.microsoft.icon'];
 const loadHome = () => import('./features/home/home.component').then((m) => m.HomeComponent);
+const loadBlog = () => import('./features/blog/blog.component').then((m) => m.BlogComponent);
+const loadBlogPost = () => import('./features/blog-post/blog-post.component').then((m) => m.BlogPostComponent);
 const loadNotFound = () => import('./features/not-found/not-found.component').then((m) => m.NotFoundComponent);
 const loadToolPage = () => import('./features/tool-page/tool-page.component').then((m) => m.ToolPageComponent);
 const loadPrivacyPolicy = () => import('./features/privacy-policy/privacy-policy.component').then((m) => m.PrivacyPolicyComponent);
@@ -279,11 +282,22 @@ const utilityToolRoutes: Routes = [...developerToolSlugs, ...calculatorToolSlugs
   data: { slug },
 }));
 
+const blogPostRoutes: Routes = BLOG_ROUTE_SLUGS.map((slug) => ({
+  path: `blog/${slug}`,
+  loadComponent: loadBlogPost,
+  data: { slug },
+}));
+
 export const routes: Routes = [
   {
     path: '',
     loadComponent: loadHome,
   },
+  {
+    path: 'blog',
+    loadComponent: loadBlog,
+  },
+  ...blogPostRoutes,
   {
     path: 'compress',
     loadComponent: loadToolPage,

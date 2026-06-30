@@ -1,349 +1,234 @@
-<article>
-  <!-- ═══════════════════════════ HERO ═══════════════════════════ -->
-  <section
-    class="relative isolate overflow-hidden bg-zinc-50 dark:bg-zinc-950"
-    style="min-height: 640px"
-  >
-    <!-- Banner image: hidden in light mode, subtle in dark mode -->
+<article class="bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-100">
+  <section class="relative isolate overflow-hidden border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950" aria-labelledby="home-heading">
     <img
       src="/assets/banner.webp"
-      alt="Camera and image editing workspace"
-      class="absolute inset-0 -z-20 h-full w-full object-cover opacity-0 dark:opacity-25"
-      loading="eager"
-      fetchpriority="high"
+      alt=""
       width="1800"
       height="1200"
+      loading="eager"
+      fetchpriority="high"
       decoding="async"
+      class="absolute inset-0 -z-20 h-full w-full object-cover opacity-20 dark:opacity-25"
     />
-
-    <!-- Dark mode scrim overlay -->
-    <div class="hero-scrim absolute inset-0 -z-10 hidden dark:block"></div>
-
-    <!-- Light mode: soft teal gradient wash -->
-    <div
-      class="pointer-events-none absolute inset-0 -z-10 dark:hidden"
-      style="
-        background:
-          radial-gradient(ellipse 90% 70% at 60% 0%, rgba(20, 184, 166, 0.1) 0%, transparent 70%),
-          linear-gradient(160deg, #f0fdf9 0%, #f8fafc 60%, #f1f5f9 100%);
-      "
-      aria-hidden="true"
-    ></div>
-
-    <!-- Dark mode: teal ambient glow -->
-    <div
-      class="pointer-events-none absolute -right-40 -top-20 -z-10 hidden h-[500px] w-[500px] rounded-full bg-teal-500/10 blur-3xl dark:block"
-      aria-hidden="true"
-    ></div>
-
-    <div
-      class="mx-auto flex max-w-7xl flex-col justify-center px-4 pb-14 pt-24 sm:px-6 lg:px-8"
-      style="min-height: 640px"
-    >
+    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-white via-white/95 to-white/80 dark:from-zinc-950 dark:via-zinc-950/95 dark:to-zinc-950/80" aria-hidden="true"></div>
+    <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:py-16 lg:grid-cols-[minmax(0,1fr)_380px] lg:px-8 lg:py-20">
       <div class="max-w-3xl">
-        <!-- Eyebrow badge -->
-        <span
-          class="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-teal-700 dark:border-teal-500/30 dark:bg-teal-500/10 dark:text-teal-300"
-        >
-          <span
-            class="h-1.5 w-1.5 rounded-full bg-teal-500 dark:bg-teal-400"
-            aria-hidden="true"
-          ></span>
-          Private image workflow
-        </span>
+        <div class="inline-flex items-center gap-3 rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-800 dark:border-teal-500/30 dark:bg-teal-500/10 dark:text-teal-200">
+          <img src="/assets/logo-96.png" alt="" width="28" height="28" class="size-7 rounded-md" loading="eager" decoding="async" />
+          <span>{{ toolCount }}+ free online tools</span>
+        </div>
 
-        <!-- Headline -->
-        <h1
-          class="mt-5 text-balance text-4xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-5xl lg:text-6xl"
-        >
-          Compress, Resize, Convert &amp; PDF
-          <span
-            class="block text-teal-600 dark:text-transparent"
-            style="
-              -webkit-background-clip: text;
-              background-clip: text;
-              background-image: linear-gradient(135deg, #2dd4bf, #0d9488);
-            "
-          >
-            Images Online — Free
-          </span>
+        <h1 id="home-heading" class="mt-6 max-w-4xl text-4xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-5xl lg:text-6xl">
+          Image, PDF, SEO and utility tools built for fast work.
         </h1>
 
-        <!-- Description -->
         <p class="mt-5 max-w-2xl text-base leading-8 text-zinc-600 dark:text-zinc-300 sm:text-lg">
-          FlexImagePro runs image compression, resizing, format conversion, and image to PDF
-          creation in your browser. Your files never leave your device — fast, private, and
-          completely free.
+          FlexImagePro gives you a clean workspace for everyday file conversion, PDF editing, SEO markup, text cleanup, developer formatting, calculators, color tools, QR codes, and GIS map helpers.
         </p>
 
-        <!-- CTAs -->
         <div class="mt-8 flex flex-wrap gap-3">
-          <a
-            routerLink="/compress"
-            class="focus-ring inline-flex items-center gap-2 rounded-lg bg-teal-800 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-900 active:scale-[0.99] dark:bg-white dark:text-zinc-950 dark:hover:bg-teal-100"
-            >Start compressing</a
-          >
-          <a
-            routerLink="/resize"
-            class="focus-ring rounded-lg border border-zinc-300 bg-transparent px-6 py-3 text-sm font-semibold text-zinc-950 shadow-sm transition-colors hover:bg-zinc-100 active:scale-[0.99] dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
-            >Resize images</a
-          >
+          <a routerLink="/compress" class="focus-ring rounded-lg bg-teal-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 active:scale-[0.99] dark:bg-teal-400 dark:text-zinc-950 dark:hover:bg-teal-300">
+            Compress Images
+          </a>
+          <a routerLink="/merge-pdf" class="focus-ring rounded-lg border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:border-teal-500 hover:text-teal-700 active:scale-[0.99] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-teal-400 dark:hover:text-teal-300">
+            Merge PDF
+          </a>
+          <a routerLink="/sitemap-generator" class="focus-ring rounded-lg border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:border-teal-500 hover:text-teal-700 active:scale-[0.99] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-teal-400 dark:hover:text-teal-300">
+            Generate Sitemap
+          </a>
         </div>
       </div>
 
-      <!-- Stats strip -->
-      <div class="mt-14 grid gap-3 text-sm sm:grid-cols-3">
-        <div
-          class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-white/15 dark:bg-zinc-950/80"
-        >
-          <strong class="block text-xl text-zinc-950 dark:text-white">Canvas API</strong>
-          <span class="text-zinc-500 dark:text-zinc-400">Fast image processing</span>
+      <aside class="rounded-lg border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-900" aria-label="Popular tools">
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-lg font-bold text-zinc-950 dark:text-white">Popular Tools</h2>
+          <span class="rounded-md bg-white px-2 py-1 text-xs font-semibold text-teal-700 dark:bg-zinc-950 dark:text-teal-300">Live</span>
         </div>
-        <div
-          class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-white/15 dark:bg-zinc-950/80"
-        >
-          <strong class="block text-xl text-zinc-950 dark:text-white">10 files</strong>
-          <span class="text-zinc-500 dark:text-zinc-400">Batch workflow with ZIP export</span>
+        <div class="mt-4 grid gap-2">
+          @for (tool of popularTools; track trackByTool($index, tool)) {
+            <a [routerLink]="tool.route" class="group flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-3 text-sm transition hover:border-teal-300 hover:bg-teal-50 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-teal-700 dark:hover:bg-teal-950/40">
+              <span>
+                <span class="block font-semibold text-zinc-950 dark:text-white">{{ tool.label }}</span>
+                <span class="mt-0.5 line-clamp-1 block text-xs text-zinc-500 dark:text-zinc-400">{{ tool.description }}</span>
+              </span>
+              <i class="bi bi-arrow-right text-teal-600 transition group-hover:translate-x-0.5 dark:text-teal-300" aria-hidden="true"></i>
+            </a>
+          }
         </div>
-        <div
-          class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-white/15 dark:bg-zinc-950/80"
-        >
-          <strong class="block text-xl text-zinc-950 dark:text-white">0 uploads</strong>
-          <span class="text-zinc-500 dark:text-zinc-400">Browser-only, always private</span>
-        </div>
-      </div>
+      </aside>
     </div>
   </section>
 
-  <section class="border-y border-zinc-200 bg-zinc-100 py-10 dark:border-zinc-800 dark:bg-zinc-900">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <app-ad-slot label="Between tools" />
-    </div>
-  </section>
-
-  <section
-    class="mx-auto max-w-7xl px-4 py-12 sm:px-6 md:py-16 lg:px-8"
-    aria-labelledby="tools-heading"
-  >
-    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p class="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
-          Tools
-        </p>
-        <h2
-          id="tools-heading"
-          class="text-2xl font-bold tracking-tight text-zinc-950 dark:text-white"
-        >
-          Choose the job and finish it fast
-        </h2>
-      </div>
-      <p class="max-w-xl text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-        Every tool runs locally, shows before-and-after output, and supports bulk download when your
-        images are ready.
+  <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-14 lg:px-8" aria-labelledby="features-heading">
+    <div class="max-w-3xl">
+      <p class="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">Built For Output</p>
+      <h2 id="features-heading" class="mt-2 text-2xl font-bold tracking-tight text-zinc-950 dark:text-white">Everything starts with the working tool.</h2>
+      <p class="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
+        No marketing wall, no confusing setup. Open a tool, add input, preview the result, and download or copy the final output.
       </p>
     </div>
-    <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      @for (tool of tools; track trackByPath($index, tool)) {
-        <a
-          [routerLink]="tool.path"
-          class="group panel p-5 hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-soft dark:hover:border-teal-700"
-        >
-          <span
-            class="inline-flex rounded-md bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:bg-teal-950 dark:text-teal-300"
-            >{{ tool.badge }}</span
-          >
-          <h3 class="mt-4 text-lg font-semibold text-zinc-950 dark:text-white">{{ tool.title }}</h3>
-          <p class="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-            {{ tool.description }}
-          </p>
-        </a>
+
+    <div class="mt-6 grid gap-4 md:grid-cols-3">
+      @for (feature of features; track trackByTitle($index, feature)) {
+        <section class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <h3 class="text-base font-semibold text-zinc-950 dark:text-white">{{ feature.title }}</h3>
+          <p class="mt-2 text-sm leading-7 text-zinc-600 dark:text-zinc-400">{{ feature.description }}</p>
+        </section>
       }
     </div>
   </section>
 
-  <section class="bg-white py-12 dark:bg-zinc-950" aria-labelledby="how-heading">
+  <section class="border-y border-zinc-200 bg-white py-10 dark:border-zinc-800 dark:bg-zinc-950" aria-labelledby="catalog-heading">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <h2 id="how-heading" class="text-2xl font-bold tracking-tight text-zinc-950 dark:text-white">
-        How it works
-      </h2>
-      <div class="mt-6 grid gap-4 md:grid-cols-3">
-        @for (step of steps; track trackByStep($index)) {
-          <section class="muted-panel p-5">
-            <p class="text-sm font-semibold text-teal-700 dark:text-teal-300">
-              Step {{ $index + 1 }}
-            </p>
-            <p class="mt-3 text-zinc-700 dark:text-zinc-300">{{ step }}</p>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">Tool Catalog</p>
+          <h2 id="catalog-heading" class="mt-2 text-2xl font-bold tracking-tight text-zinc-950 dark:text-white">Browse tools by category</h2>
+        </div>
+        <p class="max-w-xl text-sm leading-7 text-zinc-600 dark:text-zinc-400">
+          The full catalog is organized for scanning, search, and quick navigation across desktop and mobile.
+        </p>
+      </div>
+
+      <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (category of categories; track trackByCategory($index, category)) {
+          <section class="rounded-lg border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <div class="flex items-center gap-3">
+              <span class="grid size-10 place-items-center rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300">
+                <i [attr.class]="'bi ' + category.icon" aria-hidden="true"></i>
+              </span>
+              <div>
+                <h3 class="font-semibold text-zinc-950 dark:text-white">{{ category.title }}</h3>
+                <p class="text-xs text-zinc-500 dark:text-zinc-400">{{ category.tools.length }} tools</p>
+              </div>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-2">
+              @for (tool of category.tools.slice(0, 5); track trackByTool($index, tool)) {
+                <a [routerLink]="tool.route" class="rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-teal-400 hover:text-teal-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-teal-500 dark:hover:text-teal-300">
+                  {{ tool.label }}
+                </a>
+              }
+            </div>
           </section>
         }
       </div>
     </div>
   </section>
 
-  <!-- <a href="https://www.seobility.net/en/seocheck/check?url=https%3A%2F%2Ffleximagepro.com%2F"
-    ><img
-      src="https://app.seobility.net/widget/widget.png?url=https%3A%2F%2Ffleximagepro.com%2F"
-      alt="Seobility Score for fleximagepro.com"
-  /></a> -->
-
-  <section class="bg-white py-12 dark:bg-zinc-950" aria-labelledby="faq-heading">
-    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-      <p class="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
-        FAQ
-      </p>
-      <h2
-        id="faq-heading"
-        class="mt-1 text-2xl font-bold tracking-tight text-zinc-950 dark:text-white"
-      >
-        Frequently Asked Questions
-      </h2>
-
-      <div
-        class="mt-6 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900"
-      >
-        @for (faq of faqs; track $index) {
-          <div class="p-5">
-            <button
-              type="button"
-              class="group flex w-full items-start justify-between gap-4 text-left text-base font-semibold text-zinc-950 dark:text-white"
-              [attr.aria-expanded]="openFaq() === $index"
-              (click)="toggleFaq($index)"
-            >
-              <span>{{ faq.question }}</span>
-              <span class="mt-1 text-xl leading-none text-teal-600 dark:text-teal-400">{{
-                openFaq() === $index ? '-' : '+'
-              }}</span>
-            </button>
-            @if (openFaq() === $index) {
-              <div @slideDown>
-                <p class="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">
-                  {{ faq.answer }}
-                </p>
-              </div>
-            }
-          </div>
+  <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-14 lg:px-8" aria-labelledby="workflow-heading">
+    <div class="grid gap-8 lg:grid-cols-[340px_minmax(0,1fr)]">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">Workflow</p>
+        <h2 id="workflow-heading" class="mt-2 text-2xl font-bold tracking-tight text-zinc-950 dark:text-white">A simple flow for every tool</h2>
+      </div>
+      <div class="grid gap-4 md:grid-cols-3">
+        @for (step of steps; track trackByTitle($index, step); let index = $index) {
+          <section class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <span class="grid size-8 place-items-center rounded-md bg-teal-600 text-sm font-bold text-white dark:bg-teal-400 dark:text-zinc-950">{{ index + 1 }}</span>
+            <h3 class="mt-4 text-base font-semibold text-zinc-950 dark:text-white">{{ step.title }}</h3>
+            <p class="mt-2 text-sm leading-7 text-zinc-600 dark:text-zinc-400">{{ step.description }}</p>
+          </section>
         }
       </div>
     </div>
   </section>
 
-  <section class="bg-zinc-50 py-12 dark:bg-zinc-900 md:py-16" aria-labelledby="why-heading">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="mb-10">
-        <p class="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
-          Why us
-        </p>
-        <h2
-          id="why-heading"
-          class="mt-1 text-2xl font-bold tracking-tight text-zinc-950 dark:text-white"
-        >
-          Why Choose FlexImagePro?
-        </h2>
+  <section class="bg-zinc-100 py-10 dark:bg-zinc-900 md:py-14" aria-labelledby="seo-copy-heading">
+    <div class="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8">
+      <div class="space-y-6">
+        <section class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+          <h2 id="seo-copy-heading" class="text-2xl font-bold tracking-tight text-zinc-950 dark:text-white">Free online tools for practical web, file, and content work</h2>
+          <div class="mt-4 space-y-4 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
+            <p>
+              FlexImagePro is built for people who need a useful result quickly: compress an image, resize a photo, convert WebP or AVIF, merge PDFs, export PDF pages as images, generate SEO schema, format JSON, build a QR code, calculate values, or create CSS snippets. The site is broad, but the design is intentionally direct. Each tool page starts with the actual work surface, then places supporting copy, FAQs, related tools, and structured data below the workflow. That order matters for users and for search engines because it makes the purpose of every page obvious without hiding the utility behind a marketing screen.
+            </p>
+            <p>
+              The image tools cover the day-to-day jobs that designers, bloggers, developers, students, store owners, and social media teams repeat constantly. You can compress images for a faster page, resize images to exact pixel dimensions, rotate and flip visuals, add a watermark, convert JPG to PNG, convert PNG to JPG, export WebP, convert AVIF or HEIC photos, render SVG files as PNG, create ICO favicons, inspect image metadata, check DPI, change embedded DPI metadata, pick colors from an image, and apply simple filters such as blur, sharpen, grayscale, sepia, invert, brightness, and contrast. The goal is not to make users learn a graphics program for a small task. The goal is to let them finish the exact operation, review the result, and download a clean file.
+            </p>
+            <p>
+              PDF workflows are handled with the same practical mindset. The PDF tools include merge PDF, split PDF, rotate PDF, extract pages, rearrange pages, delete pages, add page numbers, images to PDF, PDF to images, and PDF metadata viewing. Browser-based processing is used first where it makes sense, while the backend repair fallback is reserved for PDFs that are damaged, encrypted, malformed, or difficult for browser libraries to parse. That keeps normal PDFs fast and avoids unnecessary uploads, but still gives difficult documents a second chance through qpdf or Ghostscript when the browser cannot finish the job. For PDF to Images, the page can convert all selected pages into a ZIP so large documents remain organized instead of producing hundreds of separate manual downloads.
+            </p>
+            <p>
+              The SEO tools help publishers create technical markup without memorizing syntax. The meta tag generator, robots.txt generator, sitemap generator, canonical tag generator, Open Graph generator, Twitter Card generator, FAQ schema generator, breadcrumb schema generator, organization schema generator, product schema generator, article schema generator, JSON-LD generator, and hreflang generator are made for people who need valid output they can paste into a site or hand to a developer. The sitemap generator can inspect a URL, check robots.txt and sitemap.xml, crawl internal links, prevent duplicates, and show a preview before download. These tools are useful for new websites, content refreshes, product pages, blogs, and local business sites that need search engines to understand their structure more clearly.
+            </p>
+            <p>
+              Text tools are included because many web tasks begin with messy copy. Word Counter and Character Counter help writers match title, description, social post, and ad limits. Text Compare helps find changes between two drafts. Text Repeater, Random Text Generator, Remove Duplicate Lines, Remove Empty Lines, Remove Extra Spaces, Sort Lines, Reverse Text, Case Converter, and Slug Generator clean up repetitive editing chores. These utilities sound small until a user has to prepare hundreds of lines, standardize labels, build URL slugs, or compare copied content from two different sources. By keeping them in the same catalog as file tools, FlexImagePro reduces the need to jump between unrelated sites.
+            </p>
+            <p>
+              Developer tools focus on formatting, validation, encoding, decoding, and quick identifiers. JSON Formatter, JSON Validator, XML Formatter, XML Validator, HTML Formatter, CSS Formatter, JavaScript Formatter, HTML Minifier, CSS Minifier, JavaScript Minifier, SQL Formatter, URL Encode, URL Decode, Base64 Encode, Base64 Decode, JWT Decoder, UUID Generator, MD5 Generator, SHA1 Generator, SHA256 Generator, and SHA512 Generator are all designed for quick checks. The JWT Decoder shows decoded JSON and claim breakdowns. Formatter outputs can be copied or downloaded where useful. This helps developers, support teams, and technical writers inspect data without opening a full IDE for every small input.
+            </p>
+            <p>
+              Calculator, generator, color, date, and GIS tools round out the site. Age Calculator, BMI Calculator, Percentage Calculator, Discount Calculator, GST Calculator, VAT Calculator, EMI Calculator, Unit Converter, Scientific Calculator, and Binary Calculator cover common numeric tasks. QR Code Generator, Barcode Generator, Password Generator, Lorem Ipsum Generator, Random Number Generator, Random Name Generator, Random Color Generator, CSS Gradient Generator, CSS Box Shadow Generator, CSS Border Radius Generator, and CSS Clip Path Generator create assets or code for design and development work. Color tools convert HEX, RGB, and HSL values, build palettes, generate gradients, and check contrast. Date tools convert timestamps, compare dates, convert time zones, and make countdowns. GIS tools generate KML circles, KML polygons, GeoJSON, GPX conversions, coordinate conversions, distance calculations, area calculations, and buffers with map previews where helpful.
+            </p>
+            <p>
+              Performance is a core part of the home page design. The banner is used directly in the first viewport instead of being preloaded and left unused. Ads are currently disabled, so third-party ad scripts do not add console errors, layout shifts, or network cost. Sections use real text and simple HTML rather than heavy animations or hidden content. Internal links point directly to live routes, which helps crawling and gives users a fast path to the right tool. The layout stays readable on mobile, avoids oversized nested cards, and keeps headings, descriptions, buttons, and result-oriented language clear for both people and search engines.
+            </p>
+            <p>
+              FlexImagePro is meant to feel like a complete utility shelf rather than a collection of unfinished demos. The site supports image processing, PDF workflows, SEO generation, developer formatting, calculators, generators, colors, dates, and GIS tasks from one header and searchable catalog. That scale is why the home page now includes deeper content: it explains what the site covers, how the categories connect, why the workflows are useful, and which pages deserve direct internal links. Users can still jump straight into a tool, but search engines and AI search systems also get enough page context to understand the breadth of the product.
+            </p>
+            <p>
+              The home page also works as a clear starting point for new visitors who do not yet know the exact tool name. Someone may arrive with a broad problem such as making a website faster, preparing files for upload, fixing a PDF, checking a color, or creating structured data for Google. The category blocks and fast links help that visitor move from a general need to a specific route, while the longer page copy explains the major use cases in natural language. This is useful for human visitors, but it also improves semantic coverage for search engines because the page connects related concepts instead of only listing tool names.
+            </p>
+            <p>
+              Another important part of the site is consistency between small tasks and larger workflows. A user who compresses images today may come back tomorrow to create a sitemap, generate FAQ schema, convert a PDF into images, and build a QR code for the same project. The visual system, buttons, inputs, result panels, upload zones, FAQ layout, and internal linking should feel familiar across all of those jobs. That consistency is especially important for a large utility site because it reduces hesitation. Users can focus on the file, text, code, map, or calculation in front of them instead of relearning a different interface on every page.
+            </p>
+          </div>
+        </section>
+
+        <section class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+          <h2 class="text-xl font-bold tracking-tight text-zinc-950 dark:text-white">Why this toolkit helps site owners and creators</h2>
+          <div class="mt-4 space-y-4 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
+            <p>
+              A modern website rarely needs only one utility. A store owner may compress product photos, convert them to WebP, create a sitemap, write meta tags, generate product schema, check color contrast, and build a QR code for packaging on the same day. A developer may format JSON, decode a JWT, merge a PDF brief, convert screenshots, and calculate timestamps during one support session. A content creator may resize images, clean text, create slugs, generate Open Graph tags, and compare drafts before publishing. FlexImagePro keeps these tasks in one place so the user does not have to search for a new site every few minutes.
+            </p>
+            <p>
+              The pages are also shaped around action names that people actually search for: image compressor, image resizer, JPG to PNG, PNG to JPG, PDF to images, images to PDF, robots.txt generator, sitemap generator, QR code generator, JSON formatter, CSS gradient generator, timestamp converter, contrast checker, and many more. Each route has its own tool page, heading, intro, controls, output area, SEO copy, FAQs, and related links. That structure lets FlexImagePro grow without turning the home page into an overloaded dashboard, while still giving the home page enough category-level explanation to represent the whole site.
+            </p>
+            <p>
+              The interface stays consistent across categories. Upload tools show upload zones, file queues, previews, result cards, and download actions. Text and code tools show input areas, options only where needed, and output panels with copy or export buttons. PDF tools show queues and options based on the operation, with repair fallback only when a PDF needs help. GIS tools use map previews when coordinates, circles, polygons, distances, areas, or buffers need visual context. This consistency lowers friction because users learn the pattern once and can move between tools without starting over.
+            </p>
+            <p>
+              A stronger home page also helps with discovery inside the site. Search engines look for clear headings, descriptive copy, internal links, useful FAQs, and a logical relationship between the home page and individual tool pages. FlexImagePro now gives those systems a better map of the product: image tools for file optimization, PDF tools for document handling, SEO tools for technical publishing, developer tools for formatting and validation, generator tools for quick assets, calculator tools for everyday math, color tools for design decisions, date tools for time-based work, and GIS tools for map-based outputs. That wider explanation supports long-tail searches without making the hero slow or crowded.
+            </p>
+            <p>
+              The design stays practical for Google PageSpeed as well. The banner is a real optimized asset, used in the first screen with fixed dimensions so the browser can reserve space. The page avoids heavy third-party ad code, keeps the layout simple, and uses catalog data already available in the Angular app. Text content is visible in the page instead of being hidden behind tabs, which helps source readability and makes the home page more useful even before a user opens a specific tool. The result is a homepage that feels larger and more complete without becoming noisy.
+            </p>
+          </div>
+        </section>
       </div>
 
-      <div class="grid gap-10 lg:grid-cols-3 lg:gap-16">
-        <div class="lg:col-span-2 space-y-5 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
-          <p>
-            Most tools that let you compress images online or resize images online require you to
-            upload your files to a remote server first. FlexImagePro works differently. Every
-            operation — compression, resizing, format conversion — runs entirely inside your browser
-            using the HTML5 Canvas API. Your images are processed in memory on your own device and
-            are never transmitted anywhere. That means no waiting for uploads, no server queues, and
-            no bandwidth caps slowing you down.
-          </p>
-
-          <p>
-            The privacy benefit is substantial. Designers working with unreleased product visuals,
-            photographers editing personal work, and developers preparing client assets can all use
-            FlexImagePro without concern. Because nothing leaves your device, your images cannot
-            appear in a third-party database, be used to train machine learning models, or be
-            exposed by a data breach on someone else's infrastructure. You stay in complete control
-            from the moment you add a file to the moment you download the result.
-          </p>
-
-          <p>
-            Performance follows naturally from this local-first design. Without upload latency, most
-            images are ready in under a second. FlexImagePro supports the three formats that cover
-            virtually every web use case:
-            <strong class="font-medium text-zinc-950 dark:text-white">JPEG</strong>
-            for photographs and photorealistic imagery,
-            <strong class="font-medium text-zinc-950 dark:text-white">PNG</strong> for lossless
-            graphics and images that need transparency, and
-            <strong class="font-medium text-zinc-950 dark:text-white">WebP</strong> for the compact
-            modern format that delivers smaller files at equivalent or better visual quality — a
-            priority for any site targeting strong Core Web Vitals scores.
-          </p>
-
-          <p>
-            The toolkit fits neatly into real publishing workflows. Website developers reach for the
-            image compressor to reduce payload sizes without degrading quality. Bloggers use the
-            image resizer to crop thumbnails to the exact pixel dimensions their CMS expects before
-            upload. E-commerce teams use the JPG to PNG converter to add transparency to cut-out
-            product images, and the WebP converter to trim kilobytes off every product card image —
-            page-speed gains that translate directly into conversion rate improvements. Social media
-            managers compress and resize photos together to satisfy the strict file-size and
-            dimension limits imposed by every major platform.
-          </p>
-
-          <p>
-            Batch support makes those workflows faster still. You can load up to ten images in one
-            session, apply a single set of settings — quality level, output dimensions, or target
-            format — and download everything as a ZIP archive. Whether you are preparing a gallery
-            for a travel blog, optimising a product catalogue for an online shop, or exporting
-            thumbnails for a video platform, FlexImagePro handles the full batch in one pass and
-            hands you a ready-to-deploy archive.
-          </p>
-
-          <p>
-            There is no account to create, no subscription to manage, and no software to install.
-            FlexImagePro works in any modern browser on desktop, tablet, or mobile. Open the tool,
-            drop your files in, adjust the settings, and download — that is the entire workflow,
-            every time.
-          </p>
+      <aside class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+        <h2 class="text-lg font-bold text-zinc-950 dark:text-white">Fast Links</h2>
+        <div class="mt-4 grid gap-2 text-sm">
+          <a routerLink="/compress" class="font-semibold text-teal-700 hover:text-teal-800 dark:text-teal-300">Image Compressor</a>
+          <a routerLink="/pdf-to-images" class="font-semibold text-teal-700 hover:text-teal-800 dark:text-teal-300">PDF to Images</a>
+          <a routerLink="/qr-code-generator" class="font-semibold text-teal-700 hover:text-teal-800 dark:text-teal-300">QR Code Generator</a>
+          <a routerLink="/json-formatter" class="font-semibold text-teal-700 hover:text-teal-800 dark:text-teal-300">JSON Formatter</a>
+          <a routerLink="/robots-txt-generator" class="font-semibold text-teal-700 hover:text-teal-800 dark:text-teal-300">Robots.txt Generator</a>
         </div>
+      </aside>
+    </div>
+  </section>
 
-        <div class="lg:col-span-1">
-          <h3 class="mb-4 text-base font-semibold text-zinc-950 dark:text-white">
-            Supported Image Tools
-          </h3>
-          <ul class="space-y-4">
-            <li class="panel p-5">
-              <p class="text-sm font-semibold text-zinc-950 dark:text-white">Image Compressor</p>
-              <p class="mt-1.5 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                Reduce JPEG, PNG, and WebP file sizes with a quality slider and instant before/after
-                preview. Ideal for speeding up websites, blogs, and e-commerce stores without
-                visible quality loss.
-              </p>
-            </li>
-            <li class="panel p-5">
-              <p class="text-sm font-semibold text-zinc-950 dark:text-white">Image Resizer</p>
-              <p class="mt-1.5 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                Set exact pixel dimensions with an optional aspect-ratio lock. Resize images online
-                for social media banners, CMS thumbnails, email headers, or any fixed-size asset
-                target.
-              </p>
-            </li>
-            <li class="panel p-5">
-              <p class="text-sm font-semibold text-zinc-950 dark:text-white">
-                Image to WebP Converter
-              </p>
-              <p class="mt-1.5 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                Convert images online from JPEG or PNG to WebP in one click. WebP files are
-                typically 25–35% smaller than equivalent JPEGs, making them the preferred format for
-                performance-optimised websites.
-              </p>
-            </li>
-            <li class="panel p-5">
-              <p class="text-sm font-semibold text-zinc-950 dark:text-white">
-                JPG to PNG / PNG to JPG Converter
-              </p>
-              <p class="mt-1.5 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                Switch between JPEG and PNG instantly. Use the JPG to PNG converter to preserve
-                transparency on product cut-outs, or the PNG to JPG converter to reduce file size
-                for photographic content.
-              </p>
-            </li>
-          </ul>
-        </div>
+  <section class="bg-white py-10 dark:bg-zinc-950 md:py-14" aria-labelledby="faq-heading">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <p class="text-sm font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">FAQ</p>
+      <h2 id="faq-heading" class="mt-2 text-2xl font-bold tracking-tight text-zinc-950 dark:text-white">Frequently Asked Questions</h2>
+
+      <div class="mt-6 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
+        @for (faq of faqs; track trackByFaq($index, faq)) {
+          <div class="p-5">
+            <button type="button" class="flex w-full items-start justify-between gap-4 text-left text-base font-semibold text-zinc-950 dark:text-white" [attr.aria-expanded]="openFaq() === $index" (click)="toggleFaq($index)">
+              <span>{{ faq.question }}</span>
+              <span class="mt-1 text-xl leading-none text-teal-600 dark:text-teal-400">{{ openFaq() === $index ? '-' : '+' }}</span>
+            </button>
+            @if (openFaq() === $index) {
+              <div @slideDown>
+                <p class="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-300">{{ faq.answer }}</p>
+              </div>
+            }
+          </div>
+        }
       </div>
     </div>
   </section>

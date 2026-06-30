@@ -2,13 +2,11 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { RouterLink } from '@angular/router';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { SeoService } from '../../core/services/seo.service';
-import { AdSlotComponent } from '../../shared/components/ad-slot/ad-slot.component';
+import { TOOL_CATEGORIES, TOOL_COUNT, ToolCatalogCategory, ToolCatalogItem } from '../../core/content/tool-catalog';
 
-interface ToolCard {
+interface FeatureItem {
   title: string;
   description: string;
-  path: string;
-  badge: string;
 }
 
 interface FaqItem {
@@ -19,7 +17,7 @@ interface FaqItem {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, AdSlotComponent],
+  imports: [RouterLink],
   templateUrl: './home.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [
@@ -37,113 +35,124 @@ interface FaqItem {
 export class HomeComponent {
   private readonly seo = inject(SeoService);
 
+  readonly toolCount = TOOL_COUNT;
+  readonly categories = TOOL_CATEGORIES;
   readonly openFaq = signal<number | null>(0);
 
-  toggleFaq(index: number): void {
-    this.openFaq.update(current => (current === index ? null : index));
-  }
+  readonly popularTools: ToolCatalogItem[] = [
+    this.findTool('image-compressor'),
+    this.findTool('image-resizer'),
+    this.findTool('image-to-webp'),
+    this.findTool('merge-pdf'),
+    this.findTool('pdf-to-images'),
+    this.findTool('qr-code-generator'),
+    this.findTool('json-formatter'),
+    this.findTool('sitemap-generator'),
+  ].filter(Boolean) as ToolCatalogItem[];
 
-  readonly tools: ToolCard[] = [
+  readonly features: FeatureItem[] = [
     {
-      title: 'Image Compressor',
-      description: 'Shrink JPG, PNG, and WebP files with quality controls and instant size savings.',
-      path: '/compress',
-      badge: 'Compress',
+      title: 'Fast browser workflows',
+      description: 'Image, text, color, calculator, and developer tools open quickly and keep the work surface first.',
     },
     {
-      title: 'Image to WebP',
-      description: 'Export lightweight WebP images from common image formats.',
-      path: '/convert-webp',
-      badge: 'Convert',
+      title: 'Complete tool coverage',
+      description: 'Use image converters, PDF utilities, SEO generators, QR tools, CSS generators, GIS helpers, and more from one catalog.',
     },
     {
-      title: 'Image Resizer',
-      description: 'Set custom dimensions and keep aspect ratio locked for clean responsive assets.',
-      path: '/resize',
-      badge: 'Resize',
-    },
-    {
-      title: 'JPG to PNG / PNG to JPG',
-      description: 'Switch between JPG and PNG for transparent graphics, thumbnails, and publishing.',
-      path: '/jpg-to-png',
-      badge: 'Format',
-    },
-    {
-      title: 'PNG to SVG Converter',
-      description: 'Trace PNG images into scalable SVG vector files — ideal for logos and flat graphics.',
-      path: '/png-to-svg',
-      badge: 'Vector',
-    },
-    {
-      title: 'Images to PDF',
-      description: 'Combine JPG, PNG, WebP, AVIF, SVG, GIF, BMP, ICO and phone photos into one PDF.',
-      path: '/images-to-pdf',
-      badge: 'PDF',
+      title: 'Clean downloads',
+      description: 'Export finished files, ZIP batches, generated code, JSON, CSV, TXT, HTML, or PDF reports where the format makes sense.',
     },
   ];
 
-  readonly steps = [
-    'Choose a tool and add up to 10 images.',
-    'Adjust quality, dimensions, or output format.',
-    'Preview the before and after result, then download one file or all processed files.',
+  readonly steps: FeatureItem[] = [
+    {
+      title: 'Choose a tool',
+      description: 'Open the exact converter, generator, calculator, or PDF utility from the home page or header search.',
+    },
+    {
+      title: 'Add input',
+      description: 'Upload files, paste text, enter a URL, pick colors, or set values using focused controls built for that tool.',
+    },
+    {
+      title: 'Preview and download',
+      description: 'Review the output, adjust options, then download the final file or copy the generated result.',
+    },
   ];
 
   readonly faqs: FaqItem[] = [
     {
-      question: 'Is FlexImagePro free to use?',
+      question: 'What is FlexImagePro?',
       answer:
-        'Yes, FlexImagePro is completely free to use. All image tools — including the compressor, WebP converter, image resizer, and JPG/PNG converter — are available at no cost with no sign-up required.',
+        'FlexImagePro is a free online toolkit for image conversion, PDF tasks, SEO markup, text cleanup, developer utilities, calculators, generators, color tools, and GIS map helpers.',
     },
     {
-      question: 'Which tools are available?',
+      question: 'Which tools are available on the site?',
       answer:
-        'FlexImagePro includes image compression, resizing, format conversion, image effects, PDF tools, text tools, and more utilities for everyday work.',
+        'The catalog includes Image Tools, PDF Tools, Text Tools, SEO Tools, Developer Tools, Calculator Tools, Generator Tools, GIS and Map Tools, Color Tools, and Date and Time Tools.',
     },
     {
-      question: 'Which image formats are supported?',
+      question: 'Can I use FlexImagePro on mobile?',
       answer:
-        'FlexImagePro supports JPG, PNG, WebP, AVIF, ICO, SVG, GIF, BMP, and other browser-supported image formats depending on the selected tool. The Images to PDF converter can combine many common image files into one PDF.',
+        'Yes. The layouts, upload zones, controls, dropdowns, and result panels are responsive for phones, tablets, laptops, and desktop screens.',
     },
     {
-      question: 'Can I compress multiple images at once?',
+      question: 'Does PDF to Images support large PDFs?',
       answer:
-        'Yes. Most image tools process up to 10 images in a batch, and the Images to PDF converter supports up to 20 images for one PDF document.',
+        'Yes. PDF to Images can render all selected pages into a ZIP. If the browser cannot decode a PDF image format, the PDF repair fallback can prepare a cleaner copy before rendering.',
     },
     {
-      question: 'Can I convert JPG to WebP?',
+      question: 'Can I process multiple images at once?',
       answer:
-        'Yes. The Image to WebP Converter tool lets you convert JPEG, PNG, or WebP images to the WebP format, which produces smaller file sizes with similar or better visual quality — ideal for web performance.',
+        'Many image tools support batch workflows with previews, result cards, and ZIP downloads, while single-image tools keep the upload flow focused.',
     },
     {
-      question: 'Can I resize images without losing quality?',
+      question: 'Are SEO generators included?',
       answer:
-        'FlexImagePro uses high-quality Canvas rendering to resize images. For best results, resize downwards (making images smaller) rather than upwards, as enlarging any image introduces interpolation artefacts regardless of the tool used.',
+        'Yes. You can generate meta tags, robots.txt, sitemaps, canonical tags, Open Graph tags, Twitter cards, FAQ schema, breadcrumb schema, product schema, article schema, and hreflang tags.',
     },
     {
-      question: 'Does FlexImagePro work on mobile devices?',
+      question: 'Can I download generated output?',
       answer:
-        'Yes. FlexImagePro is fully responsive and works on smartphones, tablets, and desktop browsers. The Canvas API is supported on all modern mobile browsers including Safari on iOS and Chrome on Android.',
+        'Yes. Tools show download actions based on the output type, including images, PDFs, ZIP files, TXT, CSV, JSON, HTML, and copy-ready code.',
     },
     {
-      question: 'Can I download processed files?',
+      question: 'Is FlexImagePro free?',
       answer:
-        'Yes. You can download single processed files, bulk ZIP files where supported, or generated text and PDF outputs from their tool pages.',
+        'Yes. The tools are free to use and designed for quick everyday work without forcing a landing page before the actual tool.',
     },
   ];
 
   constructor() {
     this.seo.update(
-      'FlexImagePro - Compress, Convert and Resize Images',
-      'Free image tools for compression, WebP conversion, resizing, JPG/PNG conversion, and everyday utility workflows.',
+      'FlexImagePro - Free Image, PDF, SEO and Utility Tools',
+      'Use 120+ free online tools for images, PDFs, SEO, text, code, calculators, colors, QR codes, dates, and GIS map workflows.',
+      'free online tools, image tools, PDF tools, SEO tools, text tools, developer tools, QR code generator, image converter, PDF converter',
     );
     this.seo.updateFaqSchema(this.faqs);
   }
 
-  trackByPath(_: number, item: ToolCard): string {
-    return item.path;
+  toggleFaq(index: number): void {
+    this.openFaq.update((current) => current === index ? null : index);
   }
 
-  trackByStep(index: number): number {
-    return index;
+  trackByCategory(_: number, category: ToolCatalogCategory): string {
+    return category.title;
+  }
+
+  trackByTool(_: number, tool: ToolCatalogItem): string {
+    return tool.slug;
+  }
+
+  trackByTitle(_: number, item: FeatureItem): string {
+    return item.title;
+  }
+
+  trackByFaq(_: number, item: FaqItem): string {
+    return item.question;
+  }
+
+  private findTool(slug: string): ToolCatalogItem | undefined {
+    return TOOL_CATEGORIES.flatMap((category) => category.tools).find((tool) => tool.slug === slug);
   }
 }

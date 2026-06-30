@@ -22,6 +22,8 @@
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href="https://fleximagepro.com/" />
+    <link rel="alternate" hreflang="en" href="https://fleximagepro.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://fleximagepro.com/" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" type="image/x-icon" />
     <link rel="icon" type="image/png" sizes="96x96" href="/assets/logo-96.png" />
@@ -29,6 +31,23 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="google-site-verification" content="hxhE3d5WoJa-nrZ-qNRHc42EaSN90ksMpZ6JFGUq92o" />
     <meta name="theme-color" content="#09090b" />
+    <script>
+      (() => {
+        try {
+          const stored = localStorage.getItem('pixelpress-theme');
+          const dark = stored
+            ? stored === 'dark'
+            : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.classList.toggle('dark', dark);
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+          const themeMeta = document.querySelector('meta[name="theme-color"]');
+          if (themeMeta) themeMeta.setAttribute('content', dark ? '#09090b' : '#ffffff');
+        } catch {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.style.colorScheme = 'light';
+        }
+      })();
+    </script>
 
     <!-- Organization Schema -->
     <script type="application/ld+json">

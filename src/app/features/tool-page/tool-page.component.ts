@@ -118,6 +118,38 @@ export class ToolPageComponent implements OnInit {
     const share = this.shareBatch();
     return Boolean(share && this.completedJobs().length > 0);
   });
+  readonly extraSeoSections = computed(() => {
+    const tool = this.tool();
+    const title = tool.title;
+    const accepted = tool.acceptedTypes
+      .map((type) => type.split('/').pop()?.replace('jpeg', 'jpg').toUpperCase())
+      .filter(Boolean)
+      .join(', ');
+
+    return [
+      {
+        heading: `${title} workflow guide`,
+        paragraphs: [
+          `${title} is designed for real image work where the result needs to be checked before it is saved, shared, or uploaded somewhere else. Add a representative image first, review the preview, then adjust quality, format, size, crop, or tracing options based on the final destination. This keeps the workflow practical for website graphics, product photos, profile images, screenshots, social posts, forms, and client assets because you can see the result before committing to a download.`,
+          `When you process more than one file, keep the original images until every finished file has been reviewed. Different photos, screenshots, icons, and transparent graphics react differently to compression, resizing, conversion, or vector tracing. A setting that looks perfect on a simple logo may not be ideal for a detailed photo, and a setting that saves a large amount of space may soften small text. Checking the preview and file size together gives the best balance of quality and performance.`,
+        ],
+      },
+      {
+        heading: `File quality and format tips`,
+        paragraphs: [
+          `Supported input formats for this page include ${accepted || 'common browser image formats'}, and each format has a different strength. JPG is usually best for photographs and smaller delivery files. PNG is better for screenshots, flat graphics, crisp edges, and transparent artwork. WebP can be a strong publishing format for modern websites, while SVG is best when simple artwork needs to scale cleanly as vector paths.`,
+          `For website publishing, the best image is rarely the largest possible file. Use the smallest version that still looks sharp at the size it appears in the layout. A full-width hero image, a thumbnail, a logo, and a document attachment all need different settings. If speed, Core Web Vitals, and mobile performance matter, compare the original and processed sizes and avoid uploading oversized images that users will never see at full resolution.`,
+        ],
+      },
+      {
+        heading: `Download, sharing, and review checklist`,
+        paragraphs: [
+          `After processing, review the before-and-after cards for file size, dimensions, and visible quality. Download a single file when you only need one result, or use the ZIP download when several images are ready. If you create a share link, open it once after generation to confirm the shared preview contains the correct processed files and that the names are easy for another person to understand.`,
+          `Before replacing an image on a live page, check the final file in the actual place where it will appear. Look at desktop and mobile widths, zoom in on small labels, inspect transparent edges, and make sure the file extension matches what the destination accepts. This final check is especially important for ecommerce images, brand assets, screenshots with text, profile photos, and any graphic that will be reused across multiple pages.`,
+        ],
+      },
+    ];
+  });
 
   ngOnInit(): void {
     this.seo.update(this.tool().titleTag, this.tool().metaDescription, this.tool().keywords);

@@ -82,6 +82,29 @@ export class ImagesToPdfComponent {
   });
 
   readonly totalSize = computed(() => this.jobs().reduce((total, job) => total + job.size, 0));
+  readonly extraSeoSections = [
+    {
+      heading: 'Images to PDF workflow guide',
+      paragraphs: [
+        'A good image to PDF workflow starts with the order of the pages. Add the images in the same sequence you want the PDF to read, then use the move controls to fix any page that is out of place. This is especially important for scanned forms, receipts, handwritten notes, worksheets, product sheets, design proofs, and screenshot collections where the reader needs a clear beginning, middle, and end.',
+        'Before downloading, create a preview and scan through the generated PDF. Check that portrait and landscape pages look correct, that no important edge is cropped, and that margins are suitable for printing or sharing. If the PDF is too large, reduce the image quality slightly or resize very large source images before adding them. If the PDF contains text captured in screenshots, keep quality high enough that labels, numbers, and signatures remain readable.',
+      ],
+    },
+    {
+      heading: 'Choosing page size, fit, and margins',
+      paragraphs: [
+        'A4 is a strong default for international documents, while Letter is common for United States paperwork. Auto orientation is helpful for mixed batches because each image can keep a natural page direction. Fixed portrait or landscape is better when the PDF must look consistent from page to page. Use fit full image when every pixel matters, and use fill page only when slight cropping is acceptable for photos or visual layouts.',
+        'Margins control how close each image sits to the page edge. Use wider margins when the PDF may be printed, hole-punched, annotated, or reviewed on paper. Use smaller margins for digital galleries, full-page screenshots, and image collections where maximum visible area matters. After changing any setting, refresh the preview so the final download and share link match the latest page setup.',
+      ],
+    },
+    {
+      heading: 'Review checklist before download',
+      paragraphs: [
+        'Check the first page, last page, file name, page order, page size, visible image quality, and final PDF size. If you are sending the PDF to a school, workplace, client, government portal, or marketplace, compare the output against their upload requirements before submitting it. Some portals care about maximum megabytes, while others care about page dimensions, orientation, or whether the content is easy to read after upload.',
+        'Keep the original images until the PDF has been accepted by the destination. If a portal rejects the file, you can return to the same images, adjust quality or margins, and create a cleaner version without retaking photos or rebuilding the document from scratch. This simple review step makes the converter more reliable for everyday paperwork and professional document preparation.',
+      ],
+    },
+  ];
   readonly pdfPreviewUrl = computed(() => {
     const url = this.pdfUrl();
     return url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null;

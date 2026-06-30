@@ -279,19 +279,19 @@
         <button
           type="button"
           (click)="theme.toggle()"
-          class="focus-ring relative inline-flex h-8 w-16 shrink-0 cursor-pointer items-center rounded-full bg-zinc-200 p-1 transition-colors duration-300 hover:bg-zinc-300 dark:bg-teal-500 dark:hover:bg-teal-400"
+          class="theme-toggle focus-ring"
+          [class.theme-toggle--dark]="theme.darkMode()"
           [attr.aria-label]="theme.darkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
         >
           <span
-            class="inline-flex size-6 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 dark:translate-x-8"
+            class="theme-toggle__thumb"
             aria-hidden="true"
           >
             <i
-              class="bi text-[11px] transition-colors duration-300"
-              [class.bi-moon-stars-fill]="theme.darkMode()"
-              [class.bi-sun-fill]="!theme.darkMode()"
-              [class.text-teal-600]="theme.darkMode()"
-              [class.text-amber-500]="!theme.darkMode()"
+              class="theme-toggle__icon theme-toggle__icon--sun bi bi-sun-fill"
+            ></i>
+            <i
+              class="theme-toggle__icon theme-toggle__icon--moon bi bi-moon-stars-fill"
             ></i>
           </span>
         </button>

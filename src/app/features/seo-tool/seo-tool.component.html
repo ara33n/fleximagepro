@@ -22,11 +22,7 @@
                 <button
                   type="button"
                   class="rounded-lg border px-4 py-2 text-sm font-semibold transition"
-                  [class.border-teal-500]="defaultRobotAction() === 'allowed'"
-                  [class.bg-teal-50]="defaultRobotAction() === 'allowed'"
-                  [class.text-teal-800]="defaultRobotAction() === 'allowed'"
-                  [class.dark:bg-teal-950]="defaultRobotAction() === 'allowed'"
-                  [class.dark:text-teal-100]="defaultRobotAction() === 'allowed'"
+                  [class.active-control]="defaultRobotAction() === 'allowed'"
                   [class.border-zinc-300]="defaultRobotAction() !== 'allowed'"
                   [class.text-zinc-700]="defaultRobotAction() !== 'allowed'"
                   [class.dark:border-zinc-700]="defaultRobotAction() !== 'allowed'"
@@ -95,10 +91,8 @@
                       </span>
                     </div>
                     <div class="mt-3 grid grid-cols-3 gap-1">
-                      <button type="button" class="rounded-md border px-2 py-1.5 text-xs font-semibold"
-                        [class.border-teal-500]="robot.action === 'allowed'"
-                        [class.bg-teal-50]="robot.action === 'allowed'"
-                        [class.text-teal-800]="robot.action === 'allowed'"
+                      <button type="button" class="rounded-md border px-2 py-1.5 text-xs font-semibold transition"
+                        [class.active-control]="robot.action === 'allowed'"
                         [class.border-zinc-300]="robot.action !== 'allowed'"
                         [class.dark:border-zinc-700]="robot.action !== 'allowed'"
                         (click)="setRobotAction(robot.userAgent, 'allowed')">Allowed</button>

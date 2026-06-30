@@ -94,12 +94,12 @@ export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly kmlCircleForm = this.formBuilder.group({
     shape: [this.slug === 'kml-polygon-generator' ? 'polygon' : 'circle' as KmlBuilderShape, [Validators.required]],
     name: ['FlexImagePro Circle', [Validators.required]],
-    latitude: [31.5204, [Validators.required, Validators.min(-90), Validators.max(90)]],
-    longitude: [74.3587, [Validators.required, Validators.min(-180), Validators.max(180)]],
+    latitude: [40.7128, [Validators.required, Validators.min(-90), Validators.max(90)]],
+    longitude: [-74.0060, [Validators.required, Validators.min(-180), Validators.max(180)]],
     radius: [1000, [Validators.required, Validators.min(1)]],
     radiusUnit: ['meter' as KmlRadiusUnit, [Validators.required]],
     includeCenter: [true],
-    polygonCoordinates: ['31.5204, 74.3587\n31.5304, 74.3687\n31.5104, 74.3787'],
+    polygonCoordinates: ['40.7128, -74.0060\n40.7228, -73.9960\n40.7028, -73.9860'],
     strokeColor: ['#0f766e', [Validators.required]],
     fillColor: ['#14b8a6', [Validators.required]],
     opacity: [40, [Validators.required, Validators.min(0), Validators.max(100)]],
@@ -107,7 +107,7 @@ export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly qrFields = signal<Record<string, string>>({
     website: 'https://fleximagepro.com',
     text: 'FlexImagePro',
-    fullName: 'Rafay Dev',
+    fullName: 'Alex Morgan',
     phone: '+10000000000',
     email: 'hello@fleximagepro.com',
     company: 'FlexImagePro',
@@ -285,6 +285,7 @@ export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly showThirdField = computed(() => ['emi-calculator', 'binary-calculator', 'css-gradient-generator', 'gradient-generator', 'contrast-checker', 'time-zone-converter'].includes(this.slug));
   readonly showPdfDownload = computed(() => PDF_DOWNLOAD_TOOLS.has(this.slug));
   readonly showOutputText = computed(() => !['qr-code-generator', 'barcode-generator'].includes(this.slug));
+  readonly showMainActionBar = computed(() => !['PDF Tools', 'GIS / Map Tools'].includes(this.category.title));
   readonly heroDescription = computed(() => `${this.catalogItem().description} Use this page to enter clean values, generate an accurate result, copy it quickly, and download the output in practical formats when you need to save or share the result later.`);
 
   ngOnInit(): void {
@@ -669,13 +670,13 @@ export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
     this.gisOpacity.set(35);
     this.kmlCircleForm.reset({
       name: 'FlexImagePro Circle',
-      latitude: 31.5204,
-      longitude: 74.3587,
+      latitude: 40.7128,
+      longitude: -74.0060,
       radius: 1000,
       shape: this.slug === 'kml-polygon-generator' ? 'polygon' : 'circle',
       radiusUnit: 'meter',
       includeCenter: true,
-      polygonCoordinates: '31.5204, 74.3587\n31.5304, 74.3687\n31.5104, 74.3787',
+      polygonCoordinates: '40.7128, -74.0060\n40.7228, -73.9960\n40.7028, -73.9860',
       strokeColor: '#0f766e',
       fillColor: '#14b8a6',
       opacity: 40,
@@ -1232,7 +1233,7 @@ export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
     } else if (this.slug === 'gpx-to-kml') {
       this.gisOutput.set(this.gpxToKml(input));
     } else {
-      this.gisOutput.set(`Latitude / Longitude: ${input || 'Paste coordinates like 31.5204, 74.3587'}`);
+      this.gisOutput.set(`Latitude / Longitude: ${input || 'Paste coordinates like 40.7128, -74.0060'}`);
     }
     this.output.set(this.gisOutput());
     this.rows.set([{ label: 'Output type', value: this.slug.includes('kml') || this.slug.includes('buffer') ? 'KML' : 'Text / JSON' }]);
@@ -1606,11 +1607,11 @@ export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   gisPlaceholder(): string {
-    if (['kml-polygon-generator', 'area-calculator'].includes(this.slug)) return '31.5204, 74.3587\n31.5304, 74.3687\n31.5104, 74.3787';
+    if (['kml-polygon-generator', 'area-calculator'].includes(this.slug)) return '40.7128, -74.0060\n40.7228, -73.9960\n40.7028, -73.9860';
     if (this.slug === 'geojson-to-kml') return '{"type":"Polygon","coordinates":[[[74.35,31.52],[74.36,31.53],[74.37,31.51],[74.35,31.52]]]}';
     if (this.slug === 'kml-to-geojson') return '<kml><Document><Placemark><Polygon><outerBoundaryIs><LinearRing><coordinates>74.35,31.52,0 74.36,31.53,0 74.35,31.52,0</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark></Document></kml>';
-    if (this.slug === 'gpx-to-kml') return '<gpx><trk><trkseg><trkpt lat="31.5204" lon="74.3587"></trkpt><trkpt lat="31.5304" lon="74.3687"></trkpt></trkseg></trk></gpx>';
-    return '31.5204, 74.3587';
+    if (this.slug === 'gpx-to-kml') return '<gpx><trk><trkseg><trkpt lat="40.7128" lon="-74.0060"></trkpt><trkpt lat="40.7228" lon="-73.9960"></trkpt></trkseg></trk></gpx>';
+    return '40.7128, -74.0060';
   }
 
   gisShowSecond(): boolean {
@@ -1696,7 +1697,7 @@ export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
     await this.loadGoogleMaps();
     if (!this.gisMap) {
       this.gisMap = new google.maps.Map(this.gisGoogleMap.nativeElement, {
-        center: { lat: 31.5204, lng: 74.3587 },
+        center: { lat: 40.7128, lng: -74.0060 },
         zoom: 11,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
         mapTypeControl: false,
@@ -1744,7 +1745,7 @@ export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
     this.clearGisOverlays();
     const points = this.gisRawPoints().filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
     if (!points.length) {
-      this.gisMap.setCenter({ lat: 31.5204, lng: 74.3587 });
+      this.gisMap.setCenter({ lat: 40.7128, lng: -74.0060 });
       this.gisMap.setZoom(11);
       return;
     }
@@ -1865,7 +1866,7 @@ export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       return this.parseLatLng(value);
     } catch {
-      if (!isPlatformBrowser(this.platformId)) throw new Error('Enter coordinates like 31.5204, 74.3587');
+      if (!isPlatformBrowser(this.platformId)) throw new Error('Enter coordinates like 40.7128, -74.0060');
       await this.loadGoogleMaps();
       return new Promise<[number, number]>((resolve, reject) => {
         const geocoder = new google.maps.Geocoder();
@@ -2073,7 +2074,7 @@ export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   private parseLatLng(value = ''): [number, number] {
     const nums = value.match(/-?\d+(?:\.\d+)?/g)?.map(Number) || [];
-    if (nums.length < 2) throw new Error('Enter coordinates like 31.5204, 74.3587');
+    if (nums.length < 2) throw new Error('Enter coordinates like 40.7128, -74.0060');
     return [nums[0], nums[1]];
   }
   private parsePoints(value = ''): Array<[number, number]> {

@@ -13,8 +13,12 @@ export class SeoService {
   private readonly breadcrumbSchemaId = 'breadcrumb-schema';
 
   update(title: string, description: string, keywords?: string): void {
+    const canonicalUrl = this.canonicalUrl();
+    const imageUrl = `${environment.siteUrl}/assets/banner.webp`;
+
     this.title.setTitle(title);
     this.meta.updateTag({ name: 'description', content: description });
+    this.meta.updateTag({ name: 'robots', content: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' });
     this.meta.updateTag({
       name: 'keywords',
       content:
@@ -24,7 +28,14 @@ export class SeoService {
     this.meta.updateTag({ property: 'og:title', content: title });
     this.meta.updateTag({ property: 'og:description', content: description });
     this.meta.updateTag({ property: 'og:type', content: 'website' });
+    this.meta.updateTag({ property: 'og:url', content: canonicalUrl });
+    this.meta.updateTag({ property: 'og:site_name', content: 'FlexImagePro' });
+    this.meta.updateTag({ property: 'og:image', content: imageUrl });
+    this.meta.updateTag({ property: 'og:image:alt', content: 'FlexImagePro online tools' });
     this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+    this.meta.updateTag({ name: 'twitter:title', content: title });
+    this.meta.updateTag({ name: 'twitter:description', content: description });
+    this.meta.updateTag({ name: 'twitter:image', content: imageUrl });
     this.updateCanonicalUrl();
     this.updateFaqSchema();
     this.updateBreadcrumbSchema();
@@ -93,7 +104,7 @@ export class SeoService {
   private updateCanonicalUrl(): void {
     // Use the production origin so canonical URLs are always correct,
     // even during SSG prerendering where document.location.origin is http://localhost.
-    const canonicalUrl = `${environment.siteUrl}${this.document.location.pathname}`;
+    const canonicalUrl = this.canonicalUrl();
     let canonicalLink = this.document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
 
     if (!canonicalLink) {
@@ -103,5 +114,10 @@ export class SeoService {
     }
 
     canonicalLink.href = canonicalUrl;
+  }
+
+  private canonicalUrl(): string {
+    const pathname = this.document.location.pathname === '/' ? '/' : this.document.location.pathname.replace(/\/+$/, '');
+    return `${environment.siteUrl}${pathname}`;
   }
 }

@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 @keyframes pong-loader {
   0% {
     left: 0;
@@ -289,9 +300,9 @@
 }
 
 .clip-shape-active {
-  border-color: #14b8a6 !important;
-  background: linear-gradient(135deg, rgba(15, 118, 110, 0.22), rgba(20, 184, 166, 0.12)) !important;
-  color: #ccfbf1 !important;
+  border-color: #0f766e !important;
+  background: #0f766e !important;
+  color: #ffffff !important;
   box-shadow: inset 0 0 0 1px rgba(20, 184, 166, 0.35);
 }
 
@@ -485,6 +496,10 @@ input[type='checkbox']:focus-visible {
 
   .secondary-button {
     @apply focus-ring rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:border-teal-300 hover:bg-teal-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-teal-700 dark:hover:bg-zinc-800;
+  }
+
+  .active-control {
+    @apply border-teal-700 bg-teal-700 text-white hover:border-teal-700 hover:bg-teal-800 hover:text-white dark:border-teal-300 dark:bg-teal-300 dark:text-zinc-950 dark:hover:border-teal-200 dark:hover:bg-teal-200 dark:hover:text-zinc-950;
   }
 
   .image-tool-layout-with-options {

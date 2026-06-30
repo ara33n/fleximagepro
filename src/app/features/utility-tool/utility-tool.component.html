@@ -73,7 +73,7 @@
               <input name="border-width-number" type="number" min="0" max="40" [value]="borderWidth()" (input)="updateBorderWidth($event)" class="mt-2 w-24 rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
               <div class="mt-4 flex flex-wrap gap-2">
                 @for (style of ['solid','dotted','dashed','double','groove','ridge','inset','outset','hidden','none']; track style) {
-                  <button type="button" class="rounded-lg border px-3 py-2 text-sm font-semibold" [style.border-style]="style" [class.bg-teal-50]="borderStyle() === style" [class.border-teal-700]="borderStyle() === style" (click)="updateBorderStyle(style)">{{ style }}</button>
+                  <button type="button" class="rounded-lg border px-3 py-2 text-sm font-semibold transition" [style.border-style]="style" [class.active-control]="borderStyle() === style" (click)="updateBorderStyle(style)">{{ style }}</button>
                 }
               </div>
               <div class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -82,7 +82,7 @@
               </div>
               <div class="mt-4 flex flex-wrap gap-2">
                 @for (position of ['all','top','right','bottom','left']; track position) {
-                  <button type="button" class="secondary-button" [class.!border-teal-700]="borderPosition() === position" [class.!bg-teal-50]="borderPosition() === position" (click)="updateBorderPosition($any(position))">{{ position }}</button>
+                  <button type="button" class="secondary-button" [class.active-control]="borderPosition() === position" (click)="updateBorderPosition($any(position))">{{ position }}</button>
                 }
               </div>
             </div>
@@ -613,7 +613,7 @@
               @if (slug === 'distance-calculator') {
                 <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
                   Start coordinate
-                  <input name="gis-start-coordinate" type="text" [value]="gisInput()" (input)="updateGisInput($event)" placeholder="31.5204, 74.3587" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                  <input name="gis-start-coordinate" type="text" [value]="gisInput()" (input)="updateGisInput($event)" placeholder="40.7128, -74.0060" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
                 </label>
                 <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
                   End coordinate
@@ -622,7 +622,7 @@
               } @else if (slug === 'coordinate-converter' || slug === 'latitude-longitude-finder') {
                 <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
                   Coordinate or place text
-                  <input name="gis-coordinate" type="text" [value]="gisInput()" (input)="updateGisInput($event)" placeholder="31.5204, 74.3587" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                  <input name="gis-coordinate" type="text" [value]="gisInput()" (input)="updateGisInput($event)" placeholder="40.7128, -74.0060" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
                 </label>
               } @else {
                 <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
@@ -725,10 +725,12 @@
           </label>
         }
 
-        <div class="mt-4 flex flex-wrap gap-2">
-          <button type="button" class="primary-button" (click)="process()">{{ slug === 'uuid-generator' ? 'Generate Again' : (slug === 'qr-code-generator' ? 'Generate QR Code' : (slug === 'barcode-generator' ? 'Generate Barcode' : 'Process')) }}</button>
-          <button type="button" class="secondary-button" (click)="clear()">Reset</button>
-        </div>
+        @if (showMainActionBar()) {
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button type="button" class="primary-button" (click)="process()">{{ slug === 'uuid-generator' ? 'Generate Again' : (slug === 'qr-code-generator' ? 'Generate QR Code' : (slug === 'barcode-generator' ? 'Generate Barcode' : 'Process')) }}</button>
+            <button type="button" class="secondary-button" (click)="clear()">Reset</button>
+          </div>
+        }
       </section>
 
       @if (error()) {

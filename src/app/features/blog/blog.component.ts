@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { BLOG_POSTS, BlogPost } from '../../core/content/blog-content';
+import { BlogPost } from '../../core/content/blog-content';
 import { SeoService } from '../../core/services/seo.service';
 import { environment } from '../../../environments/environment';
+import { BlogApiService } from '../../core/services/blog-api.service';
 
 @Component({
   selector: 'app-blog',
@@ -11,12 +13,16 @@ import { environment } from '../../../environments/environment';
   templateUrl: './blog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BlogComponent {
+export class BlogComponent implements OnInit {
   private readonly seo = inject(SeoService);
+  private readonly blogApi = inject(BlogApiService);
+  private readonly browser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  readonly posts = BLOG_POSTS;
-  readonly featuredPost = BLOG_POSTS[0];
-  readonly categories = [...new Set(BLOG_POSTS.map((post) => post.category))];
+  readonly posts = signal<BlogPost[]>([]);
+  readonly loading = signal(true);
+  readonly error = signal('');
+  readonly featuredPost = computed(() => this.posts()[0]);
+  readonly categories = computed(() => [...new Set(this.posts().map((post) => post.category))]);
   readonly editorialSections = [
     {
       heading: 'Why FlexImagePro publishes practical tool guides',
@@ -51,6 +57,33 @@ export class BlogComponent {
       { name: 'Home', item: environment.siteUrl },
       { name: 'Blog', item: `${environment.siteUrl}/blog` },
     ]);
+  }
+
+  ngOnInit(): void {
+    if (!this.browser) {
+      this.loading.set(false);
+      return;
+    }
+    void this.loadBlogs();
+  }
+
+  async loadBlogs(): Promise<void> {
+    this.loading.set(true);
+    this.error.set('');
+    try {
+      const cached = await this.blogApi.getCachedBlogs();
+      if (cached.length) {
+        this.posts.set(cached);
+        this.loading.set(false);
+      }
+      this.posts.set(await this.blogApi.syncBlogs());
+    } catch {
+      if (!this.posts().length) {
+        this.error.set('Blog posts could not be loaded right now.');
+      }
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   trackByPost(_: number, post: BlogPost): string {

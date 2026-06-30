@@ -12,7 +12,6 @@ import {
   webpFaqs,
   webpSeoContent,
 } from './core/content/tool-seo-content';
-import { BLOG_ROUTE_SLUGS } from './core/content/blog-routes';
 
 const ALL_RASTER_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/x-icon', 'image/vnd.microsoft.icon'];
 const loadHome = () => import('./features/home/home.component').then((m) => m.HomeComponent);
@@ -282,12 +281,6 @@ const utilityToolRoutes: Routes = [...developerToolSlugs, ...calculatorToolSlugs
   data: { slug },
 }));
 
-const blogPostRoutes: Routes = BLOG_ROUTE_SLUGS.map((slug) => ({
-  path: `blog/${slug}`,
-  loadComponent: loadBlogPost,
-  data: { slug },
-}));
-
 export const routes: Routes = [
   {
     path: '',
@@ -297,7 +290,10 @@ export const routes: Routes = [
     path: 'blog',
     loadComponent: loadBlog,
   },
-  ...blogPostRoutes,
+  {
+    path: 'blog/:slug',
+    loadComponent: loadBlogPost,
+  },
   {
     path: 'compress',
     loadComponent: loadToolPage,

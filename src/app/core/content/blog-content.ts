@@ -1,5 +1,4 @@
 import { ToolFaq } from '../models/image-job.model';
-import blogPostsJson from './blog-posts.json';
 
 export interface BlogSection {
   heading: string;
@@ -21,10 +20,4 @@ export interface BlogPost {
   };
   sections: BlogSection[];
   faqs: ToolFaq[];
-}
-
-export const BLOG_POSTS = blogPostsJson as BlogPost[];
-
-export function findBlogPost(slug: string | null | undefined): BlogPost | undefined {
-  return BLOG_POSTS.find((post) => post.slug === slug);
 }

@@ -2,7 +2,6 @@ import { ApplicationConfig, mergeApplicationConfig } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { RenderMode, ServerRoute, provideServerRendering, withRoutes } from '@angular/ssr';
 import { appConfig } from './app.config';
-import { BLOG_ROUTE_SLUGS } from './core/content/blog-routes';
 
 const imageToolServerRoutes: ServerRoute[] = [
   'rotate-image',
@@ -142,7 +141,7 @@ const utilityToolServerRoutes: ServerRoute[] = [
 const serverRoutes: ServerRoute[] = [
   { path: '', renderMode: RenderMode.Prerender },
   { path: 'blog', renderMode: RenderMode.Prerender },
-  ...BLOG_ROUTE_SLUGS.map((slug): ServerRoute => ({ path: `blog/${slug}`, renderMode: RenderMode.Prerender })),
+  { path: 'blog/:slug', renderMode: RenderMode.Client },
   { path: 'compress', renderMode: RenderMode.Prerender },
   { path: 'convert-webp', renderMode: RenderMode.Prerender },
   { path: 'resize', renderMode: RenderMode.Prerender },

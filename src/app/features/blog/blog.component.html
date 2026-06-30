@@ -10,21 +10,23 @@
           Learn how to choose the right tool settings, prepare cleaner files, improve search visibility, create reliable QR codes, format developer data, and avoid common workflow mistakes. Each guide links directly to the matching FlexImagePro tool so you can read, apply, and finish the task faster.
         </p>
         <div class="mt-6 flex flex-wrap gap-2">
-          @for (category of categories; track trackByValue($index, category)) {
+          @for (category of categories(); track trackByValue($index, category)) {
             <span class="rounded-lg border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-teal-800 dark:border-teal-500/30 dark:bg-teal-500/10 dark:text-teal-200">{{ category }}</span>
           }
         </div>
       </div>
 
-      <aside class="rounded-lg border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-900">
-        <p class="text-xs font-bold uppercase tracking-wide text-teal-700 dark:text-teal-300">Featured Guide</p>
-        <h2 class="mt-3 text-xl font-bold text-zinc-950 dark:text-white">{{ featuredPost.title }}</h2>
-        <p class="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400">{{ featuredPost.excerpt }}</p>
-        <a [routerLink]="'/blog/' + featuredPost.slug" class="focus-ring mt-5 inline-flex items-center gap-2 rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 dark:bg-teal-300 dark:text-zinc-950 dark:hover:bg-teal-200">
-          Read guide
-          <i class="bi bi-arrow-right" aria-hidden="true"></i>
-        </a>
-      </aside>
+      @if (featuredPost(); as featured) {
+        <aside class="rounded-lg border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <p class="text-xs font-bold uppercase tracking-wide text-teal-700 dark:text-teal-300">Featured Guide</p>
+          <h2 class="mt-3 text-xl font-bold text-zinc-950 dark:text-white">{{ featured.title }}</h2>
+          <p class="mt-3 text-sm leading-7 text-zinc-600 dark:text-zinc-400">{{ featured.excerpt }}</p>
+          <a [routerLink]="'/blog/' + featured.slug" class="focus-ring mt-5 inline-flex items-center gap-2 rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 dark:bg-teal-300 dark:text-zinc-950 dark:hover:bg-teal-200">
+            Read guide
+            <i class="bi bi-arrow-right" aria-hidden="true"></i>
+          </a>
+        </aside>
+      }
     </div>
   </section>
 
@@ -40,7 +42,30 @@
     </div>
 
     <div class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-      @for (post of posts; track trackByPost($index, post)) {
+      @if (loading()) {
+        @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+          <article class="min-h-[260px] animate-pulse rounded-lg border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div class="flex items-center justify-between gap-3">
+              <span class="h-7 w-24 rounded-md bg-zinc-200 dark:bg-zinc-800"></span>
+              <span class="h-4 w-16 rounded bg-zinc-200 dark:bg-zinc-800"></span>
+            </div>
+            <div class="mt-5 h-5 w-11/12 rounded bg-zinc-200 dark:bg-zinc-800"></div>
+            <div class="mt-3 h-5 w-8/12 rounded bg-zinc-200 dark:bg-zinc-800"></div>
+            <div class="mt-5 space-y-3">
+              <div class="h-3 w-full rounded bg-zinc-200 dark:bg-zinc-800"></div>
+              <div class="h-3 w-10/12 rounded bg-zinc-200 dark:bg-zinc-800"></div>
+              <div class="h-3 w-9/12 rounded bg-zinc-200 dark:bg-zinc-800"></div>
+            </div>
+            <div class="mt-6 flex gap-2">
+              <span class="h-9 w-24 rounded-lg bg-zinc-200 dark:bg-zinc-800"></span>
+              <span class="h-9 w-32 rounded-lg bg-zinc-200 dark:bg-zinc-800"></span>
+            </div>
+          </article>
+        }
+      } @else if (error()) {
+        <div class="rounded-lg border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{{ error() }}</div>
+      }
+      @for (post of posts(); track trackByPost($index, post)) {
         <article class="flex min-h-full flex-col rounded-lg border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
           <div class="flex items-center justify-between gap-3 text-xs font-semibold">
             <span class="rounded-md bg-teal-50 px-2 py-1 text-teal-700 dark:bg-teal-950 dark:text-teal-300">{{ post.category }}</span>

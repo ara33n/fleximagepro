@@ -7,11 +7,14 @@
 /bazel-out
 
 /backend/node_modules
+/backend/.env
 /backend/uploads/*
 !/backend/uploads/.gitkeep
 
 # Node
 /node_modules
+/fleximagepro-admin/node_modules
+/fleximagepro-admin/dist
 npm-debug.log
 yarn-error.log
 

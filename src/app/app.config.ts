@@ -1,4 +1,5 @@
 import { ApplicationConfig } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 
 import { routes } from './app.routes';
@@ -7,6 +8,7 @@ import { routes } from './app.routes';
 // are added separately in main.ts so they are never included in the server bundle.
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideHttpClient(),
     provideRouter(
       routes,
       withInMemoryScrolling({

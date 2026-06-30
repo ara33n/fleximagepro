@@ -6,15 +6,20 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "seed:blogs": "node scripts/seedBlogs.js",
+    "seed:admin": "node scripts/seedAdmin.js"
   },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.7.3",
     "multer": "^2.2.0",
     "qrcode": "^1.5.4",
     "sharp": "^0.35.2"

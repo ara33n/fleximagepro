@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
-import { BLOG_POSTS, BlogPost, findBlogPost } from '../../core/content/blog-content';
+import { BlogPost } from '../../core/content/blog-content';
 import { SeoService } from '../../core/services/seo.service';
 import { environment } from '../../../environments/environment';
 import { animate, style, transition, trigger } from '@angular/animations';
+import { BlogApiService } from '../../core/services/blog-api.service';
 
 @Component({
   selector: 'app-blog-post',
@@ -23,14 +24,17 @@ import { animate, style, transition, trigger } from '@angular/animations';
     ]),
   ],
 })
-export class BlogPostComponent {
+export class BlogPostComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly seo = inject(SeoService);
+  private readonly blogApi = inject(BlogApiService);
 
-  readonly post = signal<BlogPost | undefined>(findBlogPost(this.route.snapshot.data['slug'] ?? this.route.snapshot.paramMap.get('slug')));
+  readonly post = signal<BlogPost | undefined>(undefined);
   readonly openFaq = signal<number | null>(0);
-  readonly relatedPosts = BLOG_POSTS.filter((post) => post.slug !== this.post()?.slug).slice(0, 3);
+  readonly relatedPosts = signal<BlogPost[]>([]);
+  readonly loading = signal(true);
+  readonly error = signal('');
   readonly practicalSections = [
     {
       heading: 'Before you use the tool',
@@ -62,24 +66,50 @@ export class BlogPostComponent {
     },
   ];
 
-  constructor() {
-    const post = this.post();
-    if (!post) {
+  ngOnInit(): void {
+    void this.loadPost();
+  }
+
+  async loadPost(): Promise<void> {
+    const slug = this.route.snapshot.paramMap.get('slug') || '';
+    if (!slug) {
       void this.router.navigateByUrl('/blog', { replaceUrl: true });
       return;
     }
 
-    this.seo.update(
-      `${post.title} | FlexImagePro Blog`,
-      post.metaDescription,
-      post.tags.join(', '),
-    );
-    this.seo.updateFaqSchema(post.faqs);
-    this.seo.updateBreadcrumbSchema([
-      { name: 'Home', item: environment.siteUrl },
-      { name: 'Blog', item: `${environment.siteUrl}/blog` },
-      { name: post.title, item: `${environment.siteUrl}/blog/${post.slug}` },
-    ]);
+    this.loading.set(true);
+    this.error.set('');
+    try {
+      const cached = await this.blogApi.getCachedBlog(slug);
+      if (cached) {
+        await this.applyPost(cached);
+        this.loading.set(false);
+      }
+      const post = await this.blogApi.syncBlog(slug);
+      await this.applyPost(post);
+      void this.blogApi.trackView(slug).catch(() => undefined);
+    } catch {
+      this.error.set('This blog article could not be loaded right now.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  private async applyPost(post: BlogPost): Promise<void> {
+      this.post.set(post);
+      this.relatedPosts.set((await this.blogApi.getCachedBlogs()).filter((item) => item.slug !== post.slug).slice(0, 3));
+
+      this.seo.update(
+        `${post.title} | FlexImagePro Blog`,
+        post.metaDescription,
+        post.tags.join(', '),
+      );
+      this.seo.updateFaqSchema(post.faqs);
+      this.seo.updateBreadcrumbSchema([
+        { name: 'Home', item: environment.siteUrl },
+        { name: 'Blog', item: `${environment.siteUrl}/blog` },
+        { name: post.title, item: `${environment.siteUrl}/blog/${post.slug}` },
+      ]);
   }
 
   toggleFaq(index: number): void {

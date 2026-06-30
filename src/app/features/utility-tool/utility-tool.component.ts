@@ -73,7 +73,6 @@ export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
   private googleMapsPromise?: Promise<void>;
   private gisMap?: google.maps.Map;
   private gisOverlays: Array<google.maps.Circle | google.maps.Polygon | google.maps.Polyline> = [];
-  private readonly pdfImageRepairAttempted = new WeakSet<File>();
 
   readonly slug = this.route.snapshot.data['slug'] as string;
   readonly category = findCategoryForTool(this.slug) ?? TOOL_CATEGORIES[0];
@@ -1151,15 +1150,9 @@ export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
       const JSZip = (await import('jszip')).default;
       const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
       const zip = new JSZip();
-      let renderFile = files[0];
-      if (await this.pdfNeedsGhostscriptBeforeImageRender(renderFile)) {
-        this.toast.info('Preparing your PDF...');
-        renderFile = await this.repairPdfFile(renderFile);
-        this.pdfImageRepairAttempted.add(renderFile);
-        this.setPdfFiles([renderFile]);
-      }
+      const renderFile = files[0];
       pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/legacy/build/pdf.worker.mjs', import.meta.url).toString();
-      const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await renderFile.arrayBuffer()), verbosity: 0 });
+      const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await renderFile.arrayBuffer()), verbosity: pdfjs.VerbosityLevel.ERRORS });
       const pdf = await loadingTask.promise;
       const pagesToRender = this.parsePages(this.pdfPageInput(), pdf.numPages);
       if (!pagesToRender.length) throw new Error('No valid pages selected.');
@@ -2008,11 +2001,6 @@ export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
     const repaired = response.headers.get('X-PDF-Repaired') === 'true';
     const outputName = repaired ? `${originalName}-repaired.pdf` : file.name;
     return new File([blob], outputName, { type: 'application/pdf', lastModified: Date.now() });
-  }
-
-  private async pdfNeedsGhostscriptBeforeImageRender(file: File): Promise<boolean> {
-    if (this.pdfImageRepairAttempted.has(file) || /-repaired\.pdf$/i.test(file.name)) return false;
-    return true;
   }
 
   private async pdfRepairErrorMessage(response: Response): Promise<string> {

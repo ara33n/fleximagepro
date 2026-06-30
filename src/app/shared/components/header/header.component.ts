@@ -21,6 +21,8 @@ interface SearchResult {
   item: ToolCatalogItem;
   category: ToolCatalogCategory;
   score: number;
+  reason: string;
+  matchedTerms: string[];
 }
 
 @Component({
@@ -49,31 +51,112 @@ export class HeaderComponent {
   readonly liveTools = TOOL_CATEGORIES.flatMap((category) => category.tools
     .filter((item) => item.live)
     .map((item) => ({ item, category })));
+  readonly quickSearches = [
+    'compress image',
+    'pdf to images',
+    'qr code',
+    'json formatter',
+    'sitemap',
+    'kml circle',
+  ];
   readonly searchResults = computed<SearchResult[]>(() => {
-    const query = this.normalizeSearch(this.searchQuery());
+    const rawQuery = this.searchQuery();
+    const query = this.normalizeSearch(rawQuery);
     if (!query) return [];
     const terms = query.split(' ').filter(Boolean);
+    const queryCompact = this.compact(query);
+    const queryAcronym = this.acronym(query);
     return this.liveTools
       .map(({ item, category }) => {
-        const haystack = this.normalizeSearch(`${item.label} ${item.slug} ${item.description} ${category.title}`);
+        const aliases = this.searchAliases(item, category);
+        const haystack = this.normalizeSearch(`${item.label} ${item.slug} ${item.description} ${category.title} ${aliases.join(' ')}`);
         const label = this.normalizeSearch(item.label);
         const slug = this.normalizeSearch(item.slug);
+        const categoryTitle = this.normalizeSearch(category.title);
+        const words = haystack.split(' ').filter(Boolean);
+        const labelWords = label.split(' ').filter(Boolean);
+        const slugWords = slug.split(' ').filter(Boolean);
+        const haystackCompact = this.compact(haystack);
+        const labelCompact = this.compact(label);
+        const slugCompact = this.compact(slug);
+        const categoryCompact = this.compact(categoryTitle);
+        const labelAcronym = this.acronym(label);
+        const slugAcronym = this.acronym(slug);
+        const categoryAcronym = this.acronym(categoryTitle);
+        const matchedTerms = new Set<string>();
         let score = 0;
-        if (label === query || slug === query) score += 120;
-        if (label.includes(query)) score += 80;
-        if (slug.includes(query)) score += 65;
-        if (haystack.includes(query)) score += 45;
-        for (const term of terms) {
-          if (label.includes(term)) score += 18;
-          else if (slug.includes(term)) score += 14;
-          else if (haystack.includes(term)) score += 8;
+        let reason = 'Related match';
+
+        if (label === query || slug === query) {
+          score += 200;
+          reason = 'Exact tool match';
         }
-        if (terms.every((term) => haystack.includes(term))) score += 30;
-        return { item, category, score };
+        if (labelCompact === queryCompact || slugCompact === queryCompact) {
+          score += 180;
+          reason = 'Exact compact match';
+        }
+        if (label.startsWith(query) || slug.startsWith(query)) {
+          score += 120;
+          reason = 'Starts with your search';
+        }
+        if (label.includes(query)) {
+          score += 95;
+          reason = 'Tool name match';
+        }
+        if (slug.includes(query)) {
+          score += 80;
+          reason = 'URL match';
+        }
+        if (haystack.includes(query)) {
+          score += 60;
+          reason = reason === 'Related match' ? 'Phrase match' : reason;
+        }
+        if (queryCompact.length >= 3 && (labelCompact.includes(queryCompact) || slugCompact.includes(queryCompact) || haystackCompact.includes(queryCompact))) {
+          score += 70;
+          reason = reason === 'Related match' ? 'No-space match' : reason;
+        }
+        if (queryAcronym.length >= 2 && (labelAcronym.includes(queryAcronym) || slugAcronym.includes(queryAcronym) || categoryAcronym.includes(queryAcronym))) {
+          score += 55;
+          reason = reason === 'Related match' ? 'Initials match' : reason;
+        }
+        for (const term of terms) {
+          const bestWordDistance = this.bestDistance(term, words);
+          const isTypoMatch = term.length >= 4 && bestWordDistance <= (term.length > 7 ? 2 : 1);
+
+          if (labelWords.some((word) => word === term) || slugWords.some((word) => word === term)) {
+            score += 34;
+            matchedTerms.add(term);
+          } else if (label.includes(term)) {
+            score += 26;
+            matchedTerms.add(term);
+          } else if (slug.includes(term)) {
+            score += 22;
+            matchedTerms.add(term);
+          } else if (categoryTitle.includes(term)) {
+            score += 18;
+            matchedTerms.add(term);
+          } else if (haystack.includes(term)) {
+            score += 12;
+            matchedTerms.add(term);
+          } else if (isTypoMatch) {
+            score += 16;
+            matchedTerms.add(term);
+            reason = reason === 'Related match' ? 'Typo-tolerant match' : reason;
+          } else if (this.isSubsequence(term, labelCompact) || this.isSubsequence(term, slugCompact)) {
+            score += 9;
+            matchedTerms.add(term);
+          }
+        }
+        if (terms.length > 1 && terms.every((term) => matchedTerms.has(term))) {
+          score += 45;
+          reason = reason === 'Related match' ? 'All words matched' : reason;
+        }
+        score += this.orderBoost(terms, haystack) * 8;
+        return { item, category, score, reason, matchedTerms: [...matchedTerms] };
       })
       .filter((result) => result.score > 0)
       .sort((a, b) => b.score - a.score || a.item.label.localeCompare(b.item.label))
-      .slice(0, 10);
+      .slice(0, 14);
   });
 
   readonly links = [
@@ -198,6 +281,13 @@ export class HeaderComponent {
     this.activeSearchIndex.set(0);
   }
 
+  useQuickSearch(query: string): void {
+    this.searchQuery.set(query);
+    this.searchOpen.set(true);
+    this.activeSearchIndex.set(0);
+    window.setTimeout(() => this.toolSearchInput?.nativeElement.focus(), 0);
+  }
+
   onSearchFocus(): void {
     this.searchOpen.set(true);
   }
@@ -271,8 +361,100 @@ export class HeaderComponent {
   private normalizeSearch(value: string): string {
     return value
       .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\+/g, ' plus ')
+      .replace(/&/g, ' and ')
       .replace(/[^a-z0-9]+/g, ' ')
       .trim();
+  }
+
+  private compact(value: string): string {
+    return value.replace(/\s+/g, '');
+  }
+
+  private acronym(value: string): string {
+    return value
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => word[0])
+      .join('');
+  }
+
+  private searchAliases(item: ToolCatalogItem, category: ToolCatalogCategory): string[] {
+    const base = this.normalizeSearch(`${item.label} ${item.slug} ${category.title}`);
+    const aliases = new Set<string>();
+    const add = (...values: string[]) => values.forEach((value) => aliases.add(value));
+
+    if (base.includes('jpg') || base.includes('jpeg')) add('jpeg photo picture');
+    if (base.includes('png')) add('transparent image picture');
+    if (base.includes('webp')) add('web p next gen image');
+    if (base.includes('pdf')) add('document file pages');
+    if (base.includes('qr')) add('qrcode quick response scan wifi vcard business card');
+    if (base.includes('barcode')) add('bar code ean upc code128 product code');
+    if (base.includes('json')) add('javascript object data api pretty print');
+    if (base.includes('xml')) add('markup data');
+    if (base.includes('jwt')) add('token claims header payload decode');
+    if (base.includes('kml') || base.includes('gis') || base.includes('map')) add('map coordinates latitude longitude geo geographic');
+    if (base.includes('sitemap')) add('site map xml crawl routes pages');
+    if (base.includes('robots')) add('robot txt crawler googlebot disallow allow');
+    if (base.includes('schema')) add('structured data rich results json ld');
+    if (base.includes('color') || base.includes('hex') || base.includes('rgb') || base.includes('hsl')) add('colour palette picker contrast');
+    if (base.includes('compress')) add('reduce optimize smaller size');
+    if (base.includes('resize')) add('dimensions width height crop scale');
+    if (base.includes('metadata')) add('exif info details properties');
+    if (base.includes('dpi')) add('ppi resolution print density');
+    if (base.includes('base64')) add('b64 encode decode data uri');
+    return [...aliases];
+  }
+
+  private bestDistance(term: string, words: string[]): number {
+    let best = Number.POSITIVE_INFINITY;
+    for (const word of words) {
+      if (Math.abs(word.length - term.length) > 2) continue;
+      best = Math.min(best, this.levenshtein(term, word));
+      if (best === 0) return 0;
+    }
+    return best;
+  }
+
+  private levenshtein(a: string, b: string): number {
+    if (a === b) return 0;
+    if (!a.length) return b.length;
+    if (!b.length) return a.length;
+    const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+    const current = Array.from({ length: b.length + 1 }, () => 0);
+    for (let i = 1; i <= a.length; i += 1) {
+      current[0] = i;
+      for (let j = 1; j <= b.length; j += 1) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        current[j] = Math.min(current[j - 1] + 1, previous[j] + 1, previous[j - 1] + cost);
+      }
+      previous.splice(0, previous.length, ...current);
+    }
+    return previous[b.length];
+  }
+
+  private isSubsequence(needle: string, haystack: string): boolean {
+    if (needle.length < 3) return false;
+    let index = 0;
+    for (const char of haystack) {
+      if (char === needle[index]) index += 1;
+      if (index === needle.length) return true;
+    }
+    return false;
+  }
+
+  private orderBoost(terms: string[], haystack: string): number {
+    let lastIndex = -1;
+    let boost = 0;
+    for (const term of terms) {
+      const index = haystack.indexOf(term, lastIndex + 1);
+      if (index === -1) return boost;
+      boost += 1;
+      lastIndex = index;
+    }
+    return boost;
   }
 
   private scrollActiveSearchResult(): void {

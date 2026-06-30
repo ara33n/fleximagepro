@@ -349,9 +349,10 @@
               <input
                 #toolSearchInput
                 id="header-tool-search"
+                name="header-tool-search"
                 type="search"
                 class="header-search-input min-w-0 flex-1 bg-transparent text-base font-medium text-zinc-950 placeholder:text-zinc-400 dark:text-white"
-                placeholder="Search any tool..."
+                placeholder="Search tools, formats, tasks, or short names..."
                 [value]="searchQuery()"
                 (input)="onSearchInput($event)"
                 (focus)="onSearchFocus()"
@@ -369,48 +370,80 @@
             </button>
           </div>
 
-          @if (searchQuery().trim()) {
-            <div
-              class="search-results-panel mt-3 max-h-[min(500px,calc(100vh-6rem))] overflow-y-auto rounded-xl border border-zinc-200 bg-white p-2 shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
-              role="listbox"
-            >
+          <div
+            class="search-results-panel mt-3 max-h-[min(500px,calc(100vh-6rem))] overflow-y-auto rounded-xl border border-zinc-200 bg-white p-2 shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
+            role="listbox"
+          >
+            @if (searchQuery().trim()) {
+              <div class="flex items-center justify-between gap-3 border-b border-zinc-100 px-3 py-2 dark:border-zinc-800">
+                <p class="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                  Advanced results
+                </p>
+                <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                  {{ searchResults().length }} match{{ searchResults().length === 1 ? '' : 'es' }}
+                </p>
+              </div>
               @if (searchResults().length) {
                 @for (result of searchResults(); track result.item.slug) {
                   <button
                     #searchResultButton
                     type="button"
-                    class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition"
+                    class="group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-900"
                     [class.bg-teal-50]="isSearchResultActive($index)"
                     [class.text-teal-900]="isSearchResultActive($index)"
                     [class.dark:bg-teal-950]="isSearchResultActive($index)"
                     [class.dark:text-teal-100]="isSearchResultActive($index)"
                     (mouseenter)="activeSearchIndex.set($index)"
                     (click)="chooseSearchResult(result)"
-                    role="option"
+                      role="option"
                     [attr.aria-selected]="isSearchResultActive($index)"
                   >
-                    <i
-                      class="bi {{
-                        result.category.icon
-                      }} shrink-0 text-teal-700 dark:text-teal-300"
-                      aria-hidden="true"
-                    ></i>
-                    <span class="min-w-0 flex-1">
-                      <span
-                        class="block truncate text-sm font-semibold text-zinc-900 dark:text-white"
-                        >{{ result.item.label }}</span
-                      >
-                      <span class="block truncate text-xs text-zinc-500 dark:text-zinc-400">{{
-                        result.category.title
-                      }}</span>
+                    <span class="grid size-10 shrink-0 place-items-center rounded-lg bg-teal-50 text-teal-700 transition group-hover:bg-teal-100 dark:bg-teal-950 dark:text-teal-300 dark:group-hover:bg-teal-900">
+                      <i
+                        class="bi {{
+                          result.category.icon
+                        }}"
+                        aria-hidden="true"
+                      ></i>
                     </span>
+                    <span class="min-w-0 flex-1">
+                      <span class="flex min-w-0 items-center gap-2">
+                        <span class="truncate text-sm font-semibold text-zinc-900 dark:text-white">{{ result.item.label }}</span>
+                        <span class="hidden shrink-0 rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 sm:inline-flex">
+                          {{ result.reason }}
+                        </span>
+                      </span>
+                      <span class="mt-1 block truncate text-xs text-zinc-500 dark:text-zinc-400">
+                        {{ result.category.title }} · {{ result.item.route }} · {{ result.item.description }}
+                      </span>
+                    </span>
+                    <i class="bi bi-arrow-return-left hidden shrink-0 text-xs text-zinc-400 group-hover:text-teal-600 dark:group-hover:text-teal-300 sm:block" aria-hidden="true"></i>
                   </button>
                 }
               } @else {
-                <div class="px-3 py-4 text-sm text-zinc-500 dark:text-zinc-400">No tools found</div>
+                <div class="px-3 py-5 text-sm text-zinc-500 dark:text-zinc-400">
+                  No tools found. Try a format, task, or short name like “pdf image”, “qr”, “jwt”, or “kml”.
+                </div>
               }
-            </div>
-          }
+            } @else {
+              <div class="px-3 py-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                  Try searching
+                </p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  @for (query of quickSearches; track query) {
+                    <button
+                      type="button"
+                      class="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-teal-600 dark:hover:bg-teal-950 dark:hover:text-teal-200"
+                      (click)="useQuickSearch(query)"
+                    >
+                      {{ query }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
         </div>
       </div>
     }

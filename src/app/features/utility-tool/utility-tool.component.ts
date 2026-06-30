@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { NgClass, NgStyle } from '@angular/common';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, PLATFORM_ID, ViewChild, computed, inject, signal } from '@angular/core';
+import { NgClass, NgStyle, isPlatformBrowser } from '@angular/common';
+import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, Validators, NonNullableFormBuilder } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import * as QRCode from 'qrcode';
 import { TOOL_CATEGORIES, ToolCatalogItem, findToolBySlug } from '../../core/content/tool-catalog';
 import { findCategoryForTool, generateToolSeo } from '../../core/content/generated-tool-seo';
@@ -10,9 +11,11 @@ import { SeoService } from '../../core/services/seo.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ExportPdfService } from '../../core/services/export-pdf.service';
 import { ImageShareResponse, ImageShareService } from '../../core/services/image-share.service';
+import { PageLoaderService } from '../../core/services/page-loader.service';
 import { QrCodeCardComponent } from '../../shared/components/qr-code-card/qr-code-card.component';
 import { UploadZoneComponent } from '../../shared/components/upload-zone/upload-zone.component';
 import { ToolSeoBlockComponent } from '../../shared/components/tool-seo-block/tool-seo-block.component';
+import { environment } from '../../../environments/environment';
 
 interface ResultRow { label: string; value: string; }
 type QrType = 'website' | 'business-card' | 'text' | 'wifi' | 'pdf' | 'app-store';
@@ -25,6 +28,8 @@ type ClipDragTarget = number | 'circle-radius' | 'circle-center' | 'ellipse-radi
 type DownloadTextFormat = 'pdf' | 'txt' | 'csv' | 'json' | 'html';
 interface GisPoint { lat: number; lng: number; x: number; y: number; label: string; }
 interface KmlCircleOptions { name: string; strokeColor: string; fillColor: string; opacity: number; }
+type KmlBuilderShape = 'circle' | 'polygon';
+type KmlRadiusUnit = 'foot' | 'kilometer' | 'meter' | 'mile' | 'nautical_mile' | 'yard';
 type PdfDocumentLoader = {
   load(input: ArrayBuffer, options?: { ignoreEncryption?: boolean }): Promise<import('pdf-lib').PDFDocument>;
 };
@@ -32,6 +37,7 @@ type PdfDocumentLoader = {
 const DEV_OUTPUT_ONLY = new Set(['uuid-generator', 'random-name-generator', 'random-color-generator']);
 const CALC_OUTPUT_ONLY = new Set<string>();
 const FIELD_CATEGORIES = new Set(['Calculator Tools', 'Generator Tools', 'Color Tools', 'Date & Time Tools']);
+const PDF_REPAIR_ERROR_PATTERN = /PDFDict|PDFDocument|PDFPage|invalid object|object ref|encrypted|password|protected|damaged|xref|cross-reference|Failed to parse|parse invalid|Invalid PDF|InvalidPDF|FormatError|PasswordException|MissingPDFException|UnknownErrorException|No PDF header|bad XRef|Invalid XRef|Expected instance|trailer|startxref|endobj|badly formed|corrupt|image rendering failed|Unable to decode image|Jbig2Error|JBIG2|Dependent image/i;
 const PDF_DOWNLOAD_TOOLS = new Set([
   'json-formatter',
   'xml-formatter',
@@ -51,15 +57,23 @@ const PDF_DOWNLOAD_TOOLS = new Set([
   templateUrl: './utility-tool.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class UtilityToolComponent implements OnInit {
+export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('gisGoogleMap') private gisGoogleMap?: ElementRef<HTMLElement>;
   private readonly route = inject(ActivatedRoute);
   private readonly seo = inject(SeoService);
   private readonly toast = inject(ToastService);
   private readonly exportPdf = inject(ExportPdfService);
   private readonly imageShare = inject(ImageShareService);
+  private readonly loader = inject(PageLoaderService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly formBuilder = inject(NonNullableFormBuilder);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly subscriptions = new Subscription();
   private clipBlinkTimer: number | null = null;
+  private googleMapsPromise?: Promise<void>;
+  private gisMap?: google.maps.Map;
+  private gisOverlays: Array<google.maps.Circle | google.maps.Polygon | google.maps.Polyline> = [];
+  private readonly pdfImageRepairAttempted = new WeakSet<File>();
 
   readonly slug = this.route.snapshot.data['slug'] as string;
   readonly category = findCategoryForTool(this.slug) ?? TOOL_CATEGORIES[0];
@@ -79,10 +93,14 @@ export class UtilityToolComponent implements OnInit {
   readonly mode = signal('length');
   readonly qrType = signal<QrType>('website');
   readonly kmlCircleForm = this.formBuilder.group({
+    shape: [this.slug === 'kml-polygon-generator' ? 'polygon' : 'circle' as KmlBuilderShape, [Validators.required]],
     name: ['FlexImagePro Circle', [Validators.required]],
     latitude: [31.5204, [Validators.required, Validators.min(-90), Validators.max(90)]],
     longitude: [74.3587, [Validators.required, Validators.min(-180), Validators.max(180)]],
     radius: [1000, [Validators.required, Validators.min(1)]],
+    radiusUnit: ['meter' as KmlRadiusUnit, [Validators.required]],
+    includeCenter: [true],
+    polygonCoordinates: ['31.5204, 74.3587\n31.5304, 74.3687\n31.5104, 74.3787'],
     strokeColor: ['#0f766e', [Validators.required]],
     fillColor: ['#14b8a6', [Validators.required]],
     opacity: [40, [Validators.required, Validators.min(0), Validators.max(100)]],
@@ -120,17 +138,24 @@ export class UtilityToolComponent implements OnInit {
   readonly barcodeJpgPreview = signal('');
   readonly pdfFiles = signal<File[]>([]);
   readonly acceptedPdfTypes = ['application/pdf', '.pdf'];
-  readonly pdfPageInput = signal('1');
+  readonly pdfPageInput = signal('');
   readonly pdfOrderInput = signal('1,2,3');
   readonly pdfAngle = signal(90);
   readonly pdfOutputUrl = signal('');
   readonly pdfOutputName = signal('');
+  readonly isPdfPreviewModalOpen = signal(false);
+  readonly isProcessingPdf = signal(false);
+  readonly isRepairingPdf = signal(false);
   readonly isGeneratingPdfShareLink = signal(false);
   readonly pdfShareBatch = signal<ImageShareResponse | null>(null);
   readonly isPdfShareModalOpen = signal(false);
   readonly gisInput = signal('');
   readonly gisSecondInput = signal('');
   readonly gisOutput = signal('');
+  readonly gisRadiusUnit = signal<KmlRadiusUnit>('meter');
+  readonly gisStrokeColor = signal('#0f766e');
+  readonly gisFillColor = signal('#14b8a6');
+  readonly gisOpacity = signal(35);
   readonly shadowLayers = signal<ShadowLayer[]>([{ x: 5, y: 5, spread: 0, blur: 15, opacity: 45, color: '#000000', inset: false }]);
   readonly activeShadowLayer = signal(0);
   readonly shadowObjectColor = signal('#0f766e');
@@ -202,6 +227,7 @@ export class UtilityToolComponent implements OnInit {
     ...this.borderStyleObject(),
   }));
   readonly radiusEditorDoc = computed<SafeHtml>(() => this.sanitizer.bypassSecurityTrustHtml(`<!doctype html><html><head><style>body{min-height:100vh;margin:0;padding:24px;display:grid;place-items:center;background:#f8fafc;font-family:Inter,Arial,sans-serif}${this.borderCss()}\n#borderDemo{${this.borderCssOutput()}}</style></head><body>${this.borderHtml()}</body></html>`));
+  readonly pdfPreviewUrl = computed<SafeResourceUrl | null>(() => this.pdfOutputUrl() ? this.sanitizer.bypassSecurityTrustResourceUrl(this.pdfOutputUrl()) : null);
   readonly clipCssValue = computed(() => {
     if (this.clipKind() === 'circle') {
       const circle = this.clipCircle();
@@ -268,6 +294,22 @@ export class UtilityToolComponent implements OnInit {
     this.seo.updateFaqSchema(content.faqs);
     this.seo.updateBreadcrumbSchema(content.breadcrumb);
     if (DEV_OUTPUT_ONLY.has(this.slug)) void this.process();
+    if (this.category.title === 'GIS / Map Tools') {
+      this.subscriptions.add(this.kmlCircleForm.valueChanges.subscribe(() => {
+        this.syncKmlCircleInputs();
+        this.scheduleGisMapUpdate();
+      }));
+    }
+  }
+
+  ngAfterViewInit(): void {
+    if (this.category.title === 'GIS / Map Tools') this.scheduleGisMapUpdate();
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+    this.clearGisOverlays();
+    this.gisMap = undefined;
   }
 
   updateInput(event: Event): void { this.input.set((event.target as HTMLTextAreaElement | HTMLInputElement).value); }
@@ -292,13 +334,36 @@ export class UtilityToolComponent implements OnInit {
     this.output.set('');
     this.rows.set([]);
     this.pdfShareBatch.set(null);
+    this.isPdfPreviewModalOpen.set(false);
     this.isPdfShareModalOpen.set(false);
   }
   updatePdfPageInput(event: Event): void { this.pdfPageInput.set((event.target as HTMLInputElement).value); }
   updatePdfOrderInput(event: Event): void { this.pdfOrderInput.set((event.target as HTMLInputElement).value); }
   updatePdfAngle(event: Event): void { this.pdfAngle.set(Number((event.target as HTMLSelectElement).value)); }
-  updateGisInput(event: Event): void { this.gisInput.set((event.target as HTMLTextAreaElement | HTMLInputElement).value); }
-  updateGisSecondInput(event: Event): void { this.gisSecondInput.set((event.target as HTMLTextAreaElement | HTMLInputElement).value); }
+  updateGisInput(event: Event): void {
+    this.gisInput.set((event.target as HTMLTextAreaElement | HTMLInputElement).value);
+    this.scheduleGisMapUpdate();
+  }
+  updateGisSecondInput(event: Event): void {
+    this.gisSecondInput.set((event.target as HTMLTextAreaElement | HTMLInputElement).value);
+    this.scheduleGisMapUpdate();
+  }
+  updateGisRadiusUnit(event: Event): void {
+    this.gisRadiusUnit.set((event.target as HTMLSelectElement).value as KmlRadiusUnit);
+    this.scheduleGisMapUpdate();
+  }
+  updateGisStrokeColor(event: Event): void {
+    this.gisStrokeColor.set((event.target as HTMLInputElement).value);
+    this.scheduleGisMapUpdate();
+  }
+  updateGisFillColor(event: Event): void {
+    this.gisFillColor.set((event.target as HTMLInputElement).value);
+    this.scheduleGisMapUpdate();
+  }
+  updateGisOpacity(event: Event): void {
+    this.gisOpacity.set(Number((event.target as HTMLInputElement).value));
+    this.scheduleGisMapUpdate();
+  }
   updateShadowLayer(key: keyof ShadowLayer, event: Event): void {
     const target = event.target as HTMLInputElement;
     const rawValue = target.type === 'checkbox' ? target.checked : target.value;
@@ -490,6 +555,10 @@ export class UtilityToolComponent implements OnInit {
     const percent = ((Number(value) - min) / (max - min)) * 100;
     return `linear-gradient(to right, #0f766e 0%, #0f766e ${percent}%, #d4d4d8 ${percent}%, #d4d4d8 100%)`;
   }
+  rangeFillPercent(value: number, min: number, max: number): string {
+    const percent = Math.max(0, Math.min(100, ((Number(value) - min) / (max - min)) * 100));
+    return `${percent.toFixed(1)}%`;
+  }
   radiusRangeFill(corner: RadiusCorner): string {
     return this.percentFill(this.radiusCorners()[corner].value, 0, 160);
   }
@@ -550,17 +619,28 @@ export class UtilityToolComponent implements OnInit {
     this.activeShadowLayer.set(0);
   }
 
-  async process(): Promise<void> {
+  async process(allowPdfRepair = true): Promise<void> {
     this.error.set(null);
     try {
       if (this.category.title === 'Developer Tools') await this.processDeveloper();
       else if (this.category.title === 'Calculator Tools') this.processCalculator();
       else if (this.category.title === 'Generator Tools') await this.processGenerator();
       else if (this.category.title === 'PDF Tools') await this.processPdf();
-      else if (this.category.title === 'GIS / Map Tools') this.processGis();
+      else if (this.category.title === 'GIS / Map Tools') await this.processGis();
       else if (this.category.title === 'Color Tools') this.processColor();
       else if (this.category.title === 'Date & Time Tools') this.processDateTime();
     } catch (error) {
+      if (this.category.title === 'PDF Tools' && allowPdfRepair && this.shouldAttemptPdfRepair(error)) {
+        const repaired = await this.repairSelectedPdfFiles(error);
+        if (repaired) {
+          await this.process(false);
+          return;
+        }
+        this.output.set('');
+        this.rows.set([]);
+        this.error.set(null);
+        return;
+      }
       this.output.set('');
       this.rows.set([]);
       this.error.set(this.friendlyToolError(error));
@@ -581,17 +661,27 @@ export class UtilityToolComponent implements OnInit {
     this.pdfOutputUrl.set('');
     this.pdfOutputName.set('');
     this.pdfShareBatch.set(null);
+    this.isPdfPreviewModalOpen.set(false);
     this.isPdfShareModalOpen.set(false);
     this.gisOutput.set('');
+    this.gisRadiusUnit.set('meter');
+    this.gisStrokeColor.set('#0f766e');
+    this.gisFillColor.set('#14b8a6');
+    this.gisOpacity.set(35);
     this.kmlCircleForm.reset({
       name: 'FlexImagePro Circle',
       latitude: 31.5204,
       longitude: 74.3587,
       radius: 1000,
+      shape: this.slug === 'kml-polygon-generator' ? 'polygon' : 'circle',
+      radiusUnit: 'meter',
+      includeCenter: true,
+      polygonCoordinates: '31.5204, 74.3587\n31.5304, 74.3687\n31.5104, 74.3787',
       strokeColor: '#0f766e',
       fillColor: '#14b8a6',
       opacity: 40,
     });
+    this.scheduleGisMapUpdate();
     this.error.set(null);
   }
 
@@ -663,11 +753,16 @@ export class UtilityToolComponent implements OnInit {
   }
 
   async createPdfPreview(): Promise<void> {
+    if (this.isRepairingPdf() || this.isProcessingPdf()) return;
     await this.process();
-    if (this.pdfOutputUrl()) this.toast.success(this.pdfCreatesZip() ? 'ZIP output is ready.' : 'PDF preview is ready.');
+    if (this.pdfOutputUrl()) {
+      if (this.pdfCreatesPdf()) this.isPdfPreviewModalOpen.set(true);
+      this.toast.success(this.pdfCreatesZip() ? 'ZIP output is ready.' : this.pdfShowsMetadata() ? 'PDF metadata is ready.' : 'PDF preview is ready.');
+    }
   }
 
   async downloadPdfOutput(): Promise<void> {
+    if (this.isRepairingPdf() || this.isProcessingPdf()) return;
     if (!this.pdfOutputUrl()) await this.process();
     if (!this.pdfOutputUrl()) {
       this.toast.warning('Create the output first.');
@@ -680,7 +775,7 @@ export class UtilityToolComponent implements OnInit {
   }
 
   async generatePdfShareLink(): Promise<void> {
-    if (this.isGeneratingPdfShareLink()) return;
+    if (this.isGeneratingPdfShareLink() || this.isRepairingPdf() || this.isProcessingPdf()) return;
     if (!this.pdfCanShare()) {
       this.toast.warning('Share links are available for PDF outputs only.');
       return;
@@ -707,6 +802,26 @@ export class UtilityToolComponent implements OnInit {
 
   closePdfShareModal(): void {
     this.isPdfShareModalOpen.set(false);
+  }
+
+  openPdfPreviewModal(): void {
+    if (this.pdfOutputUrl() && this.pdfCreatesPdf()) this.isPdfPreviewModalOpen.set(true);
+  }
+
+  closePdfPreviewModal(): void {
+    this.isPdfPreviewModalOpen.set(false);
+  }
+
+  removePdfFile(index: number): void {
+    this.setPdfFiles(this.pdfFiles().filter((_, itemIndex) => itemIndex !== index));
+  }
+
+  movePdfFile(index: number, direction: -1 | 1): void {
+    const files = [...this.pdfFiles()];
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= files.length) return;
+    [files[index], files[nextIndex]] = [files[nextIndex], files[index]];
+    this.setPdfFiles(files);
   }
 
   async copyPdfShareUrl(): Promise<void> {
@@ -984,7 +1099,10 @@ export class UtilityToolComponent implements OnInit {
   }
 
   private async processPdf(): Promise<void> {
-    return this.withPdfWarningsSilenced(async () => {
+    this.isProcessingPdf.set(true);
+    this.loader.show();
+    try {
+    return await this.withPdfWarningsSilenced(async () => {
     const files = this.pdfFiles();
     if (!files.length) throw new Error('Select PDF file first.');
     const { PDFDocument, degrees, rgb, StandardFonts } = await import('pdf-lib');
@@ -1007,8 +1125,8 @@ export class UtilityToolComponent implements OnInit {
     }
     if (this.slug === 'merge-pdf') {
       const merged = await PDFDocument.create();
-      for (const file of files) {
-        const doc = await this.loadPdfDocument(PDFDocument, file);
+      for (const [index, file] of files.entries()) {
+        const doc = await this.loadPdfDocument(PDFDocument, file, index);
         const pages = await merged.copyPages(doc, doc.getPageIndices());
         pages.forEach((page) => merged.addPage(page));
       }
@@ -1033,8 +1151,15 @@ export class UtilityToolComponent implements OnInit {
       const JSZip = (await import('jszip')).default;
       const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
       const zip = new JSZip();
+      let renderFile = files[0];
+      if (await this.pdfNeedsGhostscriptBeforeImageRender(renderFile)) {
+        this.toast.info('Preparing your PDF...');
+        renderFile = await this.repairPdfFile(renderFile);
+        this.pdfImageRepairAttempted.add(renderFile);
+        this.setPdfFiles([renderFile]);
+      }
       pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/legacy/build/pdf.worker.mjs', import.meta.url).toString();
-      const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await files[0].arrayBuffer()) });
+      const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await renderFile.arrayBuffer()), verbosity: 0 });
       const pdf = await loadingTask.promise;
       const pagesToRender = this.parsePages(this.pdfPageInput(), pdf.numPages);
       if (!pagesToRender.length) throw new Error('No valid pages selected.');
@@ -1049,6 +1174,9 @@ export class UtilityToolComponent implements OnInit {
         await page.render({ canvas, canvasContext: context, viewport }).promise;
         const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error('Could not render PDF page.')), 'image/png'));
         zip.file(`page-${pageIndex + 1}.png`, blob);
+        if ((pagesToRender.indexOf(pageIndex) + 1) % 5 === 0) {
+          await this.nextFrame();
+        }
       }
       this.setDownloadBlob(await zip.generateAsync({ type: 'blob' }), 'pdf-images.zip');
       this.rows.set([{ label: 'Pages rendered', value: String(pagesToRender.length) }, { label: 'Output', value: 'PNG ZIP' }]);
@@ -1074,15 +1202,23 @@ export class UtilityToolComponent implements OnInit {
     const name = this.slug === 'extract-pdf-pages' ? 'extracted-pages.pdf' : this.slug === 'delete-pdf-pages' ? 'deleted-pages.pdf' : this.slug === 'rearrange-pdf-pages' ? 'rearranged-pages.pdf' : this.slug === 'rotate-pdf' ? 'rotated.pdf' : 'numbered.pdf';
     this.setDownloadBlob(new Blob([this.blobPart(await doc.save())], { type: 'application/pdf' }), name);
     this.rows.set([{ label: 'Input pages', value: String(source.getPageCount()) }, { label: 'Output file', value: name }]);
-    });
+    }, this.slug === 'pdf-to-images');
+    } finally {
+      this.isProcessingPdf.set(false);
+      this.loader.hide();
+    }
   }
 
-  private processGis(): void {
+  private async processGis(): Promise<void> {
     const input = this.gisInput() || this.input();
     const second = this.gisSecondInput() || this.second();
     if (this.slug === 'coordinate-converter') {
       const [lat, lng] = this.parseLatLng(input);
       this.gisOutput.set(JSON.stringify({ decimal: { lat, lng }, dms: { lat: this.toDms(lat, 'lat'), lng: this.toDms(lng, 'lng') } }, null, 2));
+    } else if (this.slug === 'latitude-longitude-finder') {
+      const [lat, lng] = await this.findLatLng(input);
+      this.gisInput.set(`${lat}, ${lng}`);
+      this.gisOutput.set(`Latitude: ${lat}\nLongitude: ${lng}\nCoordinate: ${lat}, ${lng}`);
     } else if (this.slug === 'distance-calculator') {
       const [a, b] = input.split('|');
       const distance = this.haversine(this.parseLatLng(a), this.parseLatLng(b || second));
@@ -1090,13 +1226,12 @@ export class UtilityToolComponent implements OnInit {
     } else if (this.slug === 'area-calculator') {
       const points = this.parsePoints(input);
       this.gisOutput.set(`Area: ${this.polygonArea(points).toFixed(3)} square km\nPoints: ${points.length}`);
-    } else if (this.slug === 'kml-circle-generator') {
+    } else if (this.slug === 'kml-circle-generator' || this.slug === 'kml-polygon-generator') {
       this.generateKmlCircle();
       return;
     } else if (this.slug === 'buffer-generator') {
-      this.gisOutput.set(this.kmlCircle(this.parseLatLng(input), Number(second) || 1000, this.kmlCircleOptions()));
-    } else if (this.slug === 'kml-polygon-generator') {
-      this.gisOutput.set(this.kmlPolygon(this.parsePoints(input)));
+      const radiusMeters = this.radiusToMeters(Number(second) || 1000, this.gisRadiusUnit());
+      this.gisOutput.set(this.kmlCircle(this.parseLatLng(input), radiusMeters, this.gisShapeOptions('FlexImagePro Buffer'), true));
     } else if (this.slug === 'geojson-to-kml') {
       this.gisOutput.set(this.geoJsonToKml(input));
     } else if (this.slug === 'kml-to-geojson') {
@@ -1108,6 +1243,7 @@ export class UtilityToolComponent implements OnInit {
     }
     this.output.set(this.gisOutput());
     this.rows.set([{ label: 'Output type', value: this.slug.includes('kml') || this.slug.includes('buffer') ? 'KML' : 'Text / JSON' }]);
+    this.scheduleGisMapUpdate();
   }
 
   generateKmlCircle(): void {
@@ -1118,17 +1254,26 @@ export class UtilityToolComponent implements OnInit {
       return;
     }
     const value = this.kmlCircleForm.getRawValue();
+    const isPolygon = value.shape === 'polygon';
     const center: [number, number] = [value.latitude, value.longitude];
-    this.gisInput.set(`${value.latitude}, ${value.longitude}`);
-    this.gisSecondInput.set(String(value.radius));
-    this.gisOutput.set(this.kmlCircle(center, value.radius, this.kmlCircleOptions()));
+    this.syncKmlCircleInputs();
+    if (isPolygon) {
+      const points = this.parsePoints(value.polygonCoordinates);
+      this.gisOutput.set(this.kmlPolygon(points, this.kmlCircleOptions()));
+    } else {
+      this.gisOutput.set(this.kmlCircle(center, this.radiusToMeters(value.radius, value.radiusUnit), this.kmlCircleOptions(), value.includeCenter));
+    }
     this.output.set(this.gisOutput());
     this.rows.set([
-      { label: 'Circle name', value: value.name },
-      { label: 'Center', value: `${value.latitude}, ${value.longitude}` },
-      { label: 'Radius', value: `${value.radius} meters` },
+      { label: 'Shape', value: isPolygon ? 'KML Polygon' : 'KML Circle' },
+      { label: 'Name', value: value.name },
+      ...(isPolygon ? [{ label: 'Polygon points', value: String(this.parsePoints(value.polygonCoordinates).length) }] : [
+        { label: 'Center', value: `${value.latitude}, ${value.longitude}` },
+        { label: 'Radius', value: `${value.radius} ${this.radiusUnitLabel(value.radiusUnit)}` },
+      ]),
       { label: 'Output type', value: 'KML' },
     ]);
+    this.scheduleGisMapUpdate();
   }
 
   clearKmlCircle(): void {
@@ -1393,6 +1538,10 @@ export class UtilityToolComponent implements OnInit {
     return this.pdfNeedsPageRange() || this.pdfNeedsOrder() || this.pdfNeedsAngle();
   }
 
+  pdfLayoutClass(): string {
+    return this.pdfHasOptions() ? 'lg:grid-cols-[minmax(0,1fr)_320px]' : 'lg:grid-cols-1';
+  }
+
   pdfCreatesPdf(): boolean {
     return ['merge-pdf', 'rotate-pdf', 'extract-pdf-pages', 'rearrange-pdf-pages', 'delete-pdf-pages', 'add-page-numbers'].includes(this.slug);
   }
@@ -1414,6 +1563,9 @@ export class UtilityToolComponent implements OnInit {
   }
 
   pdfPrimaryButtonLabel(): string {
+    if (this.isProcessingPdf() && this.slug === 'pdf-to-images') return 'Creating ZIP...';
+    if (this.isProcessingPdf() && this.pdfCreatesZip()) return 'Creating ZIP...';
+    if (this.isProcessingPdf()) return 'Processing PDF...';
     if (this.pdfShowsMetadata()) return 'View Metadata';
     if (this.pdfCreatesZip()) return 'Create ZIP';
     return 'Create Preview';
@@ -1456,7 +1608,7 @@ export class UtilityToolComponent implements OnInit {
 
   gisSecondaryLabel(): string {
     if (this.slug === 'distance-calculator') return 'End coordinate';
-    if (this.slug === 'kml-circle-generator' || this.slug === 'buffer-generator') return 'Radius in meters';
+    if (this.slug === 'kml-circle-generator' || this.slug === 'buffer-generator') return 'Radius';
     return 'Optional value';
   }
 
@@ -1469,7 +1621,7 @@ export class UtilityToolComponent implements OnInit {
   }
 
   gisShowSecond(): boolean {
-    return ['distance-calculator', 'kml-circle-generator', 'buffer-generator'].includes(this.slug);
+    return ['kml-circle-generator', 'buffer-generator'].includes(this.slug);
   }
 
   gisDownloadExtension(): 'kml' | 'json' | 'txt' {
@@ -1502,6 +1654,7 @@ export class UtilityToolComponent implements OnInit {
   }
 
   gisMapMode(): 'circle' | 'polygon' | 'line' | 'points' {
+    if (this.slug === 'kml-circle-generator' || this.slug === 'kml-polygon-generator') return this.kmlCircleForm.controls.shape.value === 'polygon' ? 'polygon' : 'circle';
     if (['kml-circle-generator', 'buffer-generator'].includes(this.slug)) return 'circle';
     if (['kml-polygon-generator', 'area-calculator', 'geojson-to-kml', 'kml-to-geojson'].includes(this.slug)) return 'polygon';
     if (['distance-calculator', 'gpx-to-kml'].includes(this.slug)) return 'line';
@@ -1524,7 +1677,215 @@ export class UtilityToolComponent implements OnInit {
 
   kmlCircleCenterLabel(): string {
     const value = this.kmlCircleForm.getRawValue();
+    if (value.shape === 'polygon') return `${this.parsePoints(value.polygonCoordinates).length} polygon points`;
     return `${value.latitude.toFixed(5)}, ${value.longitude.toFixed(5)}`;
+  }
+
+  private syncKmlCircleInputs(): void {
+    if (this.slug !== 'kml-circle-generator' && this.slug !== 'kml-polygon-generator') return;
+    const value = this.kmlCircleForm.getRawValue();
+    if (value.shape === 'polygon') {
+      this.gisInput.set(value.polygonCoordinates);
+      this.gisSecondInput.set('');
+    } else {
+      this.gisInput.set(`${value.latitude}, ${value.longitude}`);
+      this.gisSecondInput.set(String(this.radiusToMeters(value.radius, value.radiusUnit)));
+    }
+  }
+
+  private scheduleGisMapUpdate(): void {
+    if (this.category.title !== 'GIS / Map Tools' || !isPlatformBrowser(this.platformId)) return;
+    window.setTimeout(() => void this.updateGoogleMap(), 0);
+  }
+
+  private async ensureGoogleMap(): Promise<boolean> {
+    if (!isPlatformBrowser(this.platformId) || !this.gisGoogleMap?.nativeElement || !environment.googleMapsApiKey) return false;
+    await this.loadGoogleMaps();
+    if (!this.gisMap) {
+      this.gisMap = new google.maps.Map(this.gisGoogleMap.nativeElement, {
+        center: { lat: 31.5204, lng: 74.3587 },
+        zoom: 11,
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: true,
+        clickableIcons: false,
+        gestureHandling: 'greedy',
+        styles: [
+          { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
+          { featureType: 'transit', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+        ],
+      });
+    }
+    window.setTimeout(() => {
+      if (this.gisMap) google.maps.event.trigger(this.gisMap, 'resize');
+      this.fitGoogleMapToData();
+    }, 80);
+    return true;
+  }
+
+  private loadGoogleMaps(): Promise<void> {
+    if (window.google?.maps) return Promise.resolve();
+    if (this.googleMapsPromise) return this.googleMapsPromise;
+    this.googleMapsPromise = new Promise((resolve, reject) => {
+      const existing = document.getElementById('google-maps-js') as HTMLScriptElement | null;
+      if (existing) {
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', () => reject(new Error('Google Maps could not load.')), { once: true });
+        return;
+      }
+      const script = document.createElement('script');
+      script.id = 'google-maps-js';
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(environment.googleMapsApiKey)}&language=en&region=US&v=weekly`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Google Maps could not load.'));
+      document.head.appendChild(script);
+    });
+    return this.googleMapsPromise;
+  }
+
+  private async updateGoogleMap(): Promise<void> {
+    if (!(await this.ensureGoogleMap()) || !this.gisMap) return;
+    this.clearGisOverlays();
+    const points = this.gisRawPoints().filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
+    if (!points.length) {
+      this.gisMap.setCenter({ lat: 31.5204, lng: 74.3587 });
+      this.gisMap.setZoom(11);
+      return;
+    }
+    const teal = '#0f766e';
+    const usesKmlBuilder = this.slug === 'kml-circle-generator' || this.slug === 'kml-polygon-generator';
+    const fill = usesKmlBuilder ? this.kmlCircleForm.controls.fillColor.value : this.slug === 'buffer-generator' ? this.gisFillColor() : '#14b8a6';
+    const stroke = usesKmlBuilder ? this.kmlCircleForm.controls.strokeColor.value : this.slug === 'buffer-generator' ? this.gisStrokeColor() : teal;
+    const opacity = usesKmlBuilder ? this.kmlCirclePreviewOpacity() : this.slug === 'buffer-generator' ? Math.max(0, Math.min(1, this.gisOpacity() / 100)) : 0.24;
+    const latLngs = points.map((point) => ({ lat: point.lat, lng: point.lng }));
+    if (this.gisMapMode() === 'circle') {
+      const center = latLngs[0];
+      const value = this.kmlCircleForm.getRawValue();
+      const radius = usesKmlBuilder ? this.radiusToMeters(value.radius, value.radiusUnit) : this.slug === 'buffer-generator' ? this.radiusToMeters(Number(this.gisSecondInput() || this.second()) || 1000, this.gisRadiusUnit()) : Math.max(1, Number(this.gisSecondInput() || this.second()) || 1000);
+      const circle = new google.maps.Circle({
+        map: this.gisMap,
+        center,
+        radius,
+        strokeColor: stroke,
+        strokeOpacity: 1,
+        strokeWeight: 3,
+        fillColor: fill,
+        fillOpacity: opacity,
+      });
+      this.gisOverlays.push(circle);
+      if (!usesKmlBuilder || value.includeCenter) {
+        const marker = new google.maps.Circle({
+          map: this.gisMap,
+          center,
+          radius: Math.max(18, Math.min(80, radius * 0.025)),
+          strokeColor: '#ffffff',
+          strokeOpacity: 1,
+          strokeWeight: 3,
+          fillColor: stroke,
+          fillOpacity: 1,
+        });
+        this.gisOverlays.push(marker);
+      }
+      const bounds = circle.getBounds();
+      if (bounds) this.gisMap.fitBounds(bounds, 34);
+      return;
+    }
+    if (this.gisMapMode() === 'polygon' && latLngs.length > 2) {
+      const polygon = new google.maps.Polygon({
+        map: this.gisMap,
+        paths: latLngs,
+        strokeColor: stroke,
+        strokeOpacity: 1,
+        strokeWeight: 3,
+        fillColor: fill,
+        fillOpacity: opacity,
+      });
+      this.gisOverlays.push(polygon);
+      this.fitGoogleBounds(latLngs);
+    } else if (this.gisMapMode() === 'line' && latLngs.length > 1) {
+      const line = new google.maps.Polyline({
+        map: this.gisMap,
+        path: latLngs,
+        strokeColor: teal,
+        strokeOpacity: 1,
+        strokeWeight: 4,
+      });
+      this.gisOverlays.push(line);
+      this.fitGoogleBounds(latLngs);
+    } else {
+      this.gisMap.setCenter(latLngs[0]);
+      this.gisMap.setZoom(13);
+    }
+    points.forEach((point) => {
+      this.gisOverlays.push(new google.maps.Circle({
+        map: this.gisMap,
+        center: { lat: point.lat, lng: point.lng },
+        radius: 35,
+        strokeColor: '#ffffff',
+        strokeOpacity: 1,
+        strokeWeight: 3,
+        fillColor: teal,
+        fillOpacity: 1,
+      }));
+    });
+  }
+
+  private fitGoogleMapToData(): void {
+    if (!this.gisMap || !window.google?.maps) return;
+    const points = this.gisRawPoints().filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
+    if (!points.length) return;
+    const latLngs = points.map((point) => ({ lat: point.lat, lng: point.lng }));
+    if (this.gisMapMode() === 'circle') {
+      const center = latLngs[0];
+      const value = this.kmlCircleForm.getRawValue();
+      const usesKmlBuilder = this.slug === 'kml-circle-generator' || this.slug === 'kml-polygon-generator';
+      const radius = usesKmlBuilder ? this.radiusToMeters(value.radius, value.radiusUnit) : this.slug === 'buffer-generator' ? this.radiusToMeters(Number(this.gisSecondInput() || this.second()) || 1000, this.gisRadiusUnit()) : Math.max(1, Number(this.gisSecondInput() || this.second()) || 1000);
+      const circle = new google.maps.Circle({ center, radius });
+      const bounds = circle.getBounds();
+      if (bounds) this.gisMap.fitBounds(bounds, 34);
+      return;
+    }
+    if (latLngs.length === 1) {
+      this.gisMap.setCenter(latLngs[0]);
+      this.gisMap.setZoom(13);
+      return;
+    }
+    this.fitGoogleBounds(latLngs);
+  }
+
+  private fitGoogleBounds(points: Array<{ lat: number; lng: number }>): void {
+    if (!this.gisMap || !window.google?.maps || !points.length) return;
+    const bounds = new google.maps.LatLngBounds();
+    points.forEach((point) => bounds.extend(point));
+    this.gisMap.fitBounds(bounds, 34);
+  }
+
+  private clearGisOverlays(): void {
+    this.gisOverlays.forEach((overlay) => overlay.setMap(null));
+    this.gisOverlays = [];
+  }
+
+  private async findLatLng(value: string): Promise<[number, number]> {
+    try {
+      return this.parseLatLng(value);
+    } catch {
+      if (!isPlatformBrowser(this.platformId)) throw new Error('Enter coordinates like 31.5204, 74.3587');
+      await this.loadGoogleMaps();
+      return new Promise<[number, number]>((resolve, reject) => {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address: value }, (results, status) => {
+          if (status !== 'OK' || !results?.[0]) {
+            reject(new Error('Place not found. Try a more specific location.'));
+            return;
+          }
+          const location = results[0].geometry.location;
+          resolve([Number(location.lat().toFixed(6)), Number(location.lng().toFixed(6))]);
+        });
+      });
+    }
   }
 
   private gisRawPoints(): Array<{ lat: number; lng: number; label: string }> {
@@ -1538,7 +1899,10 @@ export class UtilityToolComponent implements OnInit {
           this.rawPoint(this.parseLatLng(b || second), 'B'),
         ];
       }
-      if (['kml-polygon-generator', 'area-calculator'].includes(this.slug)) {
+      if (this.slug === 'kml-polygon-generator' || (this.slug === 'kml-circle-generator' && this.kmlCircleForm.controls.shape.value === 'polygon')) {
+        return this.parsePoints(this.kmlCircleForm.controls.polygonCoordinates.value).map((point, index) => this.rawPoint(point, String(index + 1)));
+      }
+      if (['area-calculator'].includes(this.slug)) {
         return this.parsePoints(input).map((point, index) => this.rawPoint(point, String(index + 1)));
       }
       if (['kml-circle-generator', 'buffer-generator', 'coordinate-converter', 'latitude-longitude-finder'].includes(this.slug)) {
@@ -1573,34 +1937,129 @@ export class UtilityToolComponent implements OnInit {
     if (format === 'html') return new Blob([`<!doctype html><html><head><meta charset="utf-8"><title>${this.escape(this.catalogItem().label)}</title></head><body><h1>${this.escape(this.catalogItem().label)}</h1><pre>${this.escape(text)}</pre></body></html>`], { type: 'text/html;charset=utf-8' });
     return new Blob([text], { type: 'text/plain;charset=utf-8' });
   }
-  private async loadPdfDocument(loader: PdfDocumentLoader, file: File): Promise<import('pdf-lib').PDFDocument> {
+  private async loadPdfDocument(loader: PdfDocumentLoader, file: File, failedPdfIndex = 0): Promise<import('pdf-lib').PDFDocument> {
     try {
       return await this.withPdfWarningsSilenced(async () => loader.load(await file.arrayBuffer(), { ignoreEncryption: true }));
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
+      const pdfError = error instanceof Error ? error : new Error(message || 'PDF could not be processed.');
+      (pdfError as Error & { failedPdfIndex?: number }).failedPdfIndex = failedPdfIndex;
       if (/encrypted/i.test(message)) {
-        throw new Error('This encrypted PDF could not be processed. Try an unlocked copy of the PDF.');
+        const encryptedError = new Error('This encrypted PDF could not be processed. Try an unlocked copy of the PDF.');
+        (encryptedError as Error & { failedPdfIndex?: number }).failedPdfIndex = failedPdfIndex;
+        throw encryptedError;
       }
-      throw error;
+      throw pdfError;
     }
   }
-  private async withPdfWarningsSilenced<T>(task: () => Promise<T>): Promise<T> {
+
+  private shouldAttemptPdfRepair(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error || '');
+    return PDF_REPAIR_ERROR_PATTERN.test(message);
+  }
+
+  private async repairSelectedPdfFiles(error: unknown): Promise<boolean> {
+    const files = this.pdfFiles();
+    if (!files.length || this.isRepairingPdf()) return false;
+
+    this.isRepairingPdf.set(true);
+    this.error.set(null);
+    this.toast.info('Preparing your PDF...');
+    try {
+      const failedIndex = this.failedPdfIndex(error, files.length);
+      const repairedFile = await this.repairPdfFile(files[failedIndex]);
+      const repairedFiles = [...files];
+      repairedFiles[failedIndex] = repairedFile;
+      this.setPdfFiles(repairedFiles);
+      this.toast.success('PDF processed successfully');
+      return true;
+    } catch (error) {
+      this.toast.error(error instanceof Error ? error.message : 'This PDF could not be repaired');
+      this.error.set(null);
+      return false;
+    } finally {
+      this.isRepairingPdf.set(false);
+    }
+  }
+
+  private async repairPdfFile(file: File): Promise<File> {
+    const formData = new FormData();
+    formData.append('pdf', file, file.name);
+    if (this.slug === 'pdf-to-images') {
+      formData.append('repairMode', 'ghostscript');
+    }
+    const endpoint = `${environment.apiBaseUrl.replace(/\/+$/, '')}/api/pdf/repair`;
+    const response = await this.loader.track(fetch(endpoint, {
+      method: 'POST',
+      body: formData,
+    }));
+
+    if (!response.ok) {
+      const message = await this.pdfRepairErrorMessage(response);
+      throw new Error(message);
+    }
+
+    const blob = await response.blob();
+    if (!blob.size || !/pdf/i.test(blob.type || response.headers.get('Content-Type') || 'application/pdf')) {
+      throw new Error('This PDF could not be repaired');
+    }
+
+    const originalName = file.name.replace(/\.pdf$/i, '') || 'document';
+    const repaired = response.headers.get('X-PDF-Repaired') === 'true';
+    const outputName = repaired ? `${originalName}-repaired.pdf` : file.name;
+    return new File([blob], outputName, { type: 'application/pdf', lastModified: Date.now() });
+  }
+
+  private async pdfNeedsGhostscriptBeforeImageRender(file: File): Promise<boolean> {
+    if (this.pdfImageRepairAttempted.has(file) || /-repaired\.pdf$/i.test(file.name)) return false;
+    return true;
+  }
+
+  private async pdfRepairErrorMessage(response: Response): Promise<string> {
+    try {
+      const payload = await response.json() as { error?: string; status?: string };
+      return payload.error || payload.status || 'This PDF could not be repaired';
+    } catch {
+      return 'This PDF could not be repaired';
+    }
+  }
+
+  private failedPdfIndex(error: unknown, fileCount: number): number {
+    const index = Number((error as { failedPdfIndex?: number } | null)?.failedPdfIndex);
+    if (Number.isInteger(index) && index >= 0 && index < fileCount) return index;
+    return 0;
+  }
+
+  private nextFrame(): Promise<void> {
+    return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+  }
+
+  private async withPdfWarningsSilenced<T>(task: () => Promise<T>, throwOnRenderWarning = false): Promise<T> {
     const originalWarn = console.warn;
+    let repairWarning = '';
     console.warn = (...args: unknown[]) => {
       const text = args.map((arg) => String(arg)).join(' ');
-      if (/Trying to parse invalid object|Invalid object ref|Expected instance of PDFDict/i.test(text)) return;
+      if (/Unable to decode image|Jbig2Error|JBIG2|Dependent image isn't ready yet/i.test(text)) {
+        repairWarning ||= 'PDF image rendering failed in this browser. Preparing a repaired PDF...';
+        return;
+      }
+      if (/Trying to parse invalid object|Invalid object ref|Expected instance of PDFDict|Indexing all PDF objects|Invalid PDF|bad XRef|FormatError/i.test(text)) return;
       originalWarn(...args);
     };
     try {
-      return await task();
+      const result = await task();
+      if (throwOnRenderWarning && repairWarning) {
+        throw new Error(repairWarning);
+      }
+      return result;
     } finally {
       console.warn = originalWarn;
     }
   }
   private friendlyToolError(error: unknown): string {
     const message = error instanceof Error ? error.message : 'Could not process this tool.';
-    if (this.category.title === 'PDF Tools' && /PDFDict|invalid object|object ref|encrypted|Failed to parse|parse invalid/i.test(message)) {
-      return 'This PDF has damaged or protected internal data. Try an unlocked or freshly exported copy.';
+    if (this.category.title === 'PDF Tools' && this.shouldAttemptPdfRepair(error)) {
+      return 'This PDF is strongly encrypted or badly damaged. Please upload an unlocked or freshly exported copy.';
     }
     return message;
   }
@@ -1665,7 +2124,38 @@ export class UtilityToolComponent implements OnInit {
     });
     return Math.abs(sum) / 2;
   }
-  private kmlCircle(center: [number, number], radiusMeters: number, options: KmlCircleOptions = this.kmlCircleOptions()): string {
+  private radiusToMeters(radius: number, unit: KmlRadiusUnit): number {
+    const value = Math.max(1, Number(radius) || 1);
+    const factors: Record<KmlRadiusUnit, number> = {
+      foot: 0.3048,
+      kilometer: 1000,
+      meter: 1,
+      mile: 1609.344,
+      nautical_mile: 1852,
+      yard: 0.9144,
+    };
+    return value * factors[unit];
+  }
+  private radiusUnitLabel(unit: KmlRadiusUnit): string {
+    const labels: Record<KmlRadiusUnit, string> = {
+      foot: 'feet',
+      kilometer: 'kilometers',
+      meter: 'meters',
+      mile: 'miles',
+      nautical_mile: 'nautical miles',
+      yard: 'yards',
+    };
+    return labels[unit];
+  }
+  private gisShapeOptions(name: string): KmlCircleOptions {
+    return {
+      name,
+      strokeColor: this.gisStrokeColor(),
+      fillColor: this.gisFillColor(),
+      opacity: this.gisOpacity(),
+    };
+  }
+  private kmlCircle(center: [number, number], radiusMeters: number, options: KmlCircleOptions = this.kmlCircleOptions(), includeCenter = false): string {
     const coords = Array.from({ length: 73 }, (_, index) => {
       const angle = (index / 72) * Math.PI * 2;
       const dx = radiusMeters * Math.cos(angle);
@@ -1674,16 +2164,17 @@ export class UtilityToolComponent implements OnInit {
       const lng = center[1] + (dx / (111320 * Math.cos(center[0] * Math.PI / 180)));
       return `${lng},${lat},0`;
     }).join(' ');
-    return this.kmlWrap(coords, options);
+    return this.kmlWrap(coords, options, includeCenter ? center : null);
   }
-  private kmlPolygon(points: Array<[number, number]>): string {
+  private kmlPolygon(points: Array<[number, number]>, options: KmlCircleOptions = { name: 'FlexImagePro Polygon', strokeColor: '#0f766e', fillColor: '#14b8a6', opacity: 35 }): string {
     const closed = [...points, points[0]];
-    return this.kmlWrap(closed.map(([lat, lng]) => `${lng},${lat},0`).join(' '), { name: 'FlexImagePro Polygon', strokeColor: '#0f766e', fillColor: '#14b8a6', opacity: 35 });
+    return this.kmlWrap(closed.map(([lat, lng]) => `${lng},${lat},0`).join(' '), options);
   }
-  private kmlWrap(coords: string, options: KmlCircleOptions = { name: 'FlexImagePro Shape', strokeColor: '#0f766e', fillColor: '#14b8a6', opacity: 35 }): string {
+  private kmlWrap(coords: string, options: KmlCircleOptions = { name: 'FlexImagePro Shape', strokeColor: '#0f766e', fillColor: '#14b8a6', opacity: 35 }, center: [number, number] | null = null): string {
     const stroke = this.kmlColor(options.strokeColor, 100);
     const fill = this.kmlColor(options.fillColor, options.opacity);
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n  <Document>\n    <Style id="fleximagepro-shape">\n      <LineStyle><color>${stroke}</color><width>3</width></LineStyle>\n      <PolyStyle><color>${fill}</color></PolyStyle>\n    </Style>\n    <Placemark>\n      <name>${this.escapeXmlText(options.name)}</name>\n      <styleUrl>#fleximagepro-shape</styleUrl>\n      <Polygon>\n        <outerBoundaryIs>\n          <LinearRing>\n            <coordinates>${coords}</coordinates>\n          </LinearRing>\n        </outerBoundaryIs>\n      </Polygon>\n    </Placemark>\n  </Document>\n</kml>`;
+    const centerPlacemark = center ? `\n    <Placemark>\n      <name>${this.escapeXmlText(options.name)} Center</name>\n      <Point><coordinates>${center[1]},${center[0]},0</coordinates></Point>\n    </Placemark>` : '';
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n  <Document>\n    <Style id="fleximagepro-shape">\n      <LineStyle><color>${stroke}</color><width>3</width></LineStyle>\n      <PolyStyle><color>${fill}</color></PolyStyle>\n    </Style>\n    <Placemark>\n      <name>${this.escapeXmlText(options.name)}</name>\n      <styleUrl>#fleximagepro-shape</styleUrl>\n      <Polygon>\n        <outerBoundaryIs>\n          <LinearRing>\n            <coordinates>${coords}</coordinates>\n          </LinearRing>\n        </outerBoundaryIs>\n      </Polygon>\n    </Placemark>${centerPlacemark}\n  </Document>\n</kml>`;
   }
   private kmlCircleOptions(): KmlCircleOptions {
     const value = this.kmlCircleForm.getRawValue();

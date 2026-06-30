@@ -100,7 +100,6 @@
               <label class="block text-sm font-semibold">CSS<textarea name="border-css-editor" [value]="borderCss()" (input)="updateBorderCss($event)" class="mt-2 min-h-56 w-full rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950"></textarea></label>
               <div class="block text-sm font-semibold">WYSIWYG<iframe title="Border radius editor preview" [srcdoc]="radiusEditorDoc()" class="mt-2 min-h-56 w-full rounded-lg border border-zinc-300 bg-white dark:border-zinc-700"></iframe></div>
             </div>
-            <button type="button" class="primary-button mt-4" (click)="applyBorderCss()">Apply CSS</button>
           </section>
         </section>
       } @else if (slug === 'css-clip-path-generator') {
@@ -223,7 +222,6 @@
                 Show outside clip-path
                 <input name="clip-show-outside" type="checkbox" [checked]="clipShowOutside()" (change)="updateClipShowOutside($event)" class="size-5" />
               </label>
-              <button type="button" class="mt-5 w-full rounded-lg bg-teal-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-teal-600" (click)="copyClipCss()">Copy CSS</button>
             </aside>
           </div>
         </section>
@@ -332,7 +330,6 @@
               <iframe title="Box shadow editor preview" [srcdoc]="shadowEditorDoc()" class="mt-2 min-h-64 w-full rounded-lg border border-zinc-300 bg-white dark:border-zinc-700"></iframe>
             </div>
           </div>
-          <button type="button" class="primary-button mt-4" (click)="applyShadowCss()">Apply CSS</button>
         </section>
       } @else {
       <section class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
@@ -415,7 +412,7 @@
             </div>
           </div>
         } @else if (category.title === 'PDF Tools') {
-          <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div class="grid gap-8" [ngClass]="pdfLayoutClass()">
             <div class="space-y-4">
               @if (!pdfFiles().length) {
                 <app-upload-zone
@@ -426,7 +423,7 @@
                   description="Upload PDF files, choose the needed options, then create the output."
                   (filesSelected)="addPdfFiles($event)"
                 />
-              } @else {
+              } @else if (pdfAcceptsMultiple()) {
                 <app-upload-zone
                   [accept]="acceptedPdfTypes"
                   [multiple]="pdfAcceptsMultiple()"
@@ -447,36 +444,54 @@
                       <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{{ pdfFiles().length }} file{{ pdfFiles().length === 1 ? '' : 's' }} selected.</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                      <button type="button" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700" (click)="createPdfPreview()">{{ pdfPrimaryButtonLabel() }}</button>
+                      <button type="button" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60" (click)="createPdfPreview()" [disabled]="isRepairingPdf() || isProcessingPdf()">{{ isRepairingPdf() ? 'Preparing your PDF...' : pdfPrimaryButtonLabel() }}</button>
                       @if (pdfCanDownload()) {
-                        <button type="button" class="rounded-lg bg-zinc-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-600 dark:bg-white dark:text-zinc-950 dark:hover:bg-teal-300" (click)="downloadPdfOutput()">{{ pdfDownloadButtonLabel() }}</button>
+                        <button type="button" class="rounded-lg bg-zinc-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-950 dark:hover:bg-teal-300" (click)="downloadPdfOutput()" [disabled]="isRepairingPdf() || isProcessingPdf()">{{ pdfDownloadButtonLabel() }}</button>
+                      }
+                      @if (pdfOutputUrl() && pdfCreatesPdf()) {
+                        <button type="button" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800" (click)="openPdfPreviewModal()" [disabled]="isRepairingPdf() || isProcessingPdf()">View PDF</button>
                       }
                       @if (pdfCanShare()) {
-                        <button type="button" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800" (click)="generatePdfShareLink()" [disabled]="isGeneratingPdfShareLink()">{{ isGeneratingPdfShareLink() ? 'Generating...' : 'Generate Share Link' }}</button>
+                        <button type="button" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800" (click)="generatePdfShareLink()" [disabled]="isGeneratingPdfShareLink() || isRepairingPdf() || isProcessingPdf()">{{ isGeneratingPdfShareLink() ? 'Generating Share Link...' : 'Generate Share Link' }}</button>
                       }
                       <button type="button" class="secondary-button" (click)="clear()">Reset</button>
-                      <button type="button" class="secondary-button" (click)="clear()">Clear</button>
                     </div>
                   </div>
                 </section>
-                <div class="grid gap-3">
+                <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Selected PDFs">
                   @for (file of pdfFiles(); track $index) {
-                    <div class="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-950">
-                      <span class="min-w-0 truncate font-semibold text-zinc-900 dark:text-white">{{ file.name }}</span>
-                      <span class="shrink-0 text-zinc-500">{{ formatBytes(file.size) }}</span>
-                    </div>
+                    <article class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                      <div class="grid aspect-[4/3] place-items-center rounded-lg bg-zinc-100 text-teal-700 dark:bg-zinc-950 dark:text-teal-300">
+                        <i class="bi bi-file-earmark-pdf text-5xl" aria-hidden="true"></i>
+                      </div>
+                      <div class="mt-4">
+                        <h2 class="break-all text-sm font-semibold text-zinc-950 dark:text-white">{{ file.name }}</h2>
+                        <p class="mt-1 text-xs text-zinc-500">{{ formatBytes(file.size) }}</p>
+                      </div>
+                      <div class="mt-4 flex flex-wrap gap-2">
+                        @if (pdfAcceptsMultiple()) {
+                          <button type="button" (click)="movePdfFile($index, -1)" [disabled]="$first" class="rounded-lg border border-zinc-300 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800" aria-label="Move PDF up">
+                            <i class="bi bi-arrow-up"></i>
+                          </button>
+                          <button type="button" (click)="movePdfFile($index, 1)" [disabled]="$last" class="rounded-lg border border-zinc-300 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800" aria-label="Move PDF down">
+                            <i class="bi bi-arrow-down"></i>
+                          </button>
+                        }
+                        <button type="button" (click)="removePdfFile($index)" class="ml-auto rounded-lg border border-red-300 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950">Remove</button>
+                      </div>
+                    </article>
                   }
-                </div>
+                </section>
               }
             </div>
 
             @if (pdfHasOptions()) {
-            <aside class="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
-              <h2 class="text-base font-bold text-zinc-950 dark:text-white">PDF Options</h2>
+            <aside class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+              <h2 class="text-lg font-semibold text-zinc-950 dark:text-white">PDF Options</h2>
               @if (pdfNeedsPageRange()) {
                 <label class="mt-4 block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                  Pages
-                  <input name="pdf-page-range" type="text" [value]="pdfPageInput()" (input)="updatePdfPageInput($event)" placeholder="1,3-5" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+                  {{ slug === 'pdf-to-images' ? 'Pages to convert' : 'Pages' }}
+                  <input name="pdf-page-range" type="text" [value]="pdfPageInput()" (input)="updatePdfPageInput($event)" [placeholder]="slug === 'pdf-to-images' ? 'All pages' : 'All pages or 1,3-5'" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
                 </label>
               }
               @if (pdfNeedsOrder()) {
@@ -499,29 +514,60 @@
             }
           </div>
         } @else if (category.title === 'GIS / Map Tools') {
-          @if (slug === 'kml-circle-generator') {
+          @if (slug === 'kml-circle-generator' || slug === 'kml-polygon-generator') {
             <form [formGroup]="kmlCircleForm" class="grid gap-5 lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)]" (ngSubmit)="generateKmlCircle()">
               <section class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                <h2 class="text-lg font-bold text-zinc-950 dark:text-white">Circle Details</h2>
+                <h2 class="text-lg font-bold text-zinc-950 dark:text-white">KML Shape Details</h2>
                 <div class="mt-4 grid gap-4">
                   <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                    Circle name
+                    KML tool
+                    <select id="kml-builder-shape" name="kml-builder-shape" formControlName="shape" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
+                      <option value="circle">KML Circle Generator</option>
+                      <option value="polygon">KML Polygon Generator</option>
+                    </select>
+                  </label>
+                  <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                    Shape name
                     <input id="kml-circle-name" name="kml-circle-name" formControlName="name" type="text" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
                   </label>
-                  <div class="grid gap-4 sm:grid-cols-2">
-                    <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                      Latitude
-                      <input id="kml-circle-latitude" name="kml-circle-latitude" formControlName="latitude" type="number" step="0.000001" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                  @if (kmlCircleForm.controls.shape.value === 'circle') {
+                    <div class="grid gap-4 sm:grid-cols-2">
+                      <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                        Latitude
+                        <input id="kml-circle-latitude" name="kml-circle-latitude" formControlName="latitude" type="number" step="0.000001" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                      </label>
+                      <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                        Longitude
+                        <input id="kml-circle-longitude" name="kml-circle-longitude" formControlName="longitude" type="number" step="0.000001" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                      </label>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_170px]">
+                      <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                        Radius
+                        <input id="kml-circle-radius" name="kml-circle-radius" formControlName="radius" type="number" min="1" step="1" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                      </label>
+                      <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                        Radius Units
+                        <select id="radiusUnits" name="radiusUnits" formControlName="radiusUnit" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
+                          <option value="foot" title="US: feet (ft)">Feet</option>
+                          <option value="kilometer" title="SI kilometres (km)">Kilometers</option>
+                          <option value="meter" title="SI metres (m)">Meters</option>
+                          <option value="mile" title="US miles (mi)">Miles</option>
+                          <option value="nautical_mile" title="Modern nautical miles (1852 m)">Nautical Miles</option>
+                          <option value="yard" title="US: yards (yd)">Yards</option>
+                        </select>
+                      </label>
+                    </div>
+                    <label class="inline-flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
+                      <input id="kml-include-center" name="kml-include-center" formControlName="includeCenter" type="checkbox" class="size-4 rounded border-zinc-300 accent-teal-600 outline-none shadow-none" />
+                      Include Center
                     </label>
+                  } @else {
                     <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                      Longitude
-                      <input id="kml-circle-longitude" name="kml-circle-longitude" formControlName="longitude" type="number" step="0.000001" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                      Polygon coordinates
+                      <textarea id="kml-polygon-coordinates" name="kml-polygon-coordinates" formControlName="polygonCoordinates" rows="5" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white p-3 font-mono text-sm text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"></textarea>
                     </label>
-                  </div>
-                  <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                    Radius in meters
-                    <input id="kml-circle-radius" name="kml-circle-radius" formControlName="radius" type="number" min="1" step="1" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none transition focus:border-teal-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
-                  </label>
+                  }
                   <div class="grid gap-4 sm:grid-cols-2">
                     <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
                       Stroke color
@@ -535,16 +581,13 @@
                   <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
                     Fill opacity
                     <div class="mt-2 flex items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
-                      <input id="kml-circle-opacity" name="kml-circle-opacity" formControlName="opacity" type="range" min="0" max="100" class="min-w-0 flex-1 accent-teal-600 outline-none shadow-none" />
+                      <input id="kml-circle-opacity" name="kml-circle-opacity" formControlName="opacity" type="range" min="0" max="100" class="min-w-0 flex-1 outline-none shadow-none" [style.--fill]="rangeFillPercent(kmlCircleForm.controls.opacity.value, 0, 100)" />
                       <span class="w-12 text-right text-sm font-bold text-teal-700 dark:text-teal-300">{{ kmlCircleForm.controls.opacity.value }}%</span>
                     </div>
                   </label>
                 </div>
                 <div class="mt-5 flex flex-wrap gap-2">
-                  <button type="submit" class="primary-button">Generate Circle</button>
-                  @if (gisOutput()) {
-                    <button type="button" class="secondary-button" (click)="downloadGis()">Download KML</button>
-                  }
+                  <button type="submit" class="primary-button">Generate {{ kmlCircleForm.controls.shape.value === 'polygon' ? 'Polygon' : 'Circle' }}</button>
                   <button type="button" class="secondary-button" (click)="clearKmlCircle()">Clear Map</button>
                 </div>
               </section>
@@ -554,19 +597,7 @@
                   <h2 class="text-lg font-bold text-zinc-950 dark:text-white">Map Preview</h2>
                   <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Center: {{ kmlCircleCenterLabel() }}</p>
                 </div>
-                <svg viewBox="0 0 420 320" class="h-[320px] w-full bg-[linear-gradient(135deg,#ecfeff,#f8fafc)] dark:bg-[linear-gradient(135deg,#042f2e,#09090b)]" role="img" aria-label="KML circle map preview">
-                  <defs>
-                    <pattern id="kml-circle-grid" width="28" height="28" patternUnits="userSpaceOnUse">
-                      <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(15,118,110,.16)" stroke-width="1" />
-                    </pattern>
-                  </defs>
-                  <rect width="420" height="320" fill="url(#kml-circle-grid)" />
-                  <path d="M20 230 C100 190 155 245 230 206 S330 145 400 190" fill="none" stroke="rgba(15,118,110,.18)" stroke-width="18" stroke-linecap="round" />
-                  <circle cx="210" cy="160" [attr.r]="kmlCirclePreviewRadius()" [attr.fill]="kmlCircleForm.controls.fillColor.value" [attr.fill-opacity]="kmlCirclePreviewOpacity()" [attr.stroke]="kmlCircleForm.controls.strokeColor.value" stroke-width="4" />
-                  <circle cx="210" cy="160" r="7" fill="#0f766e" stroke="#ffffff" stroke-width="3" />
-                  <text x="224" y="154" class="fill-zinc-900 text-[13px] font-bold dark:fill-white">{{ kmlCircleForm.controls.name.value }}</text>
-                  <text x="224" y="172" class="fill-zinc-600 text-[11px] dark:fill-zinc-300">{{ kmlCircleForm.controls.radius.value }} m radius</text>
-                </svg>
+                <div #gisGoogleMap class="gis-google-map h-[340px] w-full" role="img" aria-label="KML circle map preview"></div>
                 @if (gisOutput()) {
                   <div class="border-t border-zinc-200 p-4 dark:border-zinc-800">
                     <textarea name="kml-circle-output" readonly class="min-h-40 w-full rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-xs text-zinc-900 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100">{{ gisOutput() }}</textarea>
@@ -575,56 +606,85 @@
               </section>
             </form>
           } @else {
-          <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-              {{ gisPrimaryLabel() }}
-              <textarea name="gis-input" [value]="gisInput()" (input)="updateGisInput($event)" [placeholder]="gisPlaceholder()" class="mt-2 min-h-64 w-full rounded-lg border border-zinc-300 bg-white p-3 font-mono text-sm text-zinc-950 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"></textarea>
-            </label>
-            <aside class="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
-              <h2 class="text-base font-bold text-zinc-950 dark:text-white">Map Options</h2>
-              @if (gisShowSecond()) {
-                <label class="mt-4 block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                  {{ gisSecondaryLabel() }}
-                  <input name="gis-second" type="text" [value]="gisSecondInput()" (input)="updateGisSecondInput($event)" [placeholder]="slug === 'distance-calculator' ? '31.5304, 74.3687' : '1000'" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950" />
+          <div class="grid gap-5 lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)]">
+            <section class="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <h2 class="text-lg font-bold text-zinc-950 dark:text-white">{{ catalogItem().label }}</h2>
+              <div class="mt-4 grid gap-4">
+              @if (slug === 'distance-calculator') {
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  Start coordinate
+                  <input name="gis-start-coordinate" type="text" [value]="gisInput()" (input)="updateGisInput($event)" placeholder="31.5204, 74.3587" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                </label>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  End coordinate
+                  <input name="gis-end-coordinate" type="text" [value]="gisSecondInput()" (input)="updateGisSecondInput($event)" placeholder="31.5304, 74.3687" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                </label>
+              } @else if (slug === 'coordinate-converter' || slug === 'latitude-longitude-finder') {
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  Coordinate or place text
+                  <input name="gis-coordinate" type="text" [value]="gisInput()" (input)="updateGisInput($event)" placeholder="31.5204, 74.3587" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                </label>
+              } @else {
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  {{ gisPrimaryLabel() }}
+                  <textarea name="gis-input" [value]="gisInput()" (input)="updateGisInput($event)" [placeholder]="gisPlaceholder()" class="mt-2 min-h-44 w-full rounded-lg border border-zinc-300 bg-white p-3 font-mono text-sm text-zinc-950 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"></textarea>
                 </label>
               }
+              @if (gisShowSecond()) {
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  {{ gisSecondaryLabel() }}
+                  <input name="gis-second" type="text" [value]="gisSecondInput()" (input)="updateGisSecondInput($event)" placeholder="1000" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                </label>
+              }
+              @if (slug === 'buffer-generator') {
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  Radius Units
+                  <select name="gis-radius-units" [value]="gisRadiusUnit()" (change)="updateGisRadiusUnit($event)" class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-950 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
+                    <option value="foot">Feet</option>
+                    <option value="kilometer">Kilometers</option>
+                    <option value="meter">Meters</option>
+                    <option value="mile">Miles</option>
+                    <option value="nautical_mile">Nautical Miles</option>
+                    <option value="yard">Yards</option>
+                  </select>
+                </label>
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                    Stroke color
+                    <input name="gis-stroke-color" type="color" [value]="gisStrokeColor()" (input)="updateGisStrokeColor($event)" class="mt-2 h-11 w-full rounded-lg border border-zinc-300 bg-white p-1 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950" />
+                  </label>
+                  <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                    Fill color
+                    <input name="gis-fill-color" type="color" [value]="gisFillColor()" (input)="updateGisFillColor($event)" class="mt-2 h-11 w-full rounded-lg border border-zinc-300 bg-white p-1 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950" />
+                  </label>
+                </div>
+                <label class="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                  Fill opacity
+                  <div class="mt-2 flex items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-950">
+                    <input name="gis-opacity" type="range" min="0" max="100" [value]="gisOpacity()" (input)="updateGisOpacity($event)" [style.--fill]="rangeFillPercent(gisOpacity(), 0, 100)" class="min-w-0 flex-1 outline-none shadow-none" />
+                    <span class="w-12 text-right text-sm font-bold text-teal-700 dark:text-teal-300">{{ gisOpacity() }}%</span>
+                  </div>
+                </label>
+              }
+              </div>
               <div class="mt-5 flex flex-wrap gap-2">
                 <button type="button" class="primary-button" (click)="process()">Generate</button>
                 <button type="button" class="secondary-button" (click)="clear()">Reset</button>
-                <button type="button" class="secondary-button" (click)="clear()">Clear</button>
               </div>
-              <div class="mt-5 overflow-hidden rounded-lg border border-teal-100 bg-white dark:border-teal-900 dark:bg-zinc-900">
-                <svg viewBox="0 0 100 100" class="h-64 w-full bg-[linear-gradient(135deg,#ecfeff,#f8fafc)] dark:bg-[linear-gradient(135deg,#042f2e,#09090b)]" role="img" aria-label="Map preview">
-                  <defs>
-                    <pattern id="gis-grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(15,118,110,.16)" stroke-width=".45" />
-                    </pattern>
-                  </defs>
-                  <rect width="100" height="100" fill="url(#gis-grid)" />
-                  @if (gisMapMode() === 'polygon' && gisMapPoints().length > 2) {
-                    <polygon [attr.points]="gisMapPolyline()" fill="rgba(20,184,166,.24)" stroke="#0f766e" stroke-width="1.8" />
-                  }
-                  @if (gisMapMode() === 'line' && gisMapPoints().length > 1) {
-                    <polyline [attr.points]="gisMapPolyline()" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 3" />
-                  }
-                  @if (gisMapMode() === 'circle' && gisMapPoints().length) {
-                    <circle [attr.cx]="gisMapPoints()[0].x" [attr.cy]="gisMapPoints()[0].y" [attr.r]="gisMapCircleRadius()" fill="rgba(20,184,166,.18)" stroke="#0f766e" stroke-width="1.8" />
-                  }
-                  @for (point of gisMapPoints(); track point.label) {
-                    <g>
-                      <circle [attr.cx]="point.x" [attr.cy]="point.y" r="3.4" fill="#0f766e" stroke="#ffffff" stroke-width="1.4" />
-                      <text [attr.x]="point.x + 4" [attr.y]="point.y - 4" fill="#0f172a" font-size="4" font-weight="700">{{ point.label }}</text>
-                    </g>
-                  }
-                </svg>
-                <div class="border-t border-zinc-200 p-3 text-xs leading-5 text-zinc-600 dark:border-zinc-800 dark:text-zinc-300">
-                  @if (gisMapPoints().length) {
-                    {{ gisMapPoints().length }} point{{ gisMapPoints().length === 1 ? '' : 's' }} detected from your input.
-                  } @else {
-                    Add coordinates to see markers on the map preview.
-                  }
+            </section>
+            <aside class="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div class="border-b border-zinc-200 p-4 dark:border-zinc-800">
+                <h2 class="text-lg font-bold text-zinc-950 dark:text-white">Map Preview</h2>
+                <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{{ gisMapPoints().length ? gisMapPoints().length + ' point' + (gisMapPoints().length === 1 ? '' : 's') + ' detected' : 'Enter map data to preview it here.' }}</p>
+              </div>
+              <div class="overflow-hidden bg-zinc-50 dark:bg-zinc-950">
+                <div #gisGoogleMap class="gis-google-map h-72 w-full" role="img" aria-label="Map preview"></div>
+              </div>
+              @if (gisOutput()) {
+                <div class="border-t border-zinc-200 p-4 dark:border-zinc-800">
+                  <textarea name="gis-output-preview" readonly class="min-h-36 w-full rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-xs text-zinc-900 outline-none shadow-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100">{{ gisOutput() }}</textarea>
                 </div>
-              </div>
+              }
             </aside>
           </div>
           }
@@ -668,7 +728,6 @@
         <div class="mt-4 flex flex-wrap gap-2">
           <button type="button" class="primary-button" (click)="process()">{{ slug === 'uuid-generator' ? 'Generate Again' : (slug === 'qr-code-generator' ? 'Generate QR Code' : (slug === 'barcode-generator' ? 'Generate Barcode' : 'Process')) }}</button>
           <button type="button" class="secondary-button" (click)="clear()">Reset</button>
-          <button type="button" class="secondary-button" (click)="clear()">Clear</button>
         </div>
       </section>
 
@@ -763,6 +822,35 @@
     </div>
 
   </section>
+
+  @if (isPdfPreviewModalOpen()) {
+    @if (pdfPreviewUrl(); as previewUrl) {
+      <div class="fixed inset-0 z-50 flex flex-col bg-zinc-950/80 p-3 sm:p-5" role="dialog" aria-modal="true" aria-labelledby="utility-pdf-preview-title">
+        <section class="mx-auto flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl dark:bg-zinc-900">
+          <div class="flex shrink-0 flex-col gap-3 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 id="utility-pdf-preview-title" class="text-base font-semibold text-zinc-950 dark:text-white">PDF Preview</h2>
+              <p class="mt-1 text-xs text-zinc-500">{{ pdfOutputName() }}</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" (click)="downloadPdfOutput()" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50">
+                Download PDF
+              </button>
+              @if (pdfCanShare()) {
+                <button type="button" (click)="generatePdfShareLink()" [disabled]="isGeneratingPdfShareLink()" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+                  {{ isGeneratingPdfShareLink() ? 'Generating Share Link...' : 'Generate Share Link' }}
+                </button>
+              }
+              <button type="button" (click)="closePdfPreviewModal()" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+                Close
+              </button>
+            </div>
+          </div>
+          <iframe [src]="previewUrl" title="Generated PDF preview" class="min-h-0 flex-1 bg-white"></iframe>
+        </section>
+      </div>
+    }
+  }
 
   @if (isPdfShareModalOpen()) {
     @if (pdfShareBatch(); as share) {

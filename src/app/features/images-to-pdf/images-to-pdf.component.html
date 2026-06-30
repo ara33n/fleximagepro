@@ -63,13 +63,10 @@
                 [disabled]="isCreating() || isGeneratingShareLink()"
                 class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
               >
-                {{ isGeneratingShareLink() ? 'Generating...' : 'Generate Share Link' }}
+                {{ isGeneratingShareLink() ? 'Generating Share Link...' : 'Generate Share Link' }}
               </button>
               <button type="button" (click)="clearAll()" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
                 Reset
-              </button>
-              <button type="button" (click)="clearAll()" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
-                Clear
               </button>
             </div>
           </div>
@@ -154,22 +151,6 @@
         <label class="mt-5 block text-sm font-medium text-zinc-700 dark:text-zinc-200" for="pdf-quality">Image quality: {{ options().quality }}%</label>
         <input id="pdf-quality" name="pdfQuality" type="range" min="35" max="95" step="1" [value]="options().quality" (input)="updateQuality($event)" class="mt-3 w-full" [style]="{'--fill': ((options().quality - 35) / 60 * 100).toFixed(1) + '%'}" />
 
-        @if (jobs().length) {
-          <button type="button" (click)="createPreview()" [disabled]="isCreating()" class="mt-6 w-full rounded-lg border border-teal-300 px-4 py-3 text-sm font-semibold text-teal-700 transition hover:bg-teal-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 dark:border-teal-800 dark:text-teal-300 dark:hover:bg-teal-950">
-            {{ isCreating() ? 'Creating PDF...' : (pdfUrl() && !pdfDirty() ? 'Refresh Preview' : 'Create Preview') }}
-          </button>
-          <button type="button" (click)="downloadPdf()" [disabled]="isCreating()" class="mt-6 w-full rounded-lg bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50">
-            {{ isCreating() ? 'Creating PDF...' : 'Download PDF' }}
-          </button>
-          @if (pdfUrl()) {
-            <button type="button" (click)="openPreviewModal()" class="mt-3 w-full rounded-lg border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 active:scale-[0.99] dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
-              View PDF
-            </button>
-          }
-          <button type="button" (click)="generateShareLink()" [disabled]="isCreating() || isGeneratingShareLink()" class="mt-3 w-full rounded-lg border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
-            {{ isGeneratingShareLink() ? 'Generating Share Link...' : 'Generate Share Link' }}
-          </button>
-        }
       </section>
 
       <div class="lg:sticky lg:top-28">
@@ -243,7 +224,7 @@
                 Download PDF
               </button>
               <button type="button" (click)="generateShareLink()" [disabled]="isGeneratingShareLink()" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
-                {{ isGeneratingShareLink() ? 'Generating...' : 'Share' }}
+                {{ isGeneratingShareLink() ? 'Generating Share Link...' : 'Generate Share Link' }}
               </button>
               <button type="button" (click)="closePreviewModal()" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
                 Close

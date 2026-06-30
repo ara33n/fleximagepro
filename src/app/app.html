@@ -1,4 +1,9 @@
 <div class="min-h-screen bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-100">
+  @if (routeProgressActive()) {
+    <div class="fixed left-0 right-0 top-0 z-[120] h-1 overflow-hidden bg-teal-950/10 dark:bg-white/10" aria-hidden="true">
+      <div class="route-progress-bar h-full rounded-r-full" [class.route-progress-bar--finish]="routeProgressFinishing()"></div>
+    </div>
+  }
   <app-header />
   <main>
     <router-outlet />

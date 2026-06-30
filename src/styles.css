@@ -145,6 +145,36 @@
   box-shadow: 0 24px 70px color-mix(in srgb, currentColor 28%, transparent);
 }
 
+.gis-google-map {
+  min-height: 18rem;
+  background: #ecfeff;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  z-index: 0;
+}
+
+.gis-google-map * {
+  font-family: inherit;
+}
+
+.gis-google-map > div {
+  border-radius: inherit;
+}
+
+.gis-google-map .gm-style {
+  overflow: hidden;
+}
+
+.gis-google-map .gm-style-cc,
+.gis-google-map .gmnoprint {
+  max-width: calc(100% - 12px);
+}
+
+.dark .gis-google-map {
+  background: #042f2e;
+}
+
 .shadow-range {
   height: 8px;
   appearance: none;
@@ -485,6 +515,12 @@ input[type='checkbox']:focus-visible {
     margin: 10px 0;
   }
 
+  input[type='range']::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 9999px;
+    background: transparent;
+  }
+
   input[type='range']::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -495,6 +531,7 @@ input[type='checkbox']:focus-visible {
     border: 3px solid white;
     box-shadow: none !important;
     cursor: pointer;
+    margin-top: -7px;
     transition: transform 150ms ease;
   }
 

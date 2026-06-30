@@ -1,130 +1,87 @@
-<footer class="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-  <div
-    class="mx-auto max-w-7xl px-4 py-8 text-sm text-slate-600 dark:text-slate-400 sm:px-6 lg:px-8"
-  >
-    <div class="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <a
-          routerLink="/"
-          class="text-base font-semibold text-zinc-950 hover:text-teal-700 dark:text-white dark:hover:text-teal-300"
-        >
-          FlexImagePro
+<footer class="border-t border-zinc-200 bg-white text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
+  <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div class="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,2fr)]">
+      <section class="rounded-lg border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <a routerLink="/" class="inline-flex items-center gap-3 rounded-lg text-zinc-950 transition hover:text-teal-700 dark:text-white dark:hover:text-teal-300" aria-label="FlexImagePro home">
+          <img src="/assets/logo-96.png" width="42" height="42" alt="" class="rounded-lg" loading="lazy" decoding="async" />
+          <span>
+            <span class="block text-lg font-bold tracking-tight">FlexImagePro</span>
+            <span class="mt-0.5 block text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">Free online tools</span>
+          </span>
         </a>
-        <p class="mt-1 text-xs">Fast image and utility tools.</p>
-      </div>
+        <p class="mt-4 max-w-xl text-sm leading-7">
+          Fast tools for images, PDFs, SEO markup, text cleanup, developer formatting, calculators, generators, colors, dates, and GIS map workflows.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2">
+          <a routerLink="/compress" class="focus-ring rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 dark:bg-teal-300 dark:text-zinc-950 dark:hover:bg-teal-200">Start With Images</a>
+          <a routerLink="/sitemap-generator" class="focus-ring rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:border-teal-400 hover:text-teal-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:border-teal-400 dark:hover:text-teal-300">SEO Tools</a>
+        </div>
+      </section>
 
-      <div class="flex flex-wrap gap-x-8 gap-y-6 sm:justify-end">
-        <nav aria-label="Tools">
-          <p
-            class="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-950 dark:text-white"
-          >
-            Tools
-          </p>
-          <ul class="space-y-2">
-            <li>
-              <a routerLink="/" class="hover:text-slate-950 dark:hover:text-white">Home</a>
-            </li>
-            <li>
-              <a routerLink="/compress" class="hover:text-slate-950 dark:hover:text-white"
-                >Image Compressor</a
-              >
-            </li>
-            <li>
-              <a routerLink="/resize" class="hover:text-slate-950 dark:hover:text-white"
-                >Image Resizer</a
-              >
-            </li>
-            <li>
-              <a routerLink="/convert-webp" class="hover:text-slate-950 dark:hover:text-white"
-                >WebP Converter</a
-              >
-            </li>
-            <li>
-              <a routerLink="/jpg-to-png" class="hover:text-slate-950 dark:hover:text-white"
-                >JPG to PNG Converter</a
-              >
-            </li>
-            <li>
-              <a routerLink="/png-to-svg" class="hover:text-slate-950 dark:hover:text-white"
-                >PNG to SVG Converter</a
-              >
-            </li>
-            <li>
-              <a routerLink="/images-to-pdf" class="hover:text-slate-950 dark:hover:text-white"
-                >Images to PDF Converter</a
-              >
-            </li>
+      <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        <nav aria-label="Popular tools">
+          <h2 class="text-sm font-bold uppercase tracking-wide text-zinc-950 dark:text-white">Popular Tools</h2>
+          <ul class="mt-4 space-y-2">
+            @for (tool of popularTools; track tool.route) {
+              <li>
+                <a [routerLink]="tool.route" class="group inline-flex max-w-full items-center gap-2 text-sm font-semibold transition hover:text-teal-700 dark:hover:text-teal-300">
+                  <i class="bi bi-arrow-right-short text-teal-700 transition group-hover:translate-x-0.5 dark:text-teal-300" aria-hidden="true"></i>
+                  <span class="truncate">{{ tool.label }}</span>
+                </a>
+              </li>
+            }
           </ul>
         </nav>
 
-        <nav aria-label="Legal">
-          <p
-            class="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-950 dark:text-white"
-          >
-            Company
-          </p>
-          <ul class="space-y-2">
-            <li>
-              <a routerLink="/privacy-policy" class="hover:text-slate-950 dark:hover:text-white"
-                >Privacy Policy</a
-              >
-            </li>
-            <li>
-              <a routerLink="/terms-of-service" class="hover:text-slate-950 dark:hover:text-white"
-                >Terms of Service</a
-              >
-            </li>
-            <li>
-              <a routerLink="/contact" class="hover:text-slate-950 dark:hover:text-white"
-                >Contact</a
-              >
-            </li>
+        <nav aria-label="Tool categories">
+          <h2 class="text-sm font-bold uppercase tracking-wide text-zinc-950 dark:text-white">Categories</h2>
+          <ul class="mt-4 grid gap-2">
+            @for (category of categories.slice(0, 6); track category.title) {
+              <li>
+                <a [routerLink]="category.route" class="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-teal-700 dark:hover:bg-teal-950 dark:hover:text-teal-200">
+                  <span class="flex min-w-0 items-center gap-2">
+                    <i [attr.class]="'bi ' + category.icon + ' shrink-0 text-teal-700 dark:text-teal-300'" aria-hidden="true"></i>
+                    <span class="truncate font-semibold">{{ category.title }}</span>
+                  </span>
+                  <span class="shrink-0 rounded-md bg-white px-1.5 py-0.5 text-xs font-bold text-zinc-500 dark:bg-zinc-950 dark:text-zinc-400">{{ category.count }}</span>
+                </a>
+              </li>
+            }
           </ul>
         </nav>
-        <nav aria-label="Share">
-          <p
-            class="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-950 dark:text-white"
-          >
-            Share
-          </p>
-          <ul class="space-y-2">
-            <li>
-              <a
-                href="https://x.com/intent/tweet?url=https://fleximagepro.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="hover:text-slate-950 dark:hover:text-white"
-              >
-                Share on X
+
+        <div class="space-y-6">
+          <nav aria-label="Company">
+            <h2 class="text-sm font-bold uppercase tracking-wide text-zinc-950 dark:text-white">Company</h2>
+            <ul class="mt-4 space-y-2 text-sm font-semibold">
+              <li><a routerLink="/" class="transition hover:text-teal-700 dark:hover:text-teal-300">Home</a></li>
+              <li><a routerLink="/contact" class="transition hover:text-teal-700 dark:hover:text-teal-300">Contact</a></li>
+              <li><a routerLink="/privacy-policy" class="transition hover:text-teal-700 dark:hover:text-teal-300">Privacy Policy</a></li>
+              <li><a routerLink="/terms-of-service" class="transition hover:text-teal-700 dark:hover:text-teal-300">Terms of Service</a></li>
+            </ul>
+          </nav>
+
+          <nav aria-label="Share FlexImagePro">
+            <h2 class="text-sm font-bold uppercase tracking-wide text-zinc-950 dark:text-white">Share</h2>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <a href="https://x.com/intent/tweet?url=https://fleximagepro.com" target="_blank" rel="noopener noreferrer" class="focus-ring grid size-10 place-items-center rounded-lg border border-zinc-300 bg-white text-zinc-800 transition hover:border-teal-400 hover:text-teal-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-teal-400 dark:hover:text-teal-300" aria-label="Share on X">
+                <i class="bi bi-twitter-x" aria-hidden="true"></i>
               </a>
-            </li>
-            <li>
-              <a
-                href="https://www.facebook.com/sharer/sharer.php?u=https://fleximagepro.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="hover:text-slate-950 dark:hover:text-white"
-              >
-                Share on Facebook
+              <a href="https://www.facebook.com/sharer/sharer.php?u=https://fleximagepro.com" target="_blank" rel="noopener noreferrer" class="focus-ring grid size-10 place-items-center rounded-lg border border-zinc-300 bg-white text-zinc-800 transition hover:border-teal-400 hover:text-teal-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-teal-400 dark:hover:text-teal-300" aria-label="Share on Facebook">
+                <i class="bi bi-facebook" aria-hidden="true"></i>
               </a>
-            </li>
-            <li>
-              <a
-                href="https://www.linkedin.com/sharing/share-offsite/?url=https://fleximagepro.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="hover:text-slate-950 dark:hover:text-white"
-              >
-                Share on LinkedIn
+              <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://fleximagepro.com" target="_blank" rel="noopener noreferrer" class="focus-ring grid size-10 place-items-center rounded-lg border border-zinc-300 bg-white text-zinc-800 transition hover:border-teal-400 hover:text-teal-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-teal-400 dark:hover:text-teal-300" aria-label="Share on LinkedIn">
+                <i class="bi bi-linkedin" aria-hidden="true"></i>
               </a>
-            </li>
-          </ul>
-        </nav>
+            </div>
+          </nav>
+        </div>
       </div>
     </div>
 
-    <div class="mt-8 border-t border-slate-200 pt-6 dark:border-slate-800">
-      <p class="text-xs">&copy; {{ year }} FlexImagePro. All rights reserved.</p>
+    <div class="mt-8 flex flex-col gap-3 border-t border-zinc-200 pt-6 text-xs dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between">
+      <p>&copy; {{ year }} FlexImagePro. All rights reserved.</p>
+      <p class="font-semibold text-zinc-500 dark:text-zinc-400">Built for quick, practical browser workflows.</p>
     </div>
   </div>
 </footer>

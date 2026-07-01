@@ -6,7 +6,7 @@
     aria-label="Notifications"
   >
     @for (toast of toastService.toasts(); track trackById($index, toast)) {
-      <div @toast [class]="containerClass(toast.type)" class="pointer-events-auto">
+      <div [class]="containerClass(toast.type)" class="toast-panel pointer-events-auto">
         <!-- Icon -->
         <span class="mt-0.5 shrink-0" [class]="iconClass(toast.type)" aria-hidden="true">
           @if (toast.type === 'success') {

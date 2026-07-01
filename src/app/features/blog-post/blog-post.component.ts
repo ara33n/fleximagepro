@@ -3,7 +3,6 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { BlogPost } from '../../core/content/blog-content';
 import { SeoService } from '../../core/services/seo.service';
 import { environment } from '../../../environments/environment';
-import { animate, style, transition, trigger } from '@angular/animations';
 import { BlogApiService } from '../../core/services/blog-api.service';
 
 @Component({
@@ -12,17 +11,6 @@ import { BlogApiService } from '../../core/services/blog-api.service';
   imports: [RouterLink],
   templateUrl: './blog-post.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  animations: [
-    trigger('slideDown', [
-      transition(':enter', [
-        style({ height: 0, opacity: 0 }),
-        animate('260ms cubic-bezier(0.4,0,0.2,1)', style({ height: '*', opacity: 1 })),
-      ]),
-      transition(':leave', [
-        animate('200ms cubic-bezier(0.4,0,0.2,1)', style({ height: 0, opacity: 0 })),
-      ]),
-    ]),
-  ],
 })
 export class BlogPostComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { animate, style, transition, trigger } from '@angular/animations';
 import { ToastService, Toast } from '../../../core/services/toast.service';
 
 @Component({
@@ -7,17 +6,6 @@ import { ToastService, Toast } from '../../../core/services/toast.service';
   standalone: true,
   templateUrl: './toast.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  animations: [
-    trigger('toast', [
-      transition(':enter', [
-        style({ transform: 'translateX(calc(100% + 16px))', opacity: 0 }),
-        animate('240ms cubic-bezier(0.4,0,0.2,1)', style({ transform: 'translateX(0)', opacity: 1 })),
-      ]),
-      transition(':leave', [
-        animate('180ms cubic-bezier(0.4,0,0.2,1)', style({ transform: 'translateX(calc(100% + 16px))', opacity: 0 })),
-      ]),
-    ]),
-  ],
 })
 export class ToastComponent {
   readonly toastService = inject(ToastService);

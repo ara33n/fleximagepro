@@ -38,12 +38,18 @@ export class HeaderComponent {
   private readonly elementRef = inject(ElementRef<HTMLElement>);
   private readonly document = inject(DOCUMENT);
   readonly menuOpen = signal(false);
+  readonly menuVisible = signal(false);
+  readonly menuClosing = signal(false);
   readonly activePath = signal(this.cleanPath(this.router.url));
   readonly activeDesktopCategory = signal<string | null>(null);
+  readonly visibleDesktopCategory = signal<string | null>(null);
+  readonly desktopCategoryClosing = signal(false);
   readonly activeMoreCategory = signal<string | null>(null);
   readonly openMobileCategory = signal<string | null>('Image Tools');
   readonly searchQuery = signal('');
   readonly searchOpen = signal(false);
+  readonly searchVisible = signal(false);
+  readonly searchClosing = signal(false);
   readonly activeSearchIndex = signal(0);
   readonly categories = TOOL_CATEGORIES;
   readonly primaryCategories = TOOL_CATEGORIES.slice(0, 4);
@@ -59,6 +65,9 @@ export class HeaderComponent {
     'sitemap',
     'kml circle',
   ];
+  private menuCloseTimer: ReturnType<typeof setTimeout> | null = null;
+  private searchCloseTimer: ReturnType<typeof setTimeout> | null = null;
+  private desktopCloseTimer: ReturnType<typeof setTimeout> | null = null;
   readonly searchResults = computed<SearchResult[]>(() => {
     const rawQuery = this.searchQuery();
     const query = this.normalizeSearch(rawQuery);
@@ -173,7 +182,7 @@ export class HeaderComponent {
         return;
       }
 
-      const shouldLockScroll = this.menuOpen() || this.searchOpen() || this.activeDesktopCategory() !== null;
+      const shouldLockScroll = this.menuVisible() || this.searchVisible() || this.visibleDesktopCategory() !== null;
       const body = this.document.body;
       const previousOverflow = body.style.overflow;
       const previousPaddingRight = body.style.paddingRight;
@@ -197,6 +206,8 @@ export class HeaderComponent {
       .subscribe((event) => {
         this.activePath.set(this.cleanPath(event.urlAfterRedirects));
         this.openMobileCategory.set(this.activeCategoryTitle() ?? 'Image Tools');
+        this.closeMenu();
+        this.closeDesktopCategory();
         this.closeSearch();
       });
   }
@@ -210,18 +221,40 @@ export class HeaderComponent {
   }
 
   toggleMenu(): void {
-    this.menuOpen.update((v) => {
-      if (!v) {
-        this.openMobileCategory.set(this.activeCategoryTitle() ?? 'Image Tools');
-      }
-      return !v;
-    });
+    if (this.menuOpen()) {
+      this.closeMenu();
+      return;
+    }
+    this.openMenu();
+  }
+
+  openMenu(): void {
+    this.clearMenuCloseTimer();
+    this.menuOpen.set(true);
+    this.menuVisible.set(true);
+    this.menuClosing.set(false);
+    this.openMobileCategory.set(this.activeCategoryTitle() ?? 'Image Tools');
     this.activeDesktopCategory.set(null);
     this.closeSearch();
   }
 
+  closeMenu(): void {
+    if (!this.menuVisible() && !this.menuOpen()) return;
+    this.menuOpen.set(false);
+    this.menuClosing.set(true);
+    this.clearMenuCloseTimer();
+    this.menuCloseTimer = setTimeout(() => {
+      this.menuVisible.set(false);
+      this.menuClosing.set(false);
+      this.menuCloseTimer = null;
+    }, 230);
+  }
+
   openDesktopCategory(title: string): void {
+    this.clearDesktopCloseTimer();
     this.activeDesktopCategory.set(title);
+    this.visibleDesktopCategory.set(title);
+    this.desktopCategoryClosing.set(false);
     if (title === 'More Tools' && !this.activeMoreCategory()) {
       this.activeMoreCategory.set(this.activeMoreCategoryTitle() ?? this.moreCategories[0]?.title ?? null);
     }
@@ -229,11 +262,23 @@ export class HeaderComponent {
 
   toggleDesktopCategory(event: MouseEvent, title: string): void {
     event.stopPropagation();
-    this.activeDesktopCategory.update((current) => (current === title ? null : title));
+    if (this.activeDesktopCategory() === title) {
+      this.closeDesktopCategory();
+      return;
+    }
+    this.openDesktopCategory(title);
   }
 
   closeDesktopCategory(): void {
+    if (!this.visibleDesktopCategory() && !this.activeDesktopCategory()) return;
     this.activeDesktopCategory.set(null);
+    this.desktopCategoryClosing.set(true);
+    this.clearDesktopCloseTimer();
+    this.desktopCloseTimer = setTimeout(() => {
+      this.visibleDesktopCategory.set(null);
+      this.desktopCategoryClosing.set(false);
+      this.desktopCloseTimer = null;
+    }, 170);
   }
 
   openMoreCategory(title: string): void {
@@ -269,28 +314,28 @@ export class HeaderComponent {
   }
 
   navigate(path: string): void {
-    this.menuOpen.set(false);
-    this.activeDesktopCategory.set(null);
+    this.closeMenu();
+    this.closeDesktopCategory();
     this.closeSearch();
     void this.router.navigateByUrl(path);
   }
 
   onSearchInput(event: Event): void {
     this.searchQuery.set((event.target as HTMLInputElement).value);
-    this.searchOpen.set(true);
-    this.activeDesktopCategory.set(null);
+    this.showSearch();
+    this.closeDesktopCategory();
     this.activeSearchIndex.set(0);
   }
 
   useQuickSearch(query: string): void {
     this.searchQuery.set(query);
-    this.searchOpen.set(true);
+    this.showSearch();
     this.activeSearchIndex.set(0);
     window.setTimeout(() => this.toolSearchInput?.nativeElement.focus(), 0);
   }
 
   onSearchFocus(): void {
-    this.searchOpen.set(true);
+    this.showSearch();
   }
 
   onSearchKeydown(event: KeyboardEvent): void {
@@ -298,7 +343,7 @@ export class HeaderComponent {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       if (!results.length) return;
-      this.searchOpen.set(true);
+      this.showSearch();
       this.activeSearchIndex.update((index) => Math.min(results.length - 1, index + 1));
       this.scrollActiveSearchResult();
       return;
@@ -332,14 +377,22 @@ export class HeaderComponent {
   }
 
   closeSearch(): void {
+    if (!this.searchVisible() && !this.searchOpen()) return;
     this.searchOpen.set(false);
     this.activeSearchIndex.set(0);
+    this.searchClosing.set(true);
+    this.clearSearchCloseTimer();
+    this.searchCloseTimer = setTimeout(() => {
+      this.searchVisible.set(false);
+      this.searchClosing.set(false);
+      this.searchCloseTimer = null;
+    }, 210);
   }
 
   openSearch(): void {
-    this.menuOpen.set(false);
-    this.activeDesktopCategory.set(null);
-    this.searchOpen.set(true);
+    this.closeMenu();
+    this.closeDesktopCategory();
+    this.showSearch();
     window.setTimeout(() => this.toolSearchInput?.nativeElement.focus(), 0);
   }
 
@@ -380,6 +433,34 @@ export class HeaderComponent {
       .filter(Boolean)
       .map((word) => word[0])
       .join('');
+  }
+
+  private showSearch(): void {
+    this.clearSearchCloseTimer();
+    this.searchOpen.set(true);
+    this.searchVisible.set(true);
+    this.searchClosing.set(false);
+  }
+
+  private clearMenuCloseTimer(): void {
+    if (this.menuCloseTimer) {
+      clearTimeout(this.menuCloseTimer);
+      this.menuCloseTimer = null;
+    }
+  }
+
+  private clearSearchCloseTimer(): void {
+    if (this.searchCloseTimer) {
+      clearTimeout(this.searchCloseTimer);
+      this.searchCloseTimer = null;
+    }
+  }
+
+  private clearDesktopCloseTimer(): void {
+    if (this.desktopCloseTimer) {
+      clearTimeout(this.desktopCloseTimer);
+      this.desktopCloseTimer = null;
+    }
   }
 
   private searchAliases(item: ToolCatalogItem, category: ToolCatalogCategory): string[] {

@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { animate, style, transition, trigger } from '@angular/animations';
 import { SeoService } from '../../core/services/seo.service';
 import { TOOL_CATEGORIES, TOOL_COUNT, ToolCatalogCategory, ToolCatalogItem } from '../../core/content/tool-catalog';
 
@@ -20,17 +19,6 @@ interface FaqItem {
   imports: [RouterLink],
   templateUrl: './home.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  animations: [
-    trigger('slideDown', [
-      transition(':enter', [
-        style({ height: 0, opacity: 0 }),
-        animate('260ms cubic-bezier(0.4,0,0.2,1)', style({ height: '*', opacity: 1 })),
-      ]),
-      transition(':leave', [
-        animate('200ms cubic-bezier(0.4,0,0.2,1)', style({ height: 0, opacity: 0 })),
-      ]),
-    ]),
-  ],
 })
 export class HomeComponent {
   private readonly seo = inject(SeoService);

@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
-import { animate, style, transition, trigger } from '@angular/animations';
 import { DomSanitizer } from '@angular/platform-browser';
 import { imagesToPdfFaqs, imagesToPdfSeoContent } from '../../core/content/tool-seo-content';
 import { ImageShareResponse, ImageShareService } from '../../core/services/image-share.service';
@@ -38,17 +37,6 @@ const ACCEPTED_IMAGE_TYPES = ['image/*'];
   imports: [UploadZoneComponent, AdSlotComponent, QrCodeCardComponent],
   templateUrl: './images-to-pdf.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  animations: [
-    trigger('slideDown', [
-      transition(':enter', [
-        style({ height: 0, opacity: 0 }),
-        animate('260ms cubic-bezier(0.4,0,0.2,1)', style({ height: '*', opacity: 1 })),
-      ]),
-      transition(':leave', [
-        animate('200ms cubic-bezier(0.4,0,0.2,1)', style({ height: 0, opacity: 0 })),
-      ]),
-    ]),
-  ],
 })
 export class ImagesToPdfComponent {
   private readonly seo = inject(SeoService);

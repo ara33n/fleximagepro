@@ -1,5 +1,4 @@
 import { ApplicationConfig, mergeApplicationConfig } from '@angular/core';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { RenderMode, ServerRoute, provideServerRendering, withRoutes } from '@angular/ssr';
 import { appConfig } from './app.config';
 
@@ -160,7 +159,7 @@ const serverRoutes: ServerRoute[] = [
 ];
 
 const serverConfig: ApplicationConfig = {
-  providers: [provideNoopAnimations(), provideServerRendering(withRoutes(serverRoutes))],
+  providers: [provideServerRendering(withRoutes(serverRoutes))],
 };
 
 export const config = mergeApplicationConfig(appConfig, serverConfig);

@@ -55,6 +55,11 @@ const PDF_DOWNLOAD_TOOLS = new Set([
   standalone: true,
   imports: [NgClass, NgStyle, ReactiveFormsModule, QrCodeCardComponent, UploadZoneComponent, ToolSeoBlockComponent],
   templateUrl: './utility-tool.component.html',
+  styleUrls: [
+    './utility-tool-qr.component.css',
+    './utility-tool-map-range.component.css',
+    './utility-tool-clip.component.css',
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UtilityToolComponent implements OnInit, AfterViewInit, OnDestroy {

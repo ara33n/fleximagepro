@@ -13,7 +13,6 @@ import {
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { filter } from 'rxjs';
 import { TOOL_CATEGORIES, ToolCatalogCategory, ToolCatalogItem } from '../../../core/content/tool-catalog';
 import { ThemeService } from '../../../core/services/theme.service';
 
@@ -202,8 +201,8 @@ export class HeaderComponent {
     });
 
     this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {
+        if (!(event instanceof NavigationEnd)) return;
         this.activePath.set(this.cleanPath(event.urlAfterRedirects));
         this.openMobileCategory.set(this.activeCategoryTitle() ?? 'Image Tools');
         this.closeMenu();

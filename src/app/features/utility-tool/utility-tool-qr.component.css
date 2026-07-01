@@ -1,0 +1,130 @@
+.qr-logo-badge {
+  border: 0;
+}
+
+.qr-logo-corner-break::before,
+.qr-logo-double-corner::before,
+.qr-logo-bracket::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  pointer-events: none;
+  background:
+    linear-gradient(currentColor, currentColor) left top / 18px 3px no-repeat,
+    linear-gradient(currentColor, currentColor) left top / 3px 18px no-repeat,
+    linear-gradient(currentColor, currentColor) right top / 18px 3px no-repeat,
+    linear-gradient(currentColor, currentColor) right top / 3px 18px no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / 18px 3px no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / 3px 18px no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / 18px 3px no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / 3px 18px no-repeat;
+}
+
+.qr-logo-double-corner::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  pointer-events: none;
+  background:
+    linear-gradient(currentColor, currentColor) left top / 12px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) left top / 2px 12px no-repeat,
+    linear-gradient(currentColor, currentColor) right top / 12px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) right top / 2px 12px no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / 12px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / 2px 12px no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / 12px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / 2px 12px no-repeat;
+}
+
+.qr-logo-bracket::before {
+  inset: -10px;
+  background:
+    linear-gradient(currentColor, currentColor) left top / 28px 4px no-repeat,
+    linear-gradient(currentColor, currentColor) left top / 4px 28px no-repeat,
+    linear-gradient(currentColor, currentColor) right top / 28px 4px no-repeat,
+    linear-gradient(currentColor, currentColor) right top / 4px 28px no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / 28px 4px no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / 4px 28px no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / 28px 4px no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / 4px 28px no-repeat;
+}
+
+.qr-logo-dashed {
+  border: 2px dashed currentColor;
+  border-radius: 14px;
+}
+
+.qr-logo-circle {
+  border: 3px solid currentColor;
+  border-radius: 999px;
+}
+
+.qr-logo-minimal {
+  border-top: 3px solid currentColor;
+  border-bottom: 3px solid currentColor;
+  border-radius: 4px;
+}
+
+.qr-frame {
+  border: 1px solid rgb(228 228 231);
+  border-radius: 18px;
+}
+
+.qr-frame-rounded {
+  border: 8px solid currentColor;
+  border-radius: 28px;
+}
+
+.qr-frame-phone {
+  border: 8px solid currentColor;
+  border-radius: 42px;
+  padding: 28px 18px 38px;
+}
+
+.qr-frame-phone::after {
+  content: "";
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translateX(-50%);
+  border: 3px solid currentColor;
+  border-radius: 999px;
+}
+
+.qr-frame-ticket {
+  border: 4px dashed currentColor;
+  border-radius: 24px;
+}
+
+.qr-frame-badge {
+  border: 0;
+  border-radius: 32px;
+  box-shadow: inset 0 0 0 6px currentColor;
+}
+
+.qr-frame-corner {
+  border: 0;
+}
+
+.qr-frame-corner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(currentColor, currentColor) left top / 56px 6px no-repeat,
+    linear-gradient(currentColor, currentColor) left top / 6px 56px no-repeat,
+    linear-gradient(currentColor, currentColor) right top / 56px 6px no-repeat,
+    linear-gradient(currentColor, currentColor) right top / 6px 56px no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / 56px 6px no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / 6px 56px no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / 56px 6px no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / 6px 56px no-repeat;
+}
+
+.qr-frame-shadow {
+  border: 0;
+  box-shadow: 0 24px 70px color-mix(in srgb, currentColor 28%, transparent);
+}
